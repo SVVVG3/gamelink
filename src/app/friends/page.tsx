@@ -2,7 +2,7 @@
 
 import { useUser } from '@/hooks/useUser'
 import { useSignIn } from '@farcaster/auth-kit'
-import MutualFollowersDisplay from '@/components/MutualFollowersDisplay'
+import SimpleMutualFollowersDisplay from '@/components/SimpleMutualFollowersDisplay'
 import BottomNavigation from '@/components/BottomNavigation'
 import Link from 'next/link'
 import { FaArrowLeft, FaUsers, FaGamepad } from 'react-icons/fa'
@@ -132,7 +132,7 @@ export default function FriendsPage() {
 
         {/* Mutual Followers Display */}
         <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-4 sm:p-6">
-          <MutualFollowersDisplay 
+          <SimpleMutualFollowersDisplay 
             initialDisplay={20}
             showSearch={true}
             showRefresh={true}

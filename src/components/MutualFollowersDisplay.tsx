@@ -1,12 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useUser } from '@/hooks/useUser'
-import { useMutualFollowers } from '@/hooks/useMutualFollowers'
-import { getProfileByFid } from '@/lib/supabase/profiles'
+import { useSocialData } from '@/contexts/SocialDataContext'
 import FriendCodeDisplay from './FriendCodeDisplay'
-import { type MutualFollower } from '@/lib/farcaster-client'
-import { type Profile } from '@/lib/supabase/profiles'
 import { 
   FaUsers, 
   FaSearch, 
@@ -17,8 +14,16 @@ import {
   FaSpinner
 } from 'react-icons/fa'
 
-interface MutualFollowerWithProfile extends MutualFollower {
-  profile?: Profile | null
+interface MutualFollowerWithProfile {
+  fid: number
+  username: string
+  display_name?: string
+  pfp_url?: string
+  gamertags?: Array<{
+    platform: string
+    handle: string
+    is_public?: boolean
+  }>
   hasGamertags?: boolean
 }
 
@@ -40,99 +45,47 @@ export default function MutualFollowersDisplay({
   showOnlyGamers = true
 }: MutualFollowersDisplayProps) {
   const { profile } = useUser()
-  const { mutualFollowers, loading, error, lastUpdated, refresh } = useMutualFollowers(profile?.fid || null)
+  const { 
+    mutualFollowers, 
+    gamingFollowers, 
+    isLoadingMutuals, 
+    isLoadingGamertags, 
+    mutualsError, 
+    gamertagsError, 
+    refreshData 
+  } = useSocialData()
   
   const [searchTerm, setSearchTerm] = useState('')
-  const [profilesCache, setProfilesCache] = useState<Record<number, Profile | null>>({})
-  const [loadingProfiles, setLoadingProfiles] = useState<Set<number>>(new Set())
   const [refreshing, setRefreshing] = useState(false)
   const [displayCount, setDisplayCount] = useState(initialDisplay)
   const [showOnlyGamersState, setShowOnlyGamersState] = useState(showOnlyGamers)
 
-  // Load profiles for mutual followers
-  useEffect(() => {
-    const loadProfiles = async () => {
-      const fidsToLoad = mutualFollowers
-        .filter(follower => !(follower.fid in profilesCache) && !loadingProfiles.has(follower.fid))
-        .slice(0, 10) // Load 10 at a time to avoid overwhelming the system
-
-      if (fidsToLoad.length === 0) return
-
-      // Mark as loading
-      setLoadingProfiles(prev => {
-        const newSet = new Set(prev)
-        fidsToLoad.forEach(follower => newSet.add(follower.fid))
-        return newSet
-      })
-
-      // Load profiles in parallel
-      const profilePromises = fidsToLoad.map(async (follower) => {
-        try {
-          const profile = await getProfileByFid(follower.fid)
-          return { fid: follower.fid, profile }
-        } catch (error) {
-          console.error(`Error loading profile for FID ${follower.fid}:`, error)
-          return { fid: follower.fid, profile: null }
-        }
-      })
-
-      const results = await Promise.all(profilePromises)
-      
-      // Update cache
-      setProfilesCache(prev => {
-        const newCache = { ...prev }
-        results.forEach(({ fid, profile }) => {
-          newCache[fid] = profile
-        })
-        return newCache
-      })
-
-      // Remove from loading set
-      setLoadingProfiles(prev => {
-        const newSet = new Set(prev)
-        fidsToLoad.forEach(follower => newSet.delete(follower.fid))
-        return newSet
-      })
-    }
-
-    if (mutualFollowers.length > 0) {
-      loadProfiles()
-    }
-  }, [mutualFollowers, profilesCache, loadingProfiles])
-
-  // Combine mutual followers with their profiles and check for gamertags
+  // Use the appropriate data source based on filter preference
+  const sourceFollowers = showOnlyGamersState ? gamingFollowers : mutualFollowers
+  
+  // Add hasGamertags flag to followers
   const followersWithProfiles: MutualFollowerWithProfile[] = useMemo(() => {
-    return mutualFollowers.map(follower => {
-      const profile = profilesCache[follower.fid]
-      return {
-        ...follower,
-        profile,
-        hasGamertags: profile?.id ? true : false
-      }
-    })
-  }, [mutualFollowers, profilesCache])
+    return sourceFollowers.map((follower: any) => ({
+      ...follower,
+      hasGamertags: follower.gamertags && follower.gamertags.length > 0
+    }))
+  }, [sourceFollowers])
 
-  // Filter followers based on search term and gamer preference
+  // Filter followers based on search term
   const filteredFollowers = useMemo(() => {
     let filtered = followersWithProfiles
-
-    // Filter by gamers only if enabled
-    if (showOnlyGamersState) {
-      filtered = filtered.filter(follower => follower.hasGamertags)
-    }
 
     // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter(follower => 
         follower.username.toLowerCase().includes(term) ||
-        follower.displayName.toLowerCase().includes(term) ||
-        (follower.bio && follower.bio.toLowerCase().includes(term))
+        (follower.display_name && follower.display_name.toLowerCase().includes(term))
       )
     }
 
     return filtered
-  }, [followersWithProfiles, searchTerm, showOnlyGamersState])
+  }, [followersWithProfiles, searchTerm])
 
   // Display followers (limited by displayCount)
   const displayFollowers = useMemo(() => {
@@ -152,9 +105,7 @@ export default function MutualFollowersDisplay({
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      await refresh()
-      // Clear profiles cache to reload fresh data
-      setProfilesCache({})
+      await refreshData()
     } catch (error) {
       console.error('Error refreshing mutual followers:', error)
     } finally {
@@ -169,13 +120,15 @@ export default function MutualFollowersDisplay({
   }
 
   // Loading state
-  if (loading && mutualFollowers.length === 0) {
+  if ((isLoadingMutuals || isLoadingGamertags) && mutualFollowers.length === 0) {
     return (
       <div className={`space-y-4 ${className}`}>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <FaSpinner className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
-            <p className="text-gray-300">Loading mutual followers...</p>
+            <p className="text-gray-300">
+              {isLoadingMutuals ? 'Loading mutual followers...' : 'Loading gamertags...'}
+            </p>
             <p className="text-sm text-gray-500 mt-1">This may take a moment for accounts with many connections</p>
           </div>
         </div>
@@ -184,12 +137,12 @@ export default function MutualFollowersDisplay({
   }
 
   // Error state
-  if (error && mutualFollowers.length === 0) {
+  if ((mutualsError || gamertagsError) && mutualFollowers.length === 0) {
     return (
       <div className={`${className}`}>
         <div className="p-6 bg-red-900/20 border border-red-700 rounded-lg text-center">
           <p className="text-red-300 mb-2">Error loading mutual followers</p>
-          <p className="text-sm text-red-400 mb-4">{error}</p>
+          <p className="text-sm text-red-400 mb-4">{mutualsError || gamertagsError}</p>
           {showRefresh && (
             <button
               onClick={handleRefresh}
