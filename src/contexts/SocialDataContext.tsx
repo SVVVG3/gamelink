@@ -6,8 +6,12 @@ import { useUser } from '@/hooks/useUser'
 interface MutualFollower {
   fid: number
   username: string
-  display_name?: string
-  pfp_url?: string
+  displayName?: string
+  pfpUrl?: string
+  bio?: string
+  followerCount?: number
+  followingCount?: number
+  isVerified?: boolean
   gamertags?: Array<{
     platform: string
     handle: string
@@ -104,12 +108,12 @@ export function SocialDataProvider({ children }: SocialDataProviderProps) {
       }
       
       const gamertagsData = await response.json()
-      console.log('🎮 SocialData: Received gamertags data for', Object.keys(gamertagsData).length, 'users')
+      console.log('🎮 SocialData: Received gamertags data for', Object.keys(gamertagsData.gamertags || {}).length, 'users')
       
       // Merge gamertags with followers
       const followersWithGamertags = followers.map(follower => ({
         ...follower,
-        gamertags: gamertagsData[follower.fid] || []
+        gamertags: gamertagsData.gamertags[follower.fid] || []
       }))
       
       const withGamertags = followersWithGamertags.filter(f => f.gamertags && f.gamertags.length > 0)

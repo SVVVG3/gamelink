@@ -8,6 +8,14 @@ This directory contains SQL migration files for the GameLink Farcaster Gaming Mi
 
 Creates the messaging system schema with support for both 1:1 and group chats.
 
+### 005_fix_messaging_schema_for_profiles.sql
+
+Fixes the messaging schema to work with the profiles table instead of auth.users. This migration:
+- Creates the profiles table if it doesn't exist
+- Updates foreign key constraints to reference profiles instead of auth.users
+- Disables RLS policies that were designed for Supabase Auth
+- Updates the create_direct_chat function to work with profiles
+
 **Tables Created:**
 - `chats` - Main chat records (direct or group)
 - `chat_participants` - Many-to-many relationship between users and chats

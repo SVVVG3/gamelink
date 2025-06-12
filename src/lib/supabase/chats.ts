@@ -279,29 +279,72 @@ export async function createDirectChat(
 ): Promise<string> {
   const supabase = createClient()
   
+  console.log('🔄 Creating direct chat between FIDs:', currentUserFid, 'and', targetUserFid)
+  
   // Get current user profile
-  const { data: currentProfile } = await supabase
+  const { data: currentProfile, error: currentError } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, fid, username')
     .eq('fid', currentUserFid)
     .single()
 
-  if (!currentProfile) {
-    throw new Error('Current user profile not found')
+  if (currentError) {
+    console.error('❌ Error fetching current user profile:', currentError)
+    throw new Error(`Current user profile error: ${currentError.message}`)
   }
 
-  // Get target user by FID
-  const { data: targetProfile } = await supabase
+  if (!currentProfile) {
+    console.error('❌ Current user profile not found for FID:', currentUserFid)
+    throw new Error(`Current user profile not found for FID ${currentUserFid}`)
+  }
+
+  console.log('✅ Found current user profile:', currentProfile.username, currentProfile.id)
+
+  // Get target user by FID - if not found, we'll create a basic profile
+  let targetProfile
+  const { data: existingTargetProfile, error: targetError } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, fid, username')
     .eq('fid', targetUserFid)
     .single()
 
-  if (!targetProfile) {
-    throw new Error('Target user not found')
+  if (targetError && targetError.code !== 'PGRST116') {
+    // Real error, not just "no rows found"
+    console.error('❌ Error fetching target user profile:', targetError)
+    throw new Error(`Target user profile error: ${targetError.message}`)
+  }
+
+  if (!existingTargetProfile) {
+    console.log('⚠️ Target user profile not found, creating basic profile for FID:', targetUserFid)
+    
+    // Create a basic profile for the target user
+    // In a real app, you'd fetch their Farcaster profile data here
+    const { data: newTargetProfile, error: createError } = await supabase
+      .from('profiles')
+      .insert({
+        fid: targetUserFid,
+        username: `user-${targetUserFid}`, // Fallback username
+        display_name: `User ${targetUserFid}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select('id, fid, username')
+      .single()
+
+    if (createError) {
+      console.error('❌ Error creating target user profile:', createError)
+      throw new Error(`Failed to create target user profile: ${createError.message}`)
+    }
+
+    targetProfile = newTargetProfile
+    console.log('✅ Created basic profile for target user:', targetProfile.username, targetProfile.id)
+  } else {
+    targetProfile = existingTargetProfile
+    console.log('✅ Found existing target user profile:', targetProfile.username, targetProfile.id)
   }
 
   // Use the database function to create or get existing direct chat
+  console.log('🔄 Calling create_direct_chat function...')
   const { data, error } = await supabase
     .rpc('create_direct_chat', {
       user1_id: currentProfile.id,
@@ -311,9 +354,11 @@ export async function createDirectChat(
     })
 
   if (error) {
-    throw error
+    console.error('❌ Error calling create_direct_chat:', error)
+    throw new Error(`Failed to create chat: ${error.message}`)
   }
 
+  console.log('✅ Successfully created/found chat with ID:', data)
   return data
 }
 

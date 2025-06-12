@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const totalWithGamertags = Object.values(gamertagsByFid).filter(tags => tags.length > 0).length
     console.log('✅ API: Found gamertags for', totalWithGamertags, 'out of', fids.length, 'users')
 
-    return NextResponse.json(gamertagsByFid)
+    return NextResponse.json({ gamertags: gamertagsByFid })
     
   } catch (error) {
     console.error('❌ Error in bulk gamertags API:', error)

@@ -1,14 +1,18 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { useSocialData } from '@/contexts/SocialDataContext'
+import { useUser } from '@/hooks/useUser'
+import { createDirectChat } from '@/lib/supabase/chats'
 import FriendCodeDisplay from './FriendCodeDisplay'
 import { 
   FaUsers, 
   FaSearch, 
   FaSyncAlt, 
   FaGamepad, 
-  FaSpinner
+  FaSpinner,
+  FaEnvelope
 } from 'react-icons/fa'
 
 interface SimpleMutualFollowersDisplayProps {
@@ -28,6 +32,7 @@ export default function SimpleMutualFollowersDisplay({
   compact = false,
   showOnlyGamers = true
 }: SimpleMutualFollowersDisplayProps) {
+  const { profile } = useUser()
   const { 
     mutualFollowers, 
     gamingFollowers, 
@@ -53,7 +58,7 @@ export default function SimpleMutualFollowersDisplay({
     const term = searchTerm.toLowerCase()
     return sourceFollowers.filter((follower: any) => 
       follower.username.toLowerCase().includes(term) ||
-      (follower.display_name && follower.display_name.toLowerCase().includes(term))
+      (follower.displayName && follower.displayName.toLowerCase().includes(term))
     )
   }, [sourceFollowers, searchTerm])
 
@@ -218,7 +223,11 @@ export default function SimpleMutualFollowersDisplay({
             <MutualFollowerCard 
               key={follower.fid} 
               follower={follower} 
-              compact={compact} 
+              compact={compact}
+              currentUserFid={profile?.fid}
+              onChatCreated={(chatId) => {
+                console.log('Chat created:', chatId)
+              }}
             />
           ))}
           
@@ -242,19 +251,75 @@ export default function SimpleMutualFollowersDisplay({
 interface MutualFollowerCardProps {
   follower: any
   compact?: boolean
+  currentUserFid?: number
+  onChatCreated?: (chatId: string) => void
 }
 
-function MutualFollowerCard({ follower, compact = false }: MutualFollowerCardProps) {
+function MutualFollowerCard({ follower, compact = false, currentUserFid, onChatCreated }: MutualFollowerCardProps) {
+  const router = useRouter()
+  const [isCreatingChat, setIsCreatingChat] = useState(false)
+
+  // Debug: Log follower data to see what we're getting
+  console.log('🖼️ Rendering follower card:', {
+    username: follower.username,
+    displayName: follower.displayName,
+    pfpUrl: follower.pfpUrl,
+    fid: follower.fid
+  })
+
+  const handleViewProfile = () => {
+    // Navigate to internal user profile page
+    router.push(`/profile/${follower.fid}`)
+  }
+
+  const handleSendMessage = async () => {
+    if (!currentUserFid) {
+      alert('Please sign in to send messages')
+      return
+    }
+
+    setIsCreatingChat(true)
+    try {
+      console.log('🔄 Creating direct chat between FIDs:', currentUserFid, 'and', follower.fid)
+      const chatId = await createDirectChat(currentUserFid, follower.fid)
+      console.log('✅ Chat created successfully:', chatId)
+      
+      // Navigate to the new chat
+      router.push(`/messages/${chatId}`)
+      onChatCreated?.(chatId)
+    } catch (error) {
+      console.error('❌ Error creating chat:', error)
+      alert(error instanceof Error ? error.message : 'Failed to create chat')
+    } finally {
+      setIsCreatingChat(false)
+    }
+  }
+
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors">
       <div className="flex items-start gap-4">
         {/* Profile picture */}
         <div className="flex-shrink-0">
-          {follower.pfp_url ? (
+          {follower.pfpUrl ? (
             <img
-              src={follower.pfp_url}
+              src={follower.pfpUrl}
               alt={follower.username}
-              className="w-12 h-12 rounded-full"
+              className="w-12 h-12 rounded-full object-cover"
+              onError={(e) => {
+                console.log('❌ Failed to load profile image for:', follower.username, follower.pfpUrl)
+                // Replace the image with fallback
+                const target = e.target as HTMLImageElement
+                const parent = target.parentElement
+                if (parent) {
+                  parent.innerHTML = `
+                    <div class="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+                      <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                      </svg>
+                    </div>
+                  `
+                }
+              }}
             />
           ) : (
             <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
@@ -267,7 +332,7 @@ function MutualFollowerCard({ follower, compact = false }: MutualFollowerCardPro
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-semibold text-white truncate">
-              {follower.display_name || follower.username}
+              {follower.displayName || follower.username}
             </h3>
             {follower.gamertags && follower.gamertags.length > 0 && (
               <FaGamepad className="w-4 h-4 text-purple-400 flex-shrink-0" />
@@ -276,24 +341,51 @@ function MutualFollowerCard({ follower, compact = false }: MutualFollowerCardPro
           
           <p className="text-sm text-gray-400 mb-3">@{follower.username}</p>
 
-                     {/* Gamertags */}
-           {follower.gamertags && follower.gamertags.length > 0 && (
-             <div className="flex flex-wrap gap-2">
-               {follower.gamertags.slice(0, 3).map((gamertag: any, index: number) => (
-                 <span
-                   key={index}
-                   className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-900/50 text-purple-200 border border-purple-700"
-                 >
-                   {gamertag.platform}: {gamertag.handle}
-                 </span>
-               ))}
-               {follower.gamertags.length > 3 && (
-                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
-                   +{follower.gamertags.length - 3} more
-                 </span>
-               )}
-             </div>
-           )}
+          {/* Gamertags */}
+          {follower.gamertags && follower.gamertags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {follower.gamertags.slice(0, 3).map((gamertag: any, index: number) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-900/50 text-purple-200 border border-purple-700"
+                >
+                  {gamertag.platform}: {gamertag.handle}
+                </span>
+              ))}
+              {follower.gamertags.length > 3 && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                  +{follower.gamertags.length - 3} more
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleViewProfile}
+              className="px-3 py-1.5 text-xs font-medium text-blue-400 border border-blue-400 rounded-lg hover:bg-blue-400 hover:text-white transition-colors"
+            >
+              View Profile
+            </button>
+            <button
+              onClick={handleSendMessage}
+              disabled={isCreatingChat}
+              className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+            >
+              {isCreatingChat ? (
+                <>
+                  <FaSpinner className="w-3 h-3 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <FaEnvelope className="w-3 h-3" />
+                  Send Message
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

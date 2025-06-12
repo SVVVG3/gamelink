@@ -8,16 +8,50 @@ import BottomNavigation from '@/components/BottomNavigation'
 import NewChatModal from '@/components/NewChatModal'
 import { FaComments, FaPlus, FaSearch, FaUsers, FaUser, FaSpinner } from 'react-icons/fa'
 
+// Extended interface to include user profile data
+interface ChatWithUserProfiles extends ChatWithParticipants {
+  participantProfiles?: Array<{
+    fid: number
+    username: string
+    display_name?: string
+    pfp_url?: string
+  }>
+}
+
 export default function MessagesPage() {
   const { isAuthenticated, isLoading, farcasterProfile, profile } = useUser()
   const router = useRouter()
   
   // Component state
-  const [chats, setChats] = useState<ChatWithParticipants[]>([])
+  const [chats, setChats] = useState<ChatWithUserProfiles[]>([])
   const [isLoadingChats, setIsLoadingChats] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false)
+
+  // Fetch user profiles for chat participants
+  const fetchUserProfiles = async (fids: number[]) => {
+    if (fids.length === 0) return {}
+    
+    try {
+      const response = await fetch('/api/farcaster/users/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fids })
+      })
+      
+      if (!response.ok) {
+        console.error('Failed to fetch user profiles')
+        return {}
+      }
+      
+      const data = await response.json()
+      return data.users || {}
+    } catch (error) {
+      console.error('Error fetching user profiles:', error)
+      return {}
+    }
+  }
 
   // Load user's chats
   const loadChats = useCallback(async () => {
@@ -28,7 +62,30 @@ export default function MessagesPage() {
     
     try {
       const userChats = await getUserChats(profile.fid)
-      setChats(userChats)
+      
+      // Collect all unique FIDs from chat participants
+      const allFids = new Set<number>()
+      userChats.forEach(chat => {
+        chat.participants.forEach(participant => {
+          if (participant.fid) {
+            allFids.add(participant.fid)
+          }
+        })
+      })
+      
+      // Fetch user profiles for all participants
+      const userProfiles = await fetchUserProfiles(Array.from(allFids))
+      
+      // Merge profile data with chats
+      const chatsWithProfiles: ChatWithUserProfiles[] = userChats.map(chat => ({
+        ...chat,
+        participantProfiles: chat.participants
+          .filter(p => p.fid)
+          .map(p => userProfiles[p.fid!])
+          .filter(Boolean)
+      }))
+      
+      setChats(chatsWithProfiles)
     } catch (err) {
       console.error('Error loading chats:', err)
       setError(err instanceof Error ? err.message : 'Failed to load chats')
@@ -53,25 +110,45 @@ export default function MessagesPage() {
     // Search by chat name
     if (chat.name?.toLowerCase().includes(query)) return true
     
-    // For direct chats, search by participant names (when we have that data)
-    // This would need participant profile data to be fully functional
+    // Search by participant usernames and display names
+    const matchesParticipant = chat.participantProfiles?.some(participant => 
+      participant.username.toLowerCase().includes(query) ||
+      participant.display_name?.toLowerCase().includes(query)
+    )
+    
+    if (matchesParticipant) return true
     
     return false
   })
 
   // Format chat display name
-  const getChatDisplayName = (chat: ChatWithParticipants) => {
+  const getChatDisplayName = (chat: ChatWithUserProfiles) => {
     if (chat.type === 'group') {
       return chat.name || 'Group Chat'
     }
     
     // For direct chats, show the other participant
+    const otherParticipantProfile = chat.participantProfiles?.find(p => p.fid !== profile?.fid)
+    if (otherParticipantProfile) {
+      return otherParticipantProfile.display_name || otherParticipantProfile.username
+    }
+    
+    // Fallback to FID if profile not found
     const otherParticipant = chat.participants.find(p => p.fid !== profile?.fid)
     if (otherParticipant) {
       return `User ${otherParticipant.fid}`
     }
     
     return 'Direct Chat'
+  }
+
+  // Get chat avatar URL
+  const getChatAvatarUrl = (chat: ChatWithUserProfiles) => {
+    if (chat.type === 'direct') {
+      const otherParticipantProfile = chat.participantProfiles?.find(p => p.fid !== profile?.fid)
+      return otherParticipantProfile?.pfp_url
+    }
+    return null // Group chats don't have individual avatars for now
   }
 
   // Format last message time
@@ -209,8 +286,14 @@ export default function MessagesPage() {
                 >
                   <div className="flex items-center space-x-4">
                     {/* Chat Avatar */}
-                    <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center group-hover:bg-gray-600 transition-colors">
-                      {chat.type === 'group' ? (
+                    <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center group-hover:bg-gray-600 transition-colors overflow-hidden">
+                      {getChatAvatarUrl(chat) ? (
+                        <img
+                          src={getChatAvatarUrl(chat)!}
+                          alt={getChatDisplayName(chat)}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : chat.type === 'group' ? (
                         <FaUsers className="w-6 h-6 text-gray-400" />
                       ) : (
                         <FaUser className="w-6 h-6 text-gray-400" />

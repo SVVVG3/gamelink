@@ -9,6 +9,16 @@ import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
 import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle } from 'react-icons/fa'
 
+// Extended interface to include user profile data
+interface ChatWithUserProfiles extends ChatWithParticipants {
+  participantProfiles?: Array<{
+    fid: number
+    username: string
+    display_name?: string
+    pfp_url?: string
+  }>
+}
+
 export default function ChatPage() {
   const params = useParams()
   const router = useRouter()
@@ -17,9 +27,33 @@ export default function ChatPage() {
   const chatId = params.chatId as string
   
   // Component state
-  const [chat, setChat] = useState<ChatWithParticipants | null>(null)
+  const [chat, setChat] = useState<ChatWithUserProfiles | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Fetch user profiles for chat participants
+  const fetchUserProfiles = async (fids: number[]) => {
+    if (fids.length === 0) return {}
+    
+    try {
+      const response = await fetch('/api/farcaster/users/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fids })
+      })
+      
+      if (!response.ok) {
+        console.error('Failed to fetch user profiles')
+        return {}
+      }
+      
+      const data = await response.json()
+      return data.users || {}
+    } catch (error) {
+      console.error('Error fetching user profiles:', error)
+      return {}
+    }
+  }
 
   // Load chat data
   const loadChat = useCallback(async () => {
@@ -34,7 +68,24 @@ export default function ChatPage() {
         return
       }
       
-      setChat(chatData)
+      // Collect all unique FIDs from chat participants
+      const allFids = chatData.participants
+        .filter(p => p.fid)
+        .map(p => p.fid!)
+      
+      // Fetch user profiles for all participants
+      const userProfiles = await fetchUserProfiles(allFids)
+      
+      // Merge profile data with chat
+      const chatWithProfiles: ChatWithUserProfiles = {
+        ...chatData,
+        participantProfiles: chatData.participants
+          .filter(p => p.fid)
+          .map(p => userProfiles[p.fid!])
+          .filter(Boolean)
+      }
+      
+      setChat(chatWithProfiles)
     } catch (err) {
       console.error('Error loading chat:', err)
       setError(err instanceof Error ? err.message : 'Failed to load chat')
@@ -71,9 +122,14 @@ export default function ChatPage() {
     }
     
     // For direct chats, show the other participant's name
+    const otherParticipantProfile = chat.participantProfiles?.find(p => p.fid !== profile?.fid)
+    if (otherParticipantProfile) {
+      return otherParticipantProfile.display_name || otherParticipantProfile.username
+    }
+    
+    // Fallback to FID if profile not found
     const otherParticipant = chat.participants.find(p => p.fid !== profile?.fid)
     if (otherParticipant) {
-      // We'd need to fetch the profile data for the display name
       return `User ${otherParticipant.fid}`
     }
     
