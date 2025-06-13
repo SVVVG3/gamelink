@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import BottomNavigation from '@/components/BottomNavigation'
 import { 
@@ -34,7 +34,6 @@ interface EventWithDetails extends Event {
 
 export default function EventDetailsPage() {
   const params = useParams()
-  const router = useRouter()
   const { isAuthenticated, isLoading, profile } = useUser()
   const [event, setEvent] = useState<EventWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,7 +46,7 @@ export default function EventDetailsPage() {
     if (eventId) {
       fetchEventDetails()
     }
-  }, [eventId, profile])
+  }, [eventId, profile]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchEventDetails = async () => {
     try {

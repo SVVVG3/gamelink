@@ -70,7 +70,6 @@ export async function GET(
 
     // Get user's participation status if authenticated
     let userParticipation = null
-    const authHeader = request.headers.get('authorization')
     
     // Try to get user FID from query params or headers for user-specific data
     const url = new URL(request.url)
@@ -89,7 +88,7 @@ export async function GET(
       console.log(`🔍 API: Found user profile:`, userProfile)
 
       if (userProfile) {
-        userParticipation = participants?.find((p: any) => p.user_id === userProfile.id) || null
+        userParticipation = participants?.find((p: { user_id: string }) => p.user_id === userProfile.id) || null
         console.log(`🔍 API: User participation found:`, userParticipation)
         console.log(`🔍 API: All participants:`, participants?.map(p => ({ user_id: p.user_id, role: p.role, profile: p.profile })))
       }

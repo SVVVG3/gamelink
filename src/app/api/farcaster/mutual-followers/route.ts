@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getMutualFollowers, getUserProfile, refreshMutualFollowers } from '../../../../lib/farcaster'
+import { getMutualFollowers, refreshMutualFollowers } from '../../../../lib/farcaster'
 
 export async function GET(request: NextRequest) {
   try {

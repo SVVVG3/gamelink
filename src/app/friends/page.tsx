@@ -9,7 +9,7 @@ import { FaArrowLeft, FaUsers, FaGamepad } from 'react-icons/fa'
 
 export default function FriendsPage() {
   const { isAuthenticated, isLoading, farcasterProfile, profile } = useUser()
-  const { signOut } = useSignIn({
+  const { } = useSignIn({
     onSuccess: ({ fid, username }) => {
       console.log(`Signed in as ${username} (FID: ${fid})`);
     },

@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { createGroup, createGroupInvitation, checkGroupNameExists, getProfileIdsByFids } from '../lib/supabase/groups'
 import { useUser } from '../hooks/useUser'
 import { useSocialData } from '../contexts/SocialDataContext'
-import type { CreateGroupData, MutualFollower } from '../types'
+import type { CreateGroupData } from '../types'
 
 interface GroupFormProps {
   onSuccess?: (groupId: string) => void
@@ -60,7 +60,7 @@ export default function GroupForm({ onSuccess, onCancel, className = '' }: Group
     follower.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleInputChange = (field: keyof CreateGroupData, value: any) => {
+  const handleInputChange = (field: keyof CreateGroupData, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setError(null)
   }
@@ -315,7 +315,7 @@ export default function GroupForm({ onSuccess, onCancel, className = '' }: Group
               </label>
               <select
                 value={formData.skillLevel || 'any'}
-                onChange={(e) => handleInputChange('skillLevel', e.target.value as any)}
+                onChange={(e) => handleInputChange('skillLevel', e.target.value)}
                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {SKILL_LEVELS.map(level => (
