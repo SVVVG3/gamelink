@@ -4,6 +4,7 @@ import './globals.css';
 import '@farcaster/auth-kit/styles.css';
 import AuthKitWrapper from '@/components/AuthKitWrapper';
 import { SocialDataProvider } from '@/contexts/SocialDataContext';
+import FarcasterSDKProvider from '@/components/FarcasterSDKProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,11 +30,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthKitWrapper>
-          <SocialDataProvider>
-            {children}
-          </SocialDataProvider>
-        </AuthKitWrapper>
+        <FarcasterSDKProvider>
+          <AuthKitWrapper>
+            <SocialDataProvider>
+              {children}
+            </SocialDataProvider>
+          </AuthKitWrapper>
+        </FarcasterSDKProvider>
       </body>
     </html>
   );

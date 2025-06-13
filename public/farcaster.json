@@ -1,0 +1,35 @@
+{
+  "name": "GameLink",
+  "version": "1.0.0",
+  "description": "Connect with fellow gamers on Farcaster. Share gamertags, join groups, organize events, and chat with friends.",
+  "iconUrl": "https://farcaster-gamelink.vercel.app/favicon.ico",
+  "splashImageUrl": "https://farcaster-gamelink.vercel.app/splash.png",
+  "homeUrl": "https://farcaster-gamelink.vercel.app",
+  "webhookUrl": "https://farcaster-gamelink.vercel.app/api/webhook",
+  "author": {
+    "name": "GameLink Team",
+    "url": "https://farcaster-gamelink.vercel.app"
+  },
+  "capabilities": [
+    "ethereum",
+    "notifications"
+  ],
+  "permissions": [
+    "user:read",
+    "cast:write"
+  ],
+  "categories": [
+    "gaming",
+    "social"
+  ],
+  "keywords": [
+    "gaming",
+    "gamertags",
+    "farcaster",
+    "social",
+    "events",
+    "tournaments",
+    "chat",
+    "groups"
+  ]
+} 

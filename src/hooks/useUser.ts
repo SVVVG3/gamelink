@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useProfile } from '@farcaster/auth-kit'
+import { useFarcasterSDK } from '@/components/FarcasterSDKProvider'
 import { 
   getProfileByFid, 
   upsertProfile, 
@@ -18,7 +19,10 @@ interface UseUserReturn {
   isAuthenticated: boolean
   isLoading: boolean
   
-  // Farcaster data (from AuthKit)
+  // Environment detection
+  isInFarcaster: boolean
+  
+  // Farcaster data (from AuthKit or SDK)
   farcasterProfile: {
     fid?: number
     username?: string
@@ -40,12 +44,23 @@ interface UseUserReturn {
 }
 
 export function useUser(): UseUserReturn {
-  const { isAuthenticated, profile: farcasterProfile } = useProfile()
+  const { isAuthenticated: authKitAuthenticated, profile: authKitProfile } = useProfile()
+  const { isSDKLoaded, isInFarcaster, user: sdkUser } = useFarcasterSDK()
   
   const [profile, setProfile] = useState<Profile | null>(null)
   const [gamertags, setGamertags] = useState<Gamertag[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Determine authentication state and profile data
+  const isAuthenticated = isInFarcaster ? !!sdkUser : authKitAuthenticated
+  const farcasterProfile = isInFarcaster && sdkUser ? {
+    fid: sdkUser.fid,
+    username: sdkUser.username,
+    displayName: sdkUser.displayName,
+    bio: sdkUser.bio,
+    pfpUrl: sdkUser.pfpUrl
+  } : authKitProfile
 
   // Sync Farcaster profile data with Supabase
   const syncProfile = useCallback(async () => {
@@ -69,11 +84,12 @@ export function useUser(): UseUserReturn {
       setProfile(supabaseProfile)
       
       console.log('Profile synced successfully:', supabaseProfile)
+      console.log('Authentication source:', isInFarcaster ? 'Farcaster SDK' : 'AuthKit')
     } catch (err) {
       console.error('Error syncing profile:', err)
       setError(err instanceof Error ? err.message : 'Failed to sync profile')
     }
-  }, [isAuthenticated, farcasterProfile])
+  }, [isAuthenticated, farcasterProfile, isInFarcaster])
 
   // Load user's gamertags
   const loadGamertags = useCallback(async (profileId: string) => {
@@ -116,9 +132,17 @@ export function useUser(): UseUserReturn {
     }
   }, [isAuthenticated, farcasterProfile, syncProfile, loadGamertags])
 
-  // Auto-sync when authentication state changes
+  // Auto-sync when authentication state changes or SDK loads
   useEffect(() => {
+    // Wait for SDK to load before proceeding
+    if (!isSDKLoaded) return
+
     if (isAuthenticated && farcasterProfile?.fid) {
+      console.log('Auto-syncing user data...', { 
+        isInFarcaster, 
+        fid: farcasterProfile.fid,
+        source: isInFarcaster ? 'SDK' : 'AuthKit'
+      })
       refreshData()
     } else {
       // Clear data when user signs out
@@ -126,12 +150,15 @@ export function useUser(): UseUserReturn {
       setGamertags([])
       setError(null)
     }
-  }, [isAuthenticated, farcasterProfile?.fid, refreshData])
+  }, [isSDKLoaded, isAuthenticated, farcasterProfile?.fid, isInFarcaster, refreshData])
 
   return {
     // Authentication state
     isAuthenticated,
     isLoading,
+    
+    // Environment detection
+    isInFarcaster,
     
     // Farcaster data
     farcasterProfile,
