@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useUser } from '@/hooks/useUser'
-import { getUserGroups, getPublicGroups } from '@/lib/supabase/groups'
+import { useInvitations } from '@/hooks/useInvitations'
+import { getUserGroups, getPublicGroups, acceptGroupInvitation, declineGroupInvitation } from '@/lib/supabase/groups'
 import BottomNavigation from '@/components/BottomNavigation'
-import type { GroupWithMemberCount } from '@/types'
+import type { GroupWithMemberCount, GroupInvitationWithDetails } from '@/types'
 
 export default function GroupsPage() {
   const { isAuthenticated, profile, isLoading: userLoading } = useUser()
+  const { invitations, pendingCount, refetch: refetchInvitations } = useInvitations()
   
   // State
   const [userGroups, setUserGroups] = useState<GroupWithMemberCount[]>([])
@@ -16,7 +18,8 @@ export default function GroupsPage() {
   const [isLoadingUserGroups, setIsLoadingUserGroups] = useState(false)
   const [isLoadingPublicGroups, setIsLoadingPublicGroups] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'my-groups' | 'discover'>('my-groups')
+  const [activeTab, setActiveTab] = useState<'my-groups' | 'discover' | 'invitations'>('my-groups')
+  const [processingInvitations, setProcessingInvitations] = useState<Set<string>>(new Set())
 
   // Load user's groups
   const loadUserGroups = async () => {
@@ -66,6 +69,49 @@ export default function GroupsPage() {
     }
   }, [activeTab])
 
+  // Handle invitation actions
+  const handleAcceptInvitation = async (invitationId: string) => {
+    setProcessingInvitations(prev => new Set(prev).add(invitationId))
+    
+    try {
+      const success = await acceptGroupInvitation(invitationId)
+      if (success) {
+        // Refresh invitations and user groups
+        await Promise.all([refetchInvitations(), loadUserGroups()])
+      } else {
+        setError('Failed to accept invitation')
+      }
+    } catch (err) {
+      console.error('Error accepting invitation:', err)
+      setError('Failed to accept invitation')
+    } finally {
+      setProcessingInvitations(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(invitationId)
+        return newSet
+      })
+    }
+  }
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    setProcessingInvitations(prev => new Set(prev).add(invitationId))
+    
+    try {
+      await declineGroupInvitation(invitationId)
+      // Refresh invitations
+      await refetchInvitations()
+    } catch (err) {
+      console.error('Error declining invitation:', err)
+      setError('Failed to decline invitation')
+    } finally {
+      setProcessingInvitations(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(invitationId)
+        return newSet
+      })
+    }
+  }
+
   // Loading state
   if (userLoading) {
     return (
@@ -111,6 +157,7 @@ export default function GroupsPage() {
                 Connect with gaming communities
               </p>
             </div>
+            {/* Create Group Button */}
             <Link
               href="/groups/new"
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
@@ -137,6 +184,21 @@ export default function GroupsPage() {
               }`}
             >
               My Groups ({userGroups.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('invitations')}
+              className={`relative py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'invitations'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Invitations
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                  {pendingCount > 99 ? '99+' : pendingCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('discover')}
@@ -194,6 +256,35 @@ export default function GroupsPage() {
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {userGroups.map((group) => (
                   <GroupCard key={group.id} group={group} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Invitations Tab */}
+        {activeTab === 'invitations' && (
+          <div>
+            {invitations.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m13-8V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v1M7 8h10" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">No Pending Invitations</h3>
+                <p className="text-gray-400">You don't have any pending group invitations at the moment.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {invitations.map((invitation) => (
+                  <InvitationCard
+                    key={invitation.id}
+                    invitation={invitation}
+                    isProcessing={processingInvitations.has(invitation.id)}
+                    onAccept={() => handleAcceptInvitation(invitation.id)}
+                    onDecline={() => handleDeclineInvitation(invitation.id)}
+                  />
                 ))}
               </div>
             )}
@@ -313,5 +404,111 @@ function GroupCard({ group }: { group: GroupWithMemberCount }) {
         </div>
       </div>
     </Link>
+  )
+}
+
+// Invitation Card Component
+interface InvitationCardProps {
+  invitation: GroupInvitationWithDetails
+  isProcessing: boolean
+  onAccept: () => void
+  onDecline: () => void
+}
+
+function InvitationCard({ invitation, isProcessing, onAccept, onDecline }: InvitationCardProps) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  const isExpired = new Date(invitation.expiresAt) < new Date()
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          {/* Group Info */}
+          <div className="flex items-center mb-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-4">
+              <span className="text-white font-bold text-lg">
+                {invitation.group?.name?.charAt(0).toUpperCase() || 'G'}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">{invitation.group?.name}</h3>
+              <p className="text-sm text-gray-400">
+                Invited by {invitation.inviter?.username || 'Unknown User'}
+              </p>
+            </div>
+          </div>
+
+          {/* Group Details */}
+          {invitation.group?.description && (
+            <p className="text-gray-300 mb-3">{invitation.group.description}</p>
+          )}
+
+          <div className="flex flex-wrap gap-4 text-sm text-gray-400 mb-4">
+            {invitation.group?.primaryGame && (
+              <span className="flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8m2-10v18a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2h8l4 4z" />
+                </svg>
+                {invitation.group.primaryGame}
+              </span>
+            )}
+            {invitation.group?.gamingPlatform && (
+              <span className="flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {invitation.group.gamingPlatform}
+              </span>
+            )}
+            <span className="flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Expires {formatDate(invitation.expiresAt)}
+            </span>
+          </div>
+
+          {/* Invitation Message */}
+          {invitation.message && (
+            <div className="bg-gray-700 rounded-lg p-3 mb-4">
+              <p className="text-gray-200 italic">"{invitation.message}"</p>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2 ml-4">
+          {isExpired ? (
+            <span className="px-4 py-2 bg-gray-600 text-gray-400 rounded-lg text-sm">
+              Expired
+            </span>
+          ) : (
+            <>
+              <button
+                onClick={onAccept}
+                disabled={isProcessing}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {isProcessing ? 'Accepting...' : 'Accept'}
+              </button>
+              <button
+                onClick={onDecline}
+                disabled={isProcessing}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {isProcessing ? 'Declining...' : 'Decline'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   )
 } 

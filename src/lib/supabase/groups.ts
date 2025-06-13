@@ -155,7 +155,7 @@ export async function getGroupById(groupId: string, includeMembers = false): Pro
         *,
         group_memberships(
           *,
-          profiles(*)
+          profiles!group_memberships_user_id_fkey(*)
         )
       `)
       .eq('id', groupId)
@@ -187,10 +187,25 @@ export async function getGroupById(groupId: string, includeMembers = false): Pro
  */
 export async function createGroup(groupData: CreateGroupData, createdBy: string): Promise<Group> {
   try {
+    // Validate field lengths to prevent constraint violations
+    if (groupData.name && groupData.name.length > 100) {
+      throw new Error('Group name must be 100 characters or less')
+    }
+    if (groupData.primaryGame && groupData.primaryGame.length > 100) {
+      throw new Error('Primary game name must be 100 characters or less')
+    }
+    if (groupData.gamingPlatform && groupData.gamingPlatform.length > 50) {
+      throw new Error('Gaming platform must be 50 characters or less')
+    }
+    if (groupData.skillLevel && groupData.skillLevel.length > 20) {
+      throw new Error('Skill level must be 20 characters or less')
+    }
+
+    // Create the group
     const { data: group, error } = await supabase
       .from('groups')
       .insert({
-        name: groupData.name,
+        name: groupData.name?.trim(),
         description: groupData.description,
         avatar_url: groupData.avatarUrl,
         is_private: groupData.isPrivate || false,
@@ -207,8 +222,45 @@ export async function createGroup(groupData: CreateGroupData, createdBy: string)
 
     if (error) {
       console.error('Error creating group:', error)
-      throw error
+      
+      // Handle specific constraint violations with user-friendly messages
+      if (error.code === '23505') {
+        if (error.message.includes('unique_group_name_per_creator')) {
+          throw new Error('You already have a group with this name. Please choose a different name.')
+        }
+        if (error.message.includes('unique_user_per_group')) {
+          throw new Error('You are already a member of this group.')
+        }
+        throw new Error('A group with these details already exists.')
+      }
+      
+      // Handle other common errors
+      if (error.code === '23514') {
+        if (error.message.includes('groups_name_check')) {
+          throw new Error('Group name cannot be empty.')
+        }
+        if (error.message.includes('groups_skill_level_check')) {
+          throw new Error('Invalid skill level. Please select a valid option.')
+        }
+        if (error.message.includes('groups_max_members_check')) {
+          throw new Error('Maximum members must be between 1 and 1000.')
+        }
+      }
+      
+      if (error.code === '23502') {
+        throw new Error('Required fields are missing. Please fill in all required information.')
+      }
+      
+      if (error.code === '23503') {
+        throw new Error('Invalid user account. Please sign in again.')
+      }
+      
+      // Generic fallback
+      throw new Error('Failed to create group. Please try again.')
     }
+
+    // Create the group chat (creator is automatically added as admin via database trigger)
+    await getOrCreateGroupChat(group.id, createdBy)
 
     return group
   } catch (error) {
@@ -286,7 +338,7 @@ export async function getGroupMemberships(groupId: string): Promise<(GroupMember
       .from('group_memberships')
       .select(`
         *,
-        profiles(*)
+        profiles!group_memberships_user_id_fkey(*)
       `)
       .eq('group_id', groupId)
       .eq('status', 'active')
@@ -314,6 +366,41 @@ export async function addGroupMember(
   invitedBy?: string
 ): Promise<GroupMembership> {
   try {
+    // Check if user is already a member
+    const { data: existingMembership, error: checkError } = await supabase
+      .from('group_memberships')
+      .select('id, role, status')
+      .eq('group_id', groupId)
+      .eq('user_id', userId)
+      .single()
+
+    if (existingMembership) {
+      if (existingMembership.status === 'active') {
+        // User is already an active member, just return the existing membership
+        return existingMembership as GroupMembership
+      } else {
+        // User exists but is inactive, update their status
+        const { data: updatedMembership, error: updateError } = await supabase
+          .from('group_memberships')
+          .update({ 
+            status: 'active', 
+            role,
+            updated_at: new Date().toISOString() 
+          })
+          .eq('group_id', groupId)
+          .eq('user_id', userId)
+          .select()
+          .single()
+
+        if (updateError) {
+          console.error('Error updating existing membership:', updateError)
+          throw updateError
+        }
+        return updatedMembership
+      }
+    }
+
+    // Add user to group
     const { data: membership, error } = await supabase
       .from('group_memberships')
       .insert({
@@ -329,6 +416,23 @@ export async function addGroupMember(
     if (error) {
       console.error('Error adding group member:', error)
       throw error
+    }
+
+    // Get user's FID for chat participation
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('fid')
+      .eq('id', userId)
+      .single()
+
+    if (profile?.fid) {
+      // Add user to group chat (if it exists)
+      try {
+        await addMemberToGroupChat(groupId, userId, profile.fid)
+      } catch (chatError) {
+        console.warn('Failed to add member to group chat:', chatError)
+        // Don't fail the entire operation if chat addition fails
+      }
     }
 
     return membership
@@ -375,6 +479,7 @@ export async function updateGroupMembership(
  */
 export async function removeGroupMember(groupId: string, userId: string): Promise<void> {
   try {
+    // Remove user from group
     const { error } = await supabase
       .from('group_memberships')
       .delete()
@@ -384,6 +489,14 @@ export async function removeGroupMember(groupId: string, userId: string): Promis
     if (error) {
       console.error('Error removing group member:', error)
       throw error
+    }
+
+    // Remove user from group chat
+    try {
+      await removeMemberFromGroupChat(groupId, userId)
+    } catch (chatError) {
+      console.warn('Failed to remove member from group chat:', chatError)
+      // Don't fail the entire operation if chat removal fails
     }
   } catch (error) {
     console.error('Error in removeGroupMember:', error)
@@ -583,6 +696,248 @@ export async function searchGroups(query: string): Promise<GroupWithMemberCount[
     }))
   } catch (error) {
     console.error('Error in searchGroups:', error)
+    throw error
+  }
+}
+
+// =================================
+// GROUP CHAT INTEGRATION
+// =================================
+
+/**
+ * Get or create a chat for a group
+ */
+export async function getOrCreateGroupChat(groupId: string, createdBy: string): Promise<string> {
+  try {
+    // First, check if a chat already exists for this group
+    const { data: existingChat, error: findError } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('type', 'group')
+      .single()
+
+    if (existingChat) {
+      return existingChat.id
+    }
+
+    // If no chat exists, create one
+    const { data: group, error: groupError } = await supabase
+      .from('groups')
+      .select('name')
+      .eq('id', groupId)
+      .single()
+
+    if (groupError || !group) {
+      throw new Error('Group not found')
+    }
+
+    // Create the group chat
+    const { data: newChat, error: createError } = await supabase
+      .from('chats')
+      .insert({
+        name: group.name,
+        type: 'group',
+        group_id: groupId,
+        created_by: createdBy,
+        is_active: true
+      })
+      .select('id')
+      .single()
+
+    if (createError || !newChat) {
+      console.error('Error creating group chat:', createError)
+      throw createError || new Error('Failed to create group chat')
+    }
+
+    // Add all group members as chat participants
+    await addGroupMembersToChat(newChat.id, groupId)
+
+    return newChat.id
+  } catch (error) {
+    console.error('Error in getOrCreateGroupChat:', error)
+    throw error
+  }
+}
+
+/**
+ * Add all group members to the group chat
+ */
+async function addGroupMembersToChat(chatId: string, groupId: string): Promise<void> {
+  try {
+    // Get all active group members
+    const { data: members, error: membersError } = await supabase
+      .from('group_memberships')
+      .select('user_id, profiles!group_memberships_user_id_fkey(fid)')
+      .eq('group_id', groupId)
+      .eq('status', 'active')
+
+    if (membersError || !members) {
+      console.error('Error fetching group members:', membersError)
+      return
+    }
+
+    // Prepare chat participants data
+    const participants = members
+      .filter(member => member.profiles && (member.profiles as any).fid)
+      .map(member => ({
+        chat_id: chatId,
+        user_id: member.user_id,
+        fid: (member.profiles as any).fid,
+        joined_at: new Date().toISOString(),
+        is_admin: false // Group admins can be handled separately if needed
+      }))
+
+    if (participants.length === 0) {
+      console.warn('No valid participants found for group chat')
+      return
+    }
+
+    // Insert all participants (ignore duplicates)
+    const { error: participantsError } = await supabase
+      .from('chat_participants')
+      .upsert(participants, { 
+        onConflict: 'chat_id,user_id',
+        ignoreDuplicates: true 
+      })
+
+    if (participantsError) {
+      console.error('Error adding participants to group chat:', participantsError)
+      throw participantsError
+    }
+  } catch (error) {
+    console.error('Error in addGroupMembersToChat:', error)
+    throw error
+  }
+}
+
+/**
+ * Add a new group member to the existing group chat
+ */
+export async function addMemberToGroupChat(groupId: string, userId: string, fid: number): Promise<void> {
+  try {
+    // Get the group's chat ID
+    const { data: chat, error: chatError } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('type', 'group')
+      .single()
+
+    if (chatError || !chat) {
+      console.error('Group chat not found:', chatError)
+      return
+    }
+
+    // Add the user to the chat (ignore if already exists)
+    const { error: participantError } = await supabase
+      .from('chat_participants')
+      .upsert({
+        chat_id: chat.id,
+        user_id: userId,
+        fid: fid,
+        joined_at: new Date().toISOString(),
+        is_admin: false
+      }, { 
+        onConflict: 'chat_id,user_id',
+        ignoreDuplicates: true 
+      })
+
+    if (participantError) {
+      console.error('Error adding member to group chat:', participantError)
+      throw participantError
+    }
+  } catch (error) {
+    console.error('Error in addMemberToGroupChat:', error)
+    throw error
+  }
+}
+
+/**
+ * Remove a member from the group chat
+ */
+export async function removeMemberFromGroupChat(groupId: string, userId: string): Promise<void> {
+  try {
+    // Get the group's chat ID
+    const { data: chat, error: chatError } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('type', 'group')
+      .single()
+
+    if (chatError || !chat) {
+      console.error('Group chat not found:', chatError)
+      return
+    }
+
+    // Remove the user from the chat by setting left_at timestamp
+    const { error: participantError } = await supabase
+      .from('chat_participants')
+      .update({ left_at: new Date().toISOString() })
+      .eq('chat_id', chat.id)
+      .eq('user_id', userId)
+
+    if (participantError) {
+      console.error('Error removing member from group chat:', participantError)
+      throw participantError
+    }
+  } catch (error) {
+    console.error('Error in removeMemberFromGroupChat:', error)
+    throw error
+  }
+}
+
+/**
+ * Check if a group name already exists for a user
+ */
+export async function checkGroupNameExists(name: string, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('groups')
+      .select('id')
+      .eq('name', name.trim())
+      .eq('created_by', userId)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 is "not found" error, which is expected when name doesn't exist
+      console.error('Error checking group name:', error)
+      return false
+    }
+
+    return !!data
+  } catch (error) {
+    console.error('Error in checkGroupNameExists:', error)
+    return false
+  }
+}
+
+/**
+ * Get profile IDs from FIDs
+ */
+export async function getProfileIdsByFids(fids: number[]): Promise<Map<number, string>> {
+  try {
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, fid')
+      .in('fid', fids)
+
+    if (error) {
+      console.error('Error fetching profile IDs by FIDs:', error)
+      throw error
+    }
+
+    const fidToIdMap = new Map<number, string>()
+    profiles?.forEach(profile => {
+      if (profile.fid) {
+        fidToIdMap.set(profile.fid, profile.id)
+      }
+    })
+
+    return fidToIdMap
+  } catch (error) {
+    console.error('Error in getProfileIdsByFids:', error)
     throw error
   }
 } 

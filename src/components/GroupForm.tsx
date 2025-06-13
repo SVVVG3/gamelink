@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { createGroup, createGroupInvitation } from '../lib/supabase/groups'
+import { createGroup, createGroupInvitation, checkGroupNameExists, getProfileIdsByFids } from '../lib/supabase/groups'
 import { useUser } from '../hooks/useUser'
 import { useSocialData } from '../contexts/SocialDataContext'
 import type { CreateGroupData, MutualFollower } from '../types'
@@ -77,13 +77,22 @@ export default function GroupForm({ onSuccess, onCancel, className = '' }: Group
     })
   }
 
-  const validateForm = (): string | null => {
+  const validateForm = async (): Promise<string | null> => {
     if (!formData.name.trim()) return 'Group name is required'
     if (formData.name.length < 3) return 'Group name must be at least 3 characters'
     if (formData.name.length > 100) return 'Group name must be less than 100 characters'
     if (formData.description && formData.description.length > 500) return 'Description must be less than 500 characters'
     if ((formData.maxMembers || 0) < 2) return 'Group must allow at least 2 members'
     if ((formData.maxMembers || 0) > 1000) return 'Group cannot have more than 1000 members'
+    
+    // Check for duplicate group name
+    if (profile && formData.name.trim()) {
+      const nameExists = await checkGroupNameExists(formData.name, profile.id)
+      if (nameExists) {
+        return 'You already have a group with this name. Please choose a different name.'
+      }
+    }
+    
     return null
   }
 
@@ -94,7 +103,7 @@ export default function GroupForm({ onSuccess, onCancel, className = '' }: Group
       return
     }
 
-    const validationError = validateForm()
+    const validationError = await validateForm()
     if (validationError) {
       setError(validationError)
       return
@@ -109,23 +118,35 @@ export default function GroupForm({ onSuccess, onCancel, className = '' }: Group
 
       // Send invitations to selected mutual followers
       if (selectedInvitees.size > 0) {
-        const invitationPromises = Array.from(selectedInvitees).map(async (fid) => {
-          // For now, we'll need to get the profile ID for each invitee
-          // This could be optimized with a bulk API in the future
-          try {
-            return await createGroupInvitation(
-              group.id,
-              profile.id,
-              fid.toString(), // This would need to be the actual profile ID
-              `You've been invited to join "${group.name}"!`
-            )
-          } catch (err) {
-            console.warn(`Failed to invite user ${fid}:`, err)
-            return null
-          }
-        })
+        try {
+          // Get profile IDs for all selected FIDs
+          const fidArray = Array.from(selectedInvitees)
+          const fidToIdMap = await getProfileIdsByFids(fidArray)
+          
+          const invitationPromises = fidArray.map(async (fid) => {
+            const profileId = fidToIdMap.get(fid)
+            if (!profileId) {
+              console.warn(`No profile found for FID ${fid}`)
+              return null
+            }
+            
+            try {
+              return await createGroupInvitation(
+                group.id,
+                profile.id,
+                profileId, // Now using the correct profile ID
+                `You've been invited to join "${group.name}"!`
+              )
+            } catch (err) {
+              console.warn(`Failed to invite user ${fid}:`, err)
+              return null
+            }
+          })
 
-        await Promise.allSettled(invitationPromises)
+          await Promise.allSettled(invitationPromises)
+        } catch (err) {
+          console.warn('Failed to send some invitations:', err)
+        }
       }
 
       // Success!
