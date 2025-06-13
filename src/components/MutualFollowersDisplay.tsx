@@ -18,7 +18,14 @@ interface MutualFollowerWithProfile {
   fid: number
   username: string
   display_name?: string
+  displayName?: string  // Support both naming conventions
   pfp_url?: string
+  pfpUrl?: string       // Support both naming conventions
+  isVerified?: boolean
+  bio?: string
+  followerCount?: number
+  followingCount?: number
+  profile?: any
   gamertags?: Array<{
     platform: string
     handle: string
@@ -59,6 +66,8 @@ export default function MutualFollowersDisplay({
   const [refreshing, setRefreshing] = useState(false)
   const [displayCount, setDisplayCount] = useState(initialDisplay)
   const [showOnlyGamersState, setShowOnlyGamersState] = useState(showOnlyGamers)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [loadingProfiles] = useState(new Set<number>())
 
   // Use the appropriate data source based on filter preference
   const sourceFollowers = showOnlyGamersState ? gamingFollowers : mutualFollowers
@@ -213,11 +222,11 @@ export default function MutualFollowersDisplay({
             {showRefresh && (
               <button
                 onClick={handleRefresh}
-                disabled={refreshing || loading}
+                disabled={refreshing || isLoadingMutuals || isLoadingGamertags}
                 className="p-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
                 title="Refresh mutual followers"
               >
-                {refreshing || loading ? (
+                {refreshing || isLoadingMutuals || isLoadingGamertags ? (
                   <FaSpinner className="w-4 h-4 animate-spin" />
                 ) : (
                   <FaSyncAlt className="w-4 h-4" />
@@ -298,11 +307,11 @@ export default function MutualFollowersDisplay({
           {showRefresh && (
             <button
               onClick={handleRefresh}
-              disabled={refreshing || loading}
+              disabled={refreshing || isLoadingMutuals || isLoadingGamertags}
               className="p-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
               title="Refresh mutual followers"
             >
-              {refreshing || loading ? (
+              {refreshing || isLoadingMutuals || isLoadingGamertags ? (
                 <FaSpinner className="w-4 h-4 animate-spin" />
               ) : (
                 <FaSyncAlt className="w-4 h-4" />
@@ -417,8 +426,8 @@ function MutualFollowerCard({ follower, compact = false, isLoadingProfile = fals
             )}
             
             <div className={`flex items-center space-x-4 text-gray-500 ${compact ? 'text-xs mt-1' : 'text-sm mt-2'}`}>
-              <span>{follower.followerCount.toLocaleString()} followers</span>
-              <span>{follower.followingCount.toLocaleString()} following</span>
+              <span>{follower.followerCount?.toLocaleString()} followers</span>
+              <span>{follower.followingCount?.toLocaleString()} following</span>
             </div>
           </div>
 
