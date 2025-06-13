@@ -31,12 +31,12 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protected routes that require authentication (using Supabase auth)
-  const protectedPaths = ['/events/new']
+  const protectedPaths: string[] = []  // Removed /events/new - it handles its own auth
   const isProtectedPath = protectedPaths.some(path => 
     request.nextUrl.pathname.startsWith(path)
   )
   
-  // Note: /groups, /messages, /events, and /profile handle their own auth checks using Farcaster AuthKit
+  // Note: /groups, /messages, /events, /events/new, and /profile handle their own auth checks using Farcaster AuthKit
 
   // Redirect to login if accessing protected route without auth
   if (isProtectedPath && !user) {

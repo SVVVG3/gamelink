@@ -153,6 +153,7 @@ export interface CreateEventData {
   allowSpectators?: boolean
   registrationDeadline?: string
   groupId?: string
+  createdBy?: number  // FID of the user creating the event
 }
 
 export interface UpdateEventData extends Partial<CreateEventData> {
