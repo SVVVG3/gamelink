@@ -14,7 +14,7 @@
     "webhookUrl": "https://farcaster-gamelink.vercel.app/api/webhook",
     "imageUrl": "https://farcaster-gamelink.vercel.app/gamelinkEmbed.png",
     "buttonTitle": "🎮 Start Gaming",
-    "subtitle": "Connect & Game Together",
+    "subtitle": "Connect and Game Together",
     "description": "Share your gamertags, organize events, and chat with fellow gamers on Farcaster. Join gaming groups, participate in tournaments, and build your gaming network.",
     "primaryCategory": "games",
     "tags": [
