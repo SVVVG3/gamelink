@@ -7,7 +7,7 @@
   "frame": {
     "version": "1",
     "name": "GameLink",
-    "iconUrl": "https://farcaster-gamelink.vercel.app/favicon.ico",
+    "iconUrl": "https://farcaster-gamelink.vercel.app/gamelinkSplashImage.png",
     "splashImageUrl": "https://farcaster-gamelink.vercel.app/gamelinkSplashImage.png",
     "splashBackgroundColor": "#000000",
     "homeUrl": "https://farcaster-gamelink.vercel.app",
