@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useProfile } from '@farcaster/auth-kit'
 import { useFarcasterSDK } from '@/components/FarcasterSDKProvider'
 import { 
@@ -51,6 +51,10 @@ export function useUser(): UseUserReturn {
   const [gamertags, setGamertags] = useState<Gamertag[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Prevent multiple simultaneous sync operations
+  const isSyncingRef = useRef(false)
+  const lastSyncedFidRef = useRef<number | null>(null)
 
   // Determine authentication state and profile data
   const isAuthenticated = isInFarcaster ? !!sdkUser : authKitAuthenticated
@@ -136,21 +140,72 @@ export function useUser(): UseUserReturn {
   useEffect(() => {
     // Wait for SDK to load before proceeding
     if (!isSDKLoaded) return
+    
+    // Prevent multiple simultaneous sync operations
+    if (isSyncingRef.current) return
 
     if (isAuthenticated && farcasterProfile?.fid) {
+      // Skip if we've already synced this fid recently
+      if (lastSyncedFidRef.current === farcasterProfile.fid) {
+        return
+      }
+      
       console.log('Auto-syncing user data...', { 
         isInFarcaster, 
         fid: farcasterProfile.fid,
         source: isInFarcaster ? 'SDK' : 'AuthKit'
       })
-      refreshData()
+      
+      // Inline the refresh logic to avoid dependency issues
+      const performSync = async () => {
+        if (isSyncingRef.current) return
+        
+        isSyncingRef.current = true
+        setIsLoading(true)
+        setError(null)
+
+        try {
+          // Create profile data
+          const profileData: CreateProfileData = {
+            fid: farcasterProfile.fid,
+            username: farcasterProfile.username || '',
+            display_name: farcasterProfile.displayName,
+            bio: farcasterProfile.bio,
+            pfp_url: farcasterProfile.pfpUrl
+          }
+
+          // Upsert profile (create if new, update if exists)
+          const supabaseProfile = await upsertProfile(profileData)
+          setProfile(supabaseProfile)
+          
+          // Load gamertags
+          const userGamertags = await getGamertagsByProfileId(supabaseProfile.id)
+          setGamertags(userGamertags)
+          
+          console.log('Profile synced successfully:', supabaseProfile)
+          console.log('Authentication source:', isInFarcaster ? 'Farcaster SDK' : 'AuthKit')
+          
+          // Mark this fid as synced
+          lastSyncedFidRef.current = farcasterProfile.fid
+        } catch (err) {
+          console.error('Error refreshing data:', err)
+          setError(err instanceof Error ? err.message : 'Failed to refresh data')
+        } finally {
+          setIsLoading(false)
+          isSyncingRef.current = false
+        }
+      }
+      
+      performSync()
     } else {
       // Clear data when user signs out
       setProfile(null)
       setGamertags([])
       setError(null)
+      isSyncingRef.current = false
+      lastSyncedFidRef.current = null
     }
-  }, [isSDKLoaded, isAuthenticated, farcasterProfile?.fid, isInFarcaster, refreshData])
+  }, [isSDKLoaded, isAuthenticated, farcasterProfile?.fid, isInFarcaster])
 
   return {
     // Authentication state
