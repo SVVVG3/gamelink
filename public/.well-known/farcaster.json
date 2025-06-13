@@ -1,8 +1,8 @@
 {
   "accountAssociation": {
-    "header": "PLACEHOLDER_HEADER",
-    "payload": "PLACEHOLDER_PAYLOAD", 
-    "signature": "PLACEHOLDER_SIGNATURE"
+    "header": "eyJmaWQiOjQ2NjExMSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDQ0ZDRjNThlZmNCYjQ0NjM5RDY0NDIwMTc1Q2Y1MTlhQTMxOTFhODYifQ",
+    "payload": "eyJkb21haW4iOiJmYXJjYXN0ZXItZ2FtZWxpbmsudmVyY2VsLmFwcCJ9",
+    "signature": "MHhhZmUzMWUyNjQ4ZGRjYjI4MjA0NDRmZGI4MTM1MDVjZTIyYmYxM2EyMjNhZjlmZGU4ZGM3ZDU1YzQxZWE5ZTBjMmM2ZDY2NTNlZDdiMTVjYjFmYzdhZWRlYTJiZjZhNmRjMDM5MDgyYmViYjhiMDAyYzQ4NTI5MGViODQwMTNmYzFj"
   },
   "frame": {
     "version": "1",
@@ -19,13 +19,9 @@
     "primaryCategory": "games",
     "tags": [
       "gaming",
-      "gamertags", 
-      "farcaster",
+      "gamertags",
       "social",
-      "events",
-      "tournaments",
-      "chat",
-      "groups"
+      "events"
     ]
   }
 } 
