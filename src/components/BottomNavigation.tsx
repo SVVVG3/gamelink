@@ -24,10 +24,9 @@ export default function BottomNavigation() {
 
   const navItems: NavItem[] = [
     {
-      href: '/groups',
-      icon: <FaUsers className="w-5 h-5" />,
-      label: 'Groups',
-      badge: pendingInvitations > 0 ? pendingInvitations : undefined
+      href: '/events',
+      icon: <FaCalendarAlt className="w-5 h-5" />,
+      label: 'Events'
     },
     {
       href: '/friends',
@@ -35,20 +34,21 @@ export default function BottomNavigation() {
       label: 'Friends'
     },
     {
+      href: '/profile',
+      icon: <FaUserCircle className="w-5 h-5" />,
+      label: 'Profile'
+    },
+    {
+      href: '/groups',
+      icon: <FaUsers className="w-5 h-5" />,
+      label: 'Groups',
+      badge: pendingInvitations > 0 ? pendingInvitations : undefined
+    },
+    {
       href: '/messages',
       icon: <FaComments className="w-5 h-5" />,
       label: 'Messages',
       badge: unreadMessages > 0 ? unreadMessages : undefined
-    },
-    {
-      href: '/events',
-      icon: <FaCalendarAlt className="w-5 h-5" />,
-      label: 'Events'
-    },
-    {
-      href: '/profile',
-      icon: <FaUserCircle className="w-5 h-5" />,
-      label: 'Profile'
     }
   ]
 
