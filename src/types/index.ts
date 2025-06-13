@@ -72,24 +72,97 @@ export interface EventParticipant {
   status: 'confirmed' | 'maybe' | 'declined'
 }
 
-// Group types (for future use)
+// =================================
+// GROUP TYPES
+// =================================
+
 export interface Group {
   id: string
   name: string
   description?: string
-  game?: string
-  is_public: boolean
-  created_by: number
-  created_at: string
-  updated_at: string
+  avatarUrl?: string
+  isPrivate: boolean
+  maxMembers: number
+  allowMemberInvites: boolean
+  requireAdminApproval: boolean
+  primaryGame?: string
+  gamingPlatform?: string
+  skillLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'any'
+  createdBy: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface GroupMembership {
   id: string
-  group_id: string
-  user_fid: number
+  groupId: string
+  userId: string
   role: 'admin' | 'moderator' | 'member'
-  joined_at: string
+  status: 'active' | 'inactive' | 'banned' | 'pending'
+  invitedBy?: string
+  inviteMessage?: string
+  joinedAt: string
+  lastActiveAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface GroupInvitation {
+  id: string
+  groupId: string
+  inviterId: string
+  inviteeId: string
+  message?: string
+  status: 'pending' | 'accepted' | 'declined' | 'expired'
+  expiresAt: string
+  respondedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Combined types for UI
+export interface GroupWithMemberCount extends Group {
+  memberCount: number
+  isUserMember: boolean
+  userRole?: 'admin' | 'moderator' | 'member'
+}
+
+export interface GroupWithMembers extends Group {
+  members: (GroupMembership & { profile: import('../lib/supabase/profiles').Profile })[]
+  memberCount: number
+}
+
+export interface GroupInvitationWithDetails extends GroupInvitation {
+  group: Group
+  inviter: import('../lib/supabase/profiles').Profile
+  invitee: import('../lib/supabase/profiles').Profile
+}
+
+// Database query options
+export interface GroupFilters {
+  isPrivate?: boolean
+  primaryGame?: string
+  gamingPlatform?: string
+  skillLevel?: string
+  createdBy?: string
+  search?: string
+}
+
+export interface CreateGroupData {
+  name: string
+  description?: string
+  avatarUrl?: string
+  isPrivate?: boolean
+  maxMembers?: number
+  allowMemberInvites?: boolean
+  requireAdminApproval?: boolean
+  primaryGame?: string
+  gamingPlatform?: string
+  skillLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'any'
+}
+
+export interface UpdateGroupData extends Partial<CreateGroupData> {
+  id: string
 }
 
 // Notification types

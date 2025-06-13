@@ -1,19 +1,22 @@
 'use client'
 
+import { useState } from 'react'
 import { useUser } from '@/hooks/useUser'
 import { useSignIn } from '@farcaster/auth-kit'
 import GamertagForm from '@/components/GamertagForm'
 import FriendCodeDisplay from '@/components/FriendCodeDisplay'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaGamepad, FaEdit, FaSignOutAlt, FaUser } from 'react-icons/fa'
+import { FaGamepad, FaEdit, FaSignOutAlt, FaUser, FaEye } from 'react-icons/fa'
 
 export default function ProfilePage() {
-  const { isAuthenticated, isLoading, farcasterProfile, profile } = useUser()
+  const { isAuthenticated, isLoading, farcasterProfile, profile, refreshData } = useUser()
   const { signOut } = useSignIn({
     onSuccess: ({ fid, username }) => {
       console.log(`Signed in as ${username} (FID: ${fid})`);
     },
   })
+
+  const [showGamertagForm, setShowGamertagForm] = useState(false)
 
   if (!isAuthenticated) {
     return (
@@ -109,23 +112,36 @@ export default function ProfilePage() {
               <FaGamepad className="w-6 h-6 mr-3 text-blue-400" />
               Your Gaming Profiles
             </h3>
-            <button className="flex items-center px-3 py-2 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
-              <FaEdit className="w-4 h-4 mr-2" />
-              Manage Gamertags
+            <button 
+              onClick={() => setShowGamertagForm(!showGamertagForm)}
+              className="flex items-center px-4 py-2 text-sm font-medium text-blue-400 hover:text-blue-300 bg-blue-900/20 hover:bg-blue-900/30 border border-blue-700 rounded-lg transition-colors"
+            >
+              {showGamertagForm ? (
+                <>
+                  <FaEye className="w-4 h-4 mr-2" />
+                  View Gamertags
+                </>
+              ) : (
+                <>
+                  <FaEdit className="w-4 h-4 mr-2" />
+                  Manage Gamertags
+                </>
+              )}
             </button>
           </div>
 
-          <FriendCodeDisplay />
-        </div>
-
-        {/* Add/Edit Gamertags Section */}
-        <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 sm:p-8">
-          <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-            <FaEdit className="w-6 h-6 mr-3 text-green-400" />
-            Add Gaming Profiles
-          </h3>
-          
-          <GamertagForm />
+          {showGamertagForm ? (
+            <GamertagForm 
+              onSuccess={() => {
+                console.log('Gamertag operation successful!')
+                refreshData()
+                setShowGamertagForm(false) // Close form after success
+              }}
+              onCancel={() => setShowGamertagForm(false)}
+            />
+          ) : (
+            <FriendCodeDisplay showPrivate={true} />
+          )}
         </div>
 
         {/* Profile Stats */}

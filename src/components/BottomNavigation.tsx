@@ -3,11 +3,11 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
-  FaHome, 
   FaUsers, 
   FaComments, 
   FaCalendarAlt, 
-  FaGamepad 
+  FaGamepad,
+  FaUserCircle 
 } from 'react-icons/fa'
 
 interface NavItem {
@@ -22,13 +22,13 @@ export default function BottomNavigation() {
 
   const navItems: NavItem[] = [
     {
-      href: '/',
-      icon: <FaHome className="w-5 h-5" />,
-      label: 'Home'
+      href: '/groups',
+      icon: <FaUsers className="w-5 h-5" />,
+      label: 'Groups'
     },
     {
       href: '/friends',
-      icon: <FaUsers className="w-5 h-5" />,
+      icon: <FaGamepad className="w-5 h-5" />,
       label: 'Friends'
     },
     {
@@ -44,7 +44,7 @@ export default function BottomNavigation() {
     },
     {
       href: '/profile',
-      icon: <FaGamepad className="w-5 h-5" />,
+      icon: <FaUserCircle className="w-5 h-5" />,
       label: 'Profile'
     }
   ]
