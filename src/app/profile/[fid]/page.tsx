@@ -11,8 +11,17 @@ import {
   FaSpinner, 
   FaArrowLeft,
   FaCopy,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaXbox
 } from 'react-icons/fa'
+import { 
+  SiPlaystation, 
+  SiSteam, 
+  SiNintendoswitch, 
+  SiEpicgames, 
+  SiDiscord, 
+  SiRiotgames 
+} from 'react-icons/si'
 
 interface UserProfile {
   fid: number
@@ -25,6 +34,54 @@ interface UserProfile {
     handle: string
     display_name?: string
   }>
+}
+
+// Platform configuration with icons and colors
+const PLATFORMS: Record<string, {
+  name: string
+  icon: React.ReactNode
+  color: string
+}> = {
+  PSN: {
+    name: 'PlayStation Network',
+    icon: <SiPlaystation className="w-5 h-5" />,
+    color: 'text-blue-500'
+  },
+  Xbox: {
+    name: 'Xbox Live',
+    icon: <FaXbox className="w-5 h-5" />,
+    color: 'text-green-500'
+  },
+  Steam: {
+    name: 'Steam',
+    icon: <SiSteam className="w-5 h-5" />,
+    color: 'text-blue-400'
+  },
+  Nintendo: {
+    name: 'Nintendo Switch',
+    icon: <SiNintendoswitch className="w-5 h-5" />,
+    color: 'text-red-500'
+  },
+  Epic: {
+    name: 'Epic Games',
+    icon: <SiEpicgames className="w-5 h-5" />,
+    color: 'text-gray-300'
+  },
+  Discord: {
+    name: 'Discord',
+    icon: <SiDiscord className="w-5 h-5" />,
+    color: 'text-indigo-500'
+  },
+  Riot: {
+    name: 'Riot Games',
+    icon: <SiRiotgames className="w-5 h-5" />,
+    color: 'text-orange-500'
+  },
+  PokemonGO: {
+    name: 'Pokémon GO',
+    icon: <FaGamepad className="w-5 h-5" />,
+    color: 'text-yellow-500'
+  }
 }
 
 export default function ProfilePage() {
@@ -249,39 +306,52 @@ export default function ProfilePage() {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {userProfile.gamertags.map((gamertag, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-700 rounded-lg p-4 border border-gray-600"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-purple-300">
-                      {gamertag.platform}
-                    </span>
-                    <button
-                      onClick={() => handleCopyGamertag(gamertag.platform, gamertag.handle)}
-                      className="p-1 text-gray-400 hover:text-white transition-colors"
-                      title="Copy gamertag"
-                    >
-                      <FaCopy className="w-3 h-3" />
-                    </button>
-                  </div>
-                  
-                  <p className="text-white font-mono text-sm break-all">
-                    {gamertag.handle}
-                  </p>
-                  
-                  {gamertag.display_name && (
-                    <p className="text-gray-400 text-xs mt-1">
-                      {gamertag.display_name}
+              {userProfile.gamertags.map((gamertag, index) => {
+                const platform = PLATFORMS[gamertag.platform] || {
+                  name: gamertag.platform,
+                  icon: <FaGamepad className="w-5 h-5" />,
+                  color: 'text-gray-400'
+                }
+                
+                return (
+                  <div
+                    key={index}
+                    className="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:bg-gray-600 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className={`flex-shrink-0 ${platform.color}`}>
+                          {platform.icon}
+                        </div>
+                        <span className="text-sm font-medium text-white">
+                          {gamertag.platform}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyGamertag(gamertag.platform, gamertag.handle)}
+                        className="p-1 text-gray-400 hover:text-white transition-colors"
+                        title="Copy gamertag"
+                      >
+                        <FaCopy className="w-3 h-3" />
+                      </button>
+                    </div>
+                    
+                    <p className="text-white font-mono text-sm break-all mb-2">
+                      {gamertag.handle}
                     </p>
-                  )}
-                  
-                  {copiedGamertag === `${gamertag.platform}:${gamertag.handle}` && (
-                    <p className="text-green-400 text-xs mt-1">Copied!</p>
-                  )}
-                </div>
-              ))}
+                    
+                    {gamertag.display_name && (
+                      <p className="text-gray-400 text-xs mt-1">
+                        {gamertag.display_name}
+                      </p>
+                    )}
+                    
+                    {copiedGamertag === `${gamertag.platform}:${gamertag.handle}` && (
+                      <p className="text-green-400 text-xs mt-1">Copied!</p>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

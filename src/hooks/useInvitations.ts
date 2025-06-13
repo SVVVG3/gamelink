@@ -34,7 +34,7 @@ export function useInvitations() {
   }, [isAuthenticated, profile])
 
   const pendingCount = invitations.filter(inv => 
-    inv.status === 'pending' && new Date(inv.expiresAt) > new Date()
+    inv.status === 'pending' && new Date((inv as any).expires_at || inv.expiresAt) > new Date()
   ).length
 
   return {

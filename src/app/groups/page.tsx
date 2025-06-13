@@ -424,7 +424,7 @@ function InvitationCard({ invitation, isProcessing, onAccept, onDecline }: Invit
     })
   }
 
-  const isExpired = new Date(invitation.expiresAt) < new Date()
+  const isExpired = new Date((invitation as any).expires_at || invitation.expiresAt) < new Date()
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -434,11 +434,11 @@ function InvitationCard({ invitation, isProcessing, onAccept, onDecline }: Invit
           <div className="flex items-center mb-3">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-4">
               <span className="text-white font-bold text-lg">
-                {invitation.group?.name?.charAt(0).toUpperCase() || 'G'}
+                {(invitation as any).groups?.name?.charAt(0).toUpperCase() || 'G'}
               </span>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">{invitation.group?.name}</h3>
+              <h3 className="text-lg font-semibold text-white">{(invitation as any).groups?.name || 'Unknown Group'}</h3>
               <p className="text-sm text-gray-400">
                 Invited by {invitation.inviter?.username || 'Unknown User'}
               </p>
@@ -446,32 +446,32 @@ function InvitationCard({ invitation, isProcessing, onAccept, onDecline }: Invit
           </div>
 
           {/* Group Details */}
-          {invitation.group?.description && (
-            <p className="text-gray-300 mb-3">{invitation.group.description}</p>
+          {(invitation as any).groups?.description && (
+            <p className="text-gray-300 mb-3">{(invitation as any).groups.description}</p>
           )}
 
           <div className="flex flex-wrap gap-4 text-sm text-gray-400 mb-4">
-            {invitation.group?.primaryGame && (
+            {(invitation as any).groups?.primary_game && (
               <span className="flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8m2-10v18a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2h8l4 4z" />
                 </svg>
-                {invitation.group.primaryGame}
+                {(invitation as any).groups.primary_game}
               </span>
             )}
-            {invitation.group?.gamingPlatform && (
+            {(invitation as any).groups?.gaming_platform && (
               <span className="flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                {invitation.group.gamingPlatform}
+                {(invitation as any).groups.gaming_platform}
               </span>
             )}
             <span className="flex items-center">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Expires {formatDate(invitation.expiresAt)}
+              Expires {formatDate((invitation as any).expires_at || invitation.expiresAt)}
             </span>
           </div>
 
