@@ -12,8 +12,65 @@ import {
   FaSyncAlt, 
   FaGamepad, 
   FaSpinner,
-  FaEnvelope
+  FaEnvelope,
+  FaXbox
 } from 'react-icons/fa'
+import { 
+  SiPlaystation, 
+  SiSteam, 
+  SiNintendoswitch, 
+  SiEpicgames, 
+  SiDiscord, 
+  SiRiotgames 
+} from 'react-icons/si'
+
+// Platform configuration with icons
+const PLATFORMS: Record<string, {
+  name: string
+  icon: React.ReactNode
+  color: string
+}> = {
+  PSN: {
+    name: 'PlayStation Network',
+    icon: <SiPlaystation className="w-4 h-4" />,
+    color: 'text-blue-500'
+  },
+  Xbox: {
+    name: 'Xbox Live',
+    icon: <FaXbox className="w-4 h-4" />,
+    color: 'text-green-500'
+  },
+  Steam: {
+    name: 'Steam',
+    icon: <SiSteam className="w-4 h-4" />,
+    color: 'text-blue-400'
+  },
+  Nintendo: {
+    name: 'Nintendo Switch',
+    icon: <SiNintendoswitch className="w-4 h-4" />,
+    color: 'text-red-500'
+  },
+  Epic: {
+    name: 'Epic Games',
+    icon: <SiEpicgames className="w-4 h-4" />,
+    color: 'text-gray-300'
+  },
+  Discord: {
+    name: 'Discord',
+    icon: <SiDiscord className="w-4 h-4" />,
+    color: 'text-indigo-500'
+  },
+  Riot: {
+    name: 'Riot Games',
+    icon: <SiRiotgames className="w-4 h-4" />,
+    color: 'text-orange-500'
+  },
+  PokemonGO: {
+    name: 'Pokémon GO',
+    icon: <FaGamepad className="w-4 h-4" />,
+    color: 'text-yellow-500'
+  }
+}
 
 interface SimpleMutualFollowersDisplayProps {
   className?: string
@@ -341,21 +398,27 @@ function MutualFollowerCard({ follower, compact = false, currentUserFid, onChatC
           
           <p className="text-sm text-gray-400 mb-3">@{follower.username}</p>
 
-          {/* Gamertags */}
+          {/* Platform Icons */}
           {follower.gamertags && follower.gamertags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {follower.gamertags.slice(0, 3).map((gamertag: any, index: number) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-900/50 text-purple-200 border border-purple-700"
-                >
-                  {gamertag.platform}: {gamertag.handle}
-                </span>
-              ))}
-              {follower.gamertags.length > 3 && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
-                  +{follower.gamertags.length - 3} more
-                </span>
+              {follower.gamertags.slice(0, 6).map((gamertag: any, index: number) => {
+                const platform = PLATFORMS[gamertag.platform]
+                if (!platform) return null
+                
+                return (
+                  <div
+                    key={index}
+                    className={`inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors ${platform.color}`}
+                    title={`${platform.name}: Click to view profile for details`}
+                  >
+                    {platform.icon}
+                  </div>
+                )
+              })}
+              {follower.gamertags.length > 6 && (
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700 text-gray-300 text-xs font-medium">
+                  +{follower.gamertags.length - 6}
+                </div>
               )}
             </div>
           )}
