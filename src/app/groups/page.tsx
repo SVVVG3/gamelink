@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useUser } from '@/hooks/useUser'
 import { getUserGroups, getPublicGroups } from '@/lib/supabase/groups'
+import BottomNavigation from '@/components/BottomNavigation'
 import type { GroupWithMemberCount } from '@/types'
 
 export default function GroupsPage() {
@@ -231,6 +232,8 @@ export default function GroupsPage() {
           </div>
         )}
       </div>
+      
+      <BottomNavigation />
     </div>
   )
 }
