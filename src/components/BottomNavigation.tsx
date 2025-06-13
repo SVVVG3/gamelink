@@ -9,6 +9,7 @@ import {
   FaGamepad,
   FaUserCircle 
 } from 'react-icons/fa'
+import { useNotifications } from '@/hooks/useNotifications'
 
 interface NavItem {
   href: string
@@ -19,12 +20,14 @@ interface NavItem {
 
 export default function BottomNavigation() {
   const pathname = usePathname()
+  const { unreadMessages, pendingInvitations } = useNotifications()
 
   const navItems: NavItem[] = [
     {
       href: '/groups',
       icon: <FaUsers className="w-5 h-5" />,
-      label: 'Groups'
+      label: 'Groups',
+      badge: pendingInvitations > 0 ? pendingInvitations : undefined
     },
     {
       href: '/friends',
@@ -35,7 +38,7 @@ export default function BottomNavigation() {
       href: '/messages',
       icon: <FaComments className="w-5 h-5" />,
       label: 'Messages',
-      badge: 0 // Will be dynamic later
+      badge: unreadMessages > 0 ? unreadMessages : undefined
     },
     {
       href: '/events',

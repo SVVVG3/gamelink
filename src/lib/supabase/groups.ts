@@ -153,12 +153,13 @@ export async function getGroupById(groupId: string, includeMembers = false): Pro
       .from('groups')
       .select(`
         *,
-        group_memberships(
+        group_memberships!inner(
           *,
-          profiles!group_memberships_user_id_fkey(*)
+          profile:profiles!group_memberships_user_id_fkey(*)
         )
       `)
       .eq('id', groupId)
+      .eq('group_memberships.status', 'active')
       .single()
 
     const { data: group, error } = await query
@@ -171,10 +172,16 @@ export async function getGroupById(groupId: string, includeMembers = false): Pro
 
     if (!group) return null
 
+    // Transform the data to match our expected structure
+    const members = (group.group_memberships || []).map((membership: any) => ({
+      ...membership,
+      profile: membership.profile || {}
+    }))
+
     return {
       ...group,
-      members: group.group_memberships || [],
-      memberCount: group.group_memberships?.length || 0
+      members,
+      memberCount: members.length
     }
   } catch (error) {
     console.error('Error in getGroupById:', error)
@@ -544,6 +551,33 @@ export async function createGroupInvitation(
   message?: string
 ): Promise<GroupInvitation> {
   try {
+    // First check if there's already a pending invitation
+    const { data: existingInvitation, error: checkError } = await supabase
+      .from('group_invitations')
+      .select('id, status, expires_at')
+      .eq('group_id', groupId)
+      .eq('invitee_id', inviteeId)
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (existingInvitation) {
+      throw new Error('User already has a pending invitation to this group')
+    }
+
+    // Check if user is already a member
+    const { data: membership, error: memberError } = await supabase
+      .from('group_memberships')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('user_id', inviteeId)
+      .eq('status', 'active')
+      .single()
+
+    if (membership) {
+      throw new Error('User is already a member of this group')
+    }
+
     const { data: invitation, error } = await supabase
       .from('group_invitations')
       .insert({
@@ -558,7 +592,15 @@ export async function createGroupInvitation(
 
     if (error) {
       console.error('Error creating group invitation:', error)
-      throw error
+      
+      // Provide more specific error messages
+      if (error.code === '23505') { // Unique constraint violation
+        throw new Error('User already has a pending invitation to this group')
+      } else if (error.code === '23503') { // Foreign key violation
+        throw new Error('Invalid group or user ID')
+      } else {
+        throw new Error(`Failed to create invitation: ${error.message}`)
+      }
     }
 
     return invitation
@@ -583,7 +625,7 @@ export async function getUserInvitations(userId: string): Promise<GroupInvitatio
       `)
       .eq('invitee_id', userId)
       .eq('status', 'pending')
-      .lt('expires_at', new Date().toISOString())
+      .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -603,15 +645,77 @@ export async function getUserInvitations(userId: string): Promise<GroupInvitatio
  */
 export async function acceptGroupInvitation(invitationId: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .rpc('accept_group_invitation', { invitation_id: invitationId })
+    // Get invitation details first
+    const { data: invitation, error: inviteError } = await supabase
+      .from('group_invitations')
+      .select('*')
+      .eq('id', invitationId)
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .single()
 
-    if (error) {
-      console.error('Error accepting group invitation:', error)
-      throw error
+    if (inviteError || !invitation) {
+      console.error('Error fetching invitation:', inviteError)
+      return false
     }
 
-    return data || false
+    // Check if user is already a member
+    const { data: existingMembership, error: memberError } = await supabase
+      .from('group_memberships')
+      .select('id')
+      .eq('group_id', invitation.group_id)
+      .eq('user_id', invitation.invitee_id)
+      .eq('status', 'active')
+      .single()
+
+    if (existingMembership) {
+      console.log('User is already a member of this group')
+      return false
+    }
+
+    // Start transaction-like operations
+    // 1. Update invitation status
+    const { error: updateError } = await supabase
+      .from('group_invitations')
+      .update({
+        status: 'accepted',
+        responded_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', invitationId)
+
+    if (updateError) {
+      console.error('Error updating invitation:', updateError)
+      throw updateError
+    }
+
+    // 2. Add group membership
+    const { error: membershipError } = await supabase
+      .from('group_memberships')
+      .insert({
+        group_id: invitation.group_id,
+        user_id: invitation.invitee_id,
+        role: 'member',
+        status: 'active',
+        invited_by: invitation.inviter_id
+      })
+
+    if (membershipError) {
+      console.error('Error creating membership:', membershipError)
+      // Try to rollback invitation status
+      await supabase
+        .from('group_invitations')
+        .update({
+          status: 'pending',
+          responded_at: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', invitationId)
+      
+      throw membershipError
+    }
+
+    return true
   } catch (error) {
     console.error('Error in acceptGroupInvitation:', error)
     throw error

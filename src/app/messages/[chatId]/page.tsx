@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
-import { getChatById, type ChatWithParticipants, type MessageWithSender } from '@/lib/supabase/chats'
+import { getChatById, markChatMessagesAsRead, type ChatWithParticipants, type MessageWithSender } from '@/lib/supabase/chats'
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
@@ -86,6 +86,11 @@ export default function ChatPage() {
       }
       
       setChat(chatWithProfiles)
+      
+      // Mark all messages in this chat as read
+      if (profile?.id) {
+        await markChatMessagesAsRead(chatId, profile.id)
+      }
     } catch (err) {
       console.error('Error loading chat:', err)
       setError(err instanceof Error ? err.message : 'Failed to load chat')

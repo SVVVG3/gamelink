@@ -581,4 +581,69 @@ export async function getChatParticipants(chatId: string): Promise<Array<ChatPar
   }
 
   return data || []
+}
+
+// Mark all messages in a chat as read for the current user
+export async function markChatMessagesAsRead(chatId: string, userId: string): Promise<void> {
+  try {
+    const supabase = createClient()
+    
+    // Get all messages in this chat that aren't from the current user
+    const { data: messages, error: messagesError } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('chat_id', chatId)
+      .neq('sender_id', userId)
+    
+    if (messagesError) {
+      console.error('Error fetching messages for read status:', messagesError)
+      return
+    }
+    
+    if (!messages || messages.length === 0) {
+      return // No messages to mark as read
+    }
+    
+    // Mark all messages as read by inserting into message_read_status
+    const readStatusEntries = messages.map(message => ({
+      message_id: message.id,
+      user_id: userId,
+      read_at: new Date().toISOString()
+    }))
+    
+    const { error: readError } = await supabase
+      .from('message_read_status')
+      .upsert(readStatusEntries, {
+        onConflict: 'message_id,user_id'
+      })
+    
+    if (readError) {
+      console.error('Error marking messages as read:', readError)
+    }
+  } catch (error) {
+    console.error('Error in markChatMessagesAsRead:', error)
+  }
+}
+
+// Mark a specific message as read
+export async function markMessageAsRead(messageId: string, userId: string): Promise<void> {
+  try {
+    const supabase = createClient()
+    
+    const { error } = await supabase
+      .from('message_read_status')
+      .upsert({
+        message_id: messageId,
+        user_id: userId,
+        read_at: new Date().toISOString()
+      }, {
+        onConflict: 'message_id,user_id'
+      })
+    
+    if (error) {
+      console.error('Error marking message as read:', error)
+    }
+  } catch (error) {
+    console.error('Error in markMessageAsRead:', error)
+  }
 } 
