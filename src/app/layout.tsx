@@ -18,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GameLink - Connect with Fellow Gamers on Farcaster",
   description: "Share your gamertags, organize events, and chat with fellow gamers on Farcaster",
+  manifest: "/farcaster.json",
+  other: {
+    "fc:frame": "vNext",
+    "fc:frame:manifest": "/farcaster.json",
+  },
 };
 
 export default function RootLayout({

@@ -1,0 +1,54 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#1a1a2e"/>
+  
+  <!-- Gradient overlay -->
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#16213e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bgGradient)"/>
+  
+  <!-- Gaming controller icon -->
+  <g transform="translate(200, 150)">
+    <path d="M-40,-20 Q-50,-30 -40,-40 L40,-40 Q50,-30 40,-20 L40,20 Q30,30 20,20 L-20,20 Q-30,30 -40,20 Z" 
+          fill="#8b5cf6" stroke="#a855f7" stroke-width="2"/>
+    
+    <!-- D-pad -->
+    <g transform="translate(-25, 0)">
+      <rect x="-8" y="-2" width="16" height="4" fill="#e2e8f0" rx="2"/>
+      <rect x="-2" y="-8" width="4" height="16" fill="#e2e8f0" rx="2"/>
+    </g>
+    
+    <!-- Action buttons -->
+    <circle cx="20" cy="-8" r="4" fill="#10b981"/>
+    <circle cx="30" cy="2" r="4" fill="#f59e0b"/>
+    <circle cx="20" cy="12" r="4" fill="#ef4444"/>
+    <circle cx="10" cy="2" r="4" fill="#3b82f6"/>
+  </g>
+  
+  <!-- GameLink text -->
+  <text x="200" y="250" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="32" font-weight="bold">
+    GameLink
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="200" y="280" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="16">
+    Connect • Play • Compete
+  </text>
+  
+  <!-- Loading dots animation -->
+  <g transform="translate(200, 320)">
+    <circle cx="-20" cy="0" r="4" fill="#8b5cf6">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" begin="0s"/>
+    </circle>
+    <circle cx="0" cy="0" r="4" fill="#8b5cf6">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" begin="0.5s"/>
+    </circle>
+    <circle cx="20" cy="0" r="4" fill="#8b5cf6">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+  </g>
+</svg> 

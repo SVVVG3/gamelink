@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Connect with fellow gamers on Farcaster. Share gamertags, join groups, organize events, and chat with friends.",
   "iconUrl": "https://farcaster-gamelink.vercel.app/favicon.ico",
-  "splashImageUrl": "https://farcaster-gamelink.vercel.app/splash.png",
+  "splashImageUrl": "https://farcaster-gamelink.vercel.app/splash.svg",
   "homeUrl": "https://farcaster-gamelink.vercel.app",
   "webhookUrl": "https://farcaster-gamelink.vercel.app/api/webhook",
   "author": {
