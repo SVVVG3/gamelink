@@ -50,26 +50,120 @@ export interface NavigationItem {
   badge?: number
 }
 
-// Event types (for future use)
-export interface GameEvent {
+// =================================
+// EVENT TYPES
+// =================================
+
+export interface Event {
   id: string
   title: string
   description?: string
-  game: string
-  start_time: string
-  end_time?: string
-  max_participants?: number
-  organizer_fid: number
-  created_at: string
-  updated_at: string
+  game?: string
+  gamingPlatform?: string
+  eventType: 'casual' | 'tournament' | 'practice' | 'scrimmage' | 'ranked'
+  skillLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'any'
+  startTime: string
+  endTime?: string
+  timezone: string
+  maxParticipants: number
+  minParticipants: number
+  requireApproval: boolean
+  locationType: 'online' | 'in_person' | 'hybrid'
+  connectionDetails?: string
+  physicalLocation?: string
+  isPrivate: boolean
+  allowSpectators: boolean
+  registrationDeadline?: string
+  status: 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled'
+  createdBy: string
+  groupId?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface EventParticipant {
   id: string
-  event_id: string
-  user_fid: number
-  joined_at: string
-  status: 'confirmed' | 'maybe' | 'declined'
+  eventId: string
+  userId: string
+  status: 'registered' | 'confirmed' | 'attended' | 'no_show' | 'cancelled' | 'pending_approval'
+  role: 'organizer' | 'moderator' | 'participant' | 'spectator'
+  registrationMessage?: string
+  approvedBy?: string
+  approvedAt?: string
+  placement?: number
+  score?: number
+  notes?: string
+  registeredAt: string
+  lastUpdatedAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Combined types for UI
+export interface EventWithParticipantCount extends Event {
+  participantCount: number
+  isUserParticipant: boolean
+  userRole?: 'organizer' | 'moderator' | 'participant' | 'spectator'
+  userStatus?: 'registered' | 'confirmed' | 'attended' | 'no_show' | 'cancelled' | 'pending_approval'
+}
+
+export interface EventWithParticipants extends Event {
+  participants: (EventParticipant & { profile: import('../lib/supabase/profiles').Profile })[]
+  participantCount: number
+}
+
+export interface EventWithDetails extends EventWithParticipantCount {
+  group?: Group
+  organizer: import('../lib/supabase/profiles').Profile
+}
+
+// Database query options
+export interface EventFilters {
+  game?: string
+  gamingPlatform?: string
+  eventType?: string
+  skillLevel?: string
+  locationType?: string
+  status?: string
+  createdBy?: string
+  groupId?: string
+  startTimeAfter?: string
+  startTimeBefore?: string
+  isPrivate?: boolean
+  search?: string
+}
+
+export interface CreateEventData {
+  title: string
+  description?: string
+  game?: string
+  gamingPlatform?: string
+  eventType?: 'casual' | 'tournament' | 'practice' | 'scrimmage' | 'ranked'
+  skillLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'any'
+  startTime: string
+  endTime?: string
+  timezone?: string
+  maxParticipants?: number
+  minParticipants?: number
+  requireApproval?: boolean
+  locationType?: 'online' | 'in_person' | 'hybrid'
+  connectionDetails?: string
+  physicalLocation?: string
+  isPrivate?: boolean
+  allowSpectators?: boolean
+  registrationDeadline?: string
+  groupId?: string
+}
+
+export interface UpdateEventData extends Partial<CreateEventData> {
+  id: string
+  status?: 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled'
+}
+
+export interface RegisterForEventData {
+  eventId: string
+  registrationMessage?: string
+  role?: 'participant' | 'spectator'
 }
 
 // =================================
