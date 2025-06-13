@@ -10,8 +10,8 @@ import { FaTimes, FaUser, FaUsers, FaSearch, FaSpinner } from 'react-icons/fa'
 interface MutualFollower {
   fid: number
   username: string
-  display_name?: string
-  pfp_url?: string
+  displayName?: string
+  pfpUrl?: string
   gamertags?: Array<{
     platform: string
     handle: string
@@ -109,7 +109,7 @@ export default function NewChatModal({ isOpen, onClose, onChatCreated }: NewChat
     const query = searchQuery.toLowerCase()
     return (
       user.username.toLowerCase().includes(query) ||
-      user.display_name?.toLowerCase().includes(query)
+      user.displayName?.toLowerCase().includes(query)
     )
   })
 
@@ -238,9 +238,9 @@ export default function NewChatModal({ isOpen, onClose, onChatCreated }: NewChat
                           : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                       }`}
                     >
-                      {user.pfp_url ? (
+                      {user.pfpUrl ? (
                         <img
-                          src={user.pfp_url}
+                          src={user.pfpUrl}
                           alt={user.username}
                           className="w-10 h-10 rounded-full"
                         />
@@ -251,7 +251,7 @@ export default function NewChatModal({ isOpen, onClose, onChatCreated }: NewChat
                       )}
                       <div className="flex-1 text-left">
                         <p className="font-medium">
-                          {user.display_name || user.username}
+                          {user.displayName || user.username}
                         </p>
                         <p className="text-sm opacity-75">@{user.username}</p>
                         {user.gamertags && user.gamertags.length > 0 && (
