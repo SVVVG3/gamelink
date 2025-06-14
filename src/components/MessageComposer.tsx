@@ -128,6 +128,8 @@ export default function MessageComposer({
         
         // Send notification to other chat participants
         try {
+          console.log(`📱 Attempting to send notification for message ID: ${sentMessage.id}`)
+          
           const response = await fetch('/api/notifications/message', {
             method: 'POST',
             headers: {
@@ -138,13 +140,23 @@ export default function MessageComposer({
             })
           })
           
+          const responseData = await response.text()
+          console.log(`📱 Notification API response status: ${response.status}`)
+          console.log(`📱 Notification API response:`, responseData)
+          
           if (!response.ok) {
-            console.warn('Failed to send message notification:', await response.text())
+            console.warn('❌ Failed to send message notification:', responseData)
           } else {
             console.log('✅ Message notification sent successfully')
+            try {
+              const jsonData = JSON.parse(responseData)
+              console.log('✅ Notification details:', jsonData.debug)
+            } catch (e) {
+              console.log('✅ Response was not JSON:', responseData)
+            }
           }
         } catch (notificationError) {
-          console.warn('Error sending message notification:', notificationError)
+          console.error('❌ Error sending message notification:', notificationError)
           // Don't fail the message send if notification fails
         }
         

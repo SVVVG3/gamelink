@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
     const { messageId } = await request.json()
     
     if (!messageId) {
+      console.error('❌ No messageId provided to notification API')
       return NextResponse.json(
         { error: 'Message ID is required' },
         { status: 400 }
@@ -41,12 +42,20 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (messageError || !message) {
-      console.error('Error fetching message:', messageError)
+      console.error('❌ Error fetching message:', messageError)
+      console.error('❌ Message data:', message)
       return NextResponse.json(
-        { error: 'Message not found' },
+        { error: 'Message not found', details: messageError },
         { status: 404 }
       )
     }
+
+    console.log('✅ Message found:', {
+      id: message.id,
+      sender_fid: message.sender_fid,
+      chat_id: message.chat_id,
+      content_preview: message.content.substring(0, 50) + '...'
+    })
 
     // Extract participant FIDs and sender info
     const chat = message.chats[0] // Get the first (and only) chat
@@ -55,6 +64,13 @@ export async function POST(request: NextRequest) {
     const senderName = senderProfile?.profiles?.[0]?.display_name || 
                       senderProfile?.profiles?.[0]?.username || 
                       `User ${message.sender_fid}`
+
+    console.log('📊 Chat participants:', {
+      all_participants: participantFids,
+      sender_fid: message.sender_fid,
+      sender_name: senderName,
+      recipients: participantFids.filter(fid => fid !== message.sender_fid)
+    })
 
     // Send notification via Neynar
     const result = await sendMessageNotification(
@@ -68,18 +84,35 @@ export async function POST(request: NextRequest) {
     if (result.success) {
       console.log(`✅ Message notification sent via Neynar for message ${messageId}`)
       return NextResponse.json(
-        { message: 'Message notification sent successfully via Neynar', messageId },
+        { 
+          message: 'Message notification sent successfully via Neynar', 
+          messageId,
+          debug: {
+            participants: participantFids,
+            sender: message.sender_fid,
+            sender_name: senderName,
+            recipients: participantFids.filter(fid => fid !== message.sender_fid)
+          }
+        },
         { status: 200 }
       )
     } else {
-      console.error('Failed to send message notification via Neynar:', result.error)
+      console.error('❌ Failed to send message notification via Neynar:', result.error)
       return NextResponse.json(
-        { error: 'Failed to send notification', details: result.error },
+        { 
+          error: 'Failed to send notification', 
+          details: result.error,
+          debug: {
+            participants: participantFids,
+            sender: message.sender_fid,
+            sender_name: senderName
+          }
+        },
         { status: 500 }
       )
     }
   } catch (error: any) {
-    console.error('Error in message notification API:', error)
+    console.error('❌ Error in message notification API:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
