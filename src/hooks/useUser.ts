@@ -55,6 +55,7 @@ export function useUser(): UseUserReturn {
   // Prevent multiple simultaneous sync operations
   const isSyncingRef = useRef(false)
   const lastSyncedFidRef = useRef<number | null>(null)
+  const [hasCheckedPersistedAuth, setHasCheckedPersistedAuth] = useState(false)
 
   // Determine authentication state and profile data
   const isAuthenticated = isInFarcaster ? !!sdkUser : authKitAuthenticated
@@ -136,10 +137,22 @@ export function useUser(): UseUserReturn {
     }
   }, [isAuthenticated, farcasterProfile, syncProfile, loadGamertags])
 
+  // Check for persisted authentication on mount
+  useEffect(() => {
+    if (!hasCheckedPersistedAuth && isSDKLoaded) {
+      setHasCheckedPersistedAuth(true)
+      console.log('Checking for persisted authentication...', { 
+        isAuthenticated, 
+        isInFarcaster,
+        fid: farcasterProfile?.fid 
+      })
+    }
+  }, [isSDKLoaded, hasCheckedPersistedAuth, isAuthenticated, isInFarcaster, farcasterProfile?.fid])
+
   // Auto-sync when authentication state changes or SDK loads
   useEffect(() => {
-    // Wait for SDK to load before proceeding
-    if (!isSDKLoaded) return
+    // Wait for SDK to load and initial auth check before proceeding
+    if (!isSDKLoaded || !hasCheckedPersistedAuth) return
     
     // Prevent multiple simultaneous sync operations
     if (isSyncingRef.current) return
@@ -205,7 +218,7 @@ export function useUser(): UseUserReturn {
       isSyncingRef.current = false
       lastSyncedFidRef.current = null
     }
-  }, [isSDKLoaded, isAuthenticated, farcasterProfile?.fid, isInFarcaster])
+  }, [isSDKLoaded, hasCheckedPersistedAuth, isAuthenticated, farcasterProfile?.fid, isInFarcaster])
 
   return {
     // Authentication state
