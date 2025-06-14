@@ -149,13 +149,47 @@ export async function getPublicGroups(options?: { limit?: number; offset?: numbe
  */
 export async function getGroupById(groupId: string, includeMembers = false): Promise<GroupWithMembers | null> {
   try {
+    console.log('🔍 getGroupById: Starting query', { groupId, includeMembers })
+    
     let query = supabase
       .from('groups')
       .select(`
-        *,
+        id,
+        name,
+        description,
+        avatar_url,
+        is_private,
+        max_members,
+        allow_member_invites,
+        require_admin_approval,
+        primary_game,
+        gaming_platform,
+        skill_level,
+        created_by,
+        created_at,
+        updated_at,
         group_memberships!inner(
-          *,
-          profile:profiles!group_memberships_user_id_fkey(*)
+          id,
+          group_id,
+          user_id,
+          role,
+          status,
+          invited_by,
+          invite_message,
+          joined_at,
+          last_active_at,
+          created_at,
+          updated_at,
+          profile:profiles!group_memberships_user_id_fkey(
+            id,
+            fid,
+            username,
+            display_name,
+            bio,
+            pfp_url,
+            created_at,
+            updated_at
+          )
         )
       `)
       .eq('id', groupId)
@@ -163,28 +197,73 @@ export async function getGroupById(groupId: string, includeMembers = false): Pro
       .single()
 
     const { data: group, error } = await query
+    
+    console.log('🔍 getGroupById: Query result', { 
+      hasData: !!group, 
+      error: error?.message,
+      createdBy: group?.created_by,
+      memberCount: group?.group_memberships?.length 
+    })
 
     if (error) {
-      if (error.code === 'PGRST116') return null // Not found
-      console.error('Error fetching group:', error)
+      if (error.code === 'PGRST116') {
+        console.log('🔍 getGroupById: Group not found')
+        return null // Not found
+      }
+      console.error('🔍 getGroupById: Database error:', error)
       throw error
     }
 
-    if (!group) return null
+    if (!group) {
+      console.log('🔍 getGroupById: No group data returned')
+      return null
+    }
 
     // Transform the data to match our expected structure
     const members = (group.group_memberships || []).map((membership: any) => ({
-      ...membership,
+      id: membership.id,
+      groupId: membership.group_id,
+      userId: membership.user_id,
+      role: membership.role,
+      status: membership.status,
+      invitedBy: membership.invited_by,
+      inviteMessage: membership.invite_message,
+      joinedAt: membership.joined_at,
+      lastActiveAt: membership.last_active_at,
+      createdAt: membership.created_at,
+      updatedAt: membership.updated_at,
       profile: membership.profile || {}
     }))
 
-    return {
-      ...group,
+    const result = {
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      avatarUrl: group.avatar_url,
+      isPrivate: group.is_private,
+      maxMembers: group.max_members,
+      allowMemberInvites: group.allow_member_invites,
+      requireAdminApproval: group.require_admin_approval,
+      primaryGame: group.primary_game,
+      gamingPlatform: group.gaming_platform,
+      skillLevel: group.skill_level,
+      createdBy: group.created_by,
+      createdAt: group.created_at,
+      updatedAt: group.updated_at,
       members,
       memberCount: members.length
     }
+    
+    console.log('🔍 getGroupById: Transformed result', { 
+      id: result.id,
+      name: result.name,
+      createdBy: result.createdBy,
+      memberCount: result.memberCount 
+    })
+
+    return result
   } catch (error) {
-    console.error('Error in getGroupById:', error)
+    console.error('🔍 getGroupById: Error in getGroupById:', error)
     throw error
   }
 }
@@ -645,6 +724,8 @@ export async function getUserInvitations(userId: string): Promise<GroupInvitatio
  */
 export async function acceptGroupInvitation(invitationId: string): Promise<boolean> {
   try {
+    console.log('🔍 acceptGroupInvitation: Starting', { invitationId })
+    
     // Get invitation details first
     const { data: invitation, error: inviteError } = await supabase
       .from('group_invitations')
@@ -655,9 +736,14 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
       .single()
 
     if (inviteError || !invitation) {
-      console.error('Error fetching invitation:', inviteError)
+      console.error('🔍 acceptGroupInvitation: Error fetching invitation:', inviteError)
       return false
     }
+
+    console.log('🔍 acceptGroupInvitation: Invitation found', { 
+      groupId: invitation.group_id, 
+      inviteeId: invitation.invitee_id 
+    })
 
     // Check if user is already a member
     const { data: existingMembership, error: memberError } = await supabase
@@ -669,7 +755,7 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
       .single()
 
     if (existingMembership) {
-      console.log('User is already a member of this group')
+      console.log('🔍 acceptGroupInvitation: User is already a member of this group')
       return false
     }
 
@@ -685,9 +771,11 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
       .eq('id', invitationId)
 
     if (updateError) {
-      console.error('Error updating invitation:', updateError)
+      console.error('🔍 acceptGroupInvitation: Error updating invitation:', updateError)
       throw updateError
     }
+
+    console.log('🔍 acceptGroupInvitation: Invitation status updated')
 
     // 2. Add group membership
     const { error: membershipError } = await supabase
@@ -701,7 +789,7 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
       })
 
     if (membershipError) {
-      console.error('Error creating membership:', membershipError)
+      console.error('🔍 acceptGroupInvitation: Error creating membership:', membershipError)
       // Try to rollback invitation status
       await supabase
         .from('group_invitations')
@@ -715,9 +803,41 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
       throw membershipError
     }
 
+    console.log('🔍 acceptGroupInvitation: Membership created')
+
+    // 3. Get user's FID for chat participation
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('fid')
+      .eq('id', invitation.invitee_id)
+      .single()
+
+    if (profileError || !profile?.fid) {
+      console.error('🔍 acceptGroupInvitation: Error getting user FID:', profileError)
+      // Don't fail the whole operation, just log the error
+      console.warn('🔍 acceptGroupInvitation: Could not add user to group chat - missing FID')
+    } else {
+      // 4. Add user to group chat
+      try {
+        console.log('🔍 acceptGroupInvitation: Adding user to group chat', { 
+          groupId: invitation.group_id, 
+          userId: invitation.invitee_id, 
+          fid: profile.fid 
+        })
+        
+        await addMemberToGroupChat(invitation.group_id, invitation.invitee_id, profile.fid)
+        console.log('🔍 acceptGroupInvitation: User added to group chat successfully')
+      } catch (chatError) {
+        console.error('🔍 acceptGroupInvitation: Error adding user to group chat:', chatError)
+        // Don't fail the whole operation, just log the error
+        console.warn('🔍 acceptGroupInvitation: User joined group but could not be added to chat')
+      }
+    }
+
+    console.log('🔍 acceptGroupInvitation: Successfully completed')
     return true
   } catch (error) {
-    console.error('Error in acceptGroupInvitation:', error)
+    console.error('🔍 acceptGroupInvitation: Error in acceptGroupInvitation:', error)
     throw error
   }
 }

@@ -41,16 +41,26 @@ export default function MembersClient({ params }: Props) {
 
       try {
         setError(null)
+        console.log('🔍 loadGroup: Starting to load group', { groupId, profileId: profile.id })
+        
         const groupData = await getGroupById(groupId, true) // true to include members
+        console.log('🔍 loadGroup: Group data received', { 
+          groupData, 
+          hasCreatedBy: !!groupData?.createdBy,
+          createdBy: groupData?.createdBy,
+          memberCount: groupData?.members?.length 
+        })
         
         if (!groupData) {
+          console.log('🔍 loadGroup: No group data returned')
           setError('Group not found')
           return
         }
 
         setGroup(groupData)
+        console.log('🔍 loadGroup: Group state set successfully')
       } catch (err) {
-        console.error('Error loading group:', err)
+        console.error('🔍 loadGroup: Error loading group:', err)
         setError(err instanceof Error ? err.message : 'Failed to load group')
       } finally {
         setIsLoading(false)
