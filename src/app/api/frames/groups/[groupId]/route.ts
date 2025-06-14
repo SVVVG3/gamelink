@@ -15,10 +15,10 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { groupId: string } }
+  { params }: { params: Promise<{ groupId: string }> }
 ) {
   try {
-    const groupId = params.groupId;
+    const { groupId } = await params;
 
     // Fetch group data
     const supabase = await createClient()
