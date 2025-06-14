@@ -51,9 +51,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const group = invitation.groups?.[0]
-    const inviterProfile = invitation.inviter?.[0]
-    const inviteeProfile = invitation.invitee?.[0]
+    // Fix: these are objects, not arrays
+    const group = invitation.groups as any
+    const inviterProfile = invitation.inviter as any
+    const inviteeProfile = invitation.invitee as any
+
+    console.log('📊 Invitation details:', {
+      invitation_id: invitation.id,
+      group_debug: group,
+      inviter_debug: inviterProfile,
+      invitee_debug: inviteeProfile
+    })
 
     if (!group || !inviterProfile || !inviteeProfile) {
       console.error('Missing required data for invitation notification')
@@ -66,6 +74,13 @@ export async function POST(request: NextRequest) {
     const inviterName = inviterProfile.display_name || 
                        inviterProfile.username || 
                        `User ${inviterProfile.fid}`
+
+    console.log('📊 Sending invitation notification:', {
+      invitee_fid: inviteeProfile.fid,
+      group_name: group.name,
+      group_id: group.id,
+      inviter_name: inviterName
+    })
 
     // Send notification via Neynar to the invitee
     const result = await sendGroupInvitationNotification(

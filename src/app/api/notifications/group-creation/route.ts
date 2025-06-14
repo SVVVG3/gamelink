@@ -52,10 +52,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const creatorProfile = group.profiles?.[0] // Get first profile from array
+    // Fix: profiles is an object, not an array
+    const creatorProfile = group.profiles as any
     const creatorName = creatorProfile?.display_name || 
                        creatorProfile?.username || 
                        `User ${creatorProfile?.fid}`
+
+    console.log('📊 Group creator info:', {
+      group_id: group.id,
+      group_name: group.name,
+      creator_fid: creatorProfile?.fid,
+      creator_name: creatorName,
+      creator_profile_debug: creatorProfile
+    })
 
     // Send notification via Neynar with mutual follower filtering
     const result = await sendGroupCreationNotification(

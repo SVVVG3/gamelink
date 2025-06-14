@@ -52,10 +52,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const creatorProfile = event.profiles?.[0] // Get first profile from array
+    // Fix: profiles is an object, not an array
+    const creatorProfile = event.profiles as any
     const creatorName = creatorProfile?.display_name || 
                        creatorProfile?.username || 
                        `User ${creatorProfile?.fid}`
+
+    console.log('📊 Event creator info:', {
+      event_id: event.id,
+      event_title: event.title,
+      creator_fid: creatorProfile?.fid,
+      creator_name: creatorName,
+      creator_profile_debug: creatorProfile
+    })
 
     // Send notification via Neynar with mutual follower filtering
     const result = await sendEventNotification(
