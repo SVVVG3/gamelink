@@ -4,13 +4,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { getChatById, markChatMessagesAsRead, type ChatWithParticipants, type MessageWithSender } from '@/lib/supabase/chats'
+import { isGroupMember } from '@/lib/supabase/groups'
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV } from 'react-icons/fa'
 
-// Extended interface to include user profile data
+// Extended interface to include user profile data and group info
 interface ChatWithUserProfiles extends ChatWithParticipants {
+  group_id?: string
   participantProfiles?: Array<{
     fid: number
     username: string
@@ -30,6 +32,8 @@ export default function ChatPage() {
   const [chat, setChat] = useState<ChatWithUserProfiles | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isGroupAdmin, setIsGroupAdmin] = useState(false)
+  const [showAdminMenu, setShowAdminMenu] = useState(false)
 
   // Fetch user profiles for chat participants
   const fetchUserProfiles = async (fids: number[]) => {
@@ -87,6 +91,19 @@ export default function ChatPage() {
       
       setChat(chatWithProfiles)
       
+      // Check if user is admin of the group (if this is a group chat)
+      if (chatData.type === 'group' && (chatData as any).group_id && profile?.id) {
+        try {
+          const membershipInfo = await isGroupMember((chatData as any).group_id, profile.id)
+          setIsGroupAdmin(membershipInfo.isMember && (membershipInfo.role === 'admin' || membershipInfo.role === 'moderator'))
+        } catch (adminError) {
+          console.error('Error checking admin status:', adminError)
+          setIsGroupAdmin(false)
+        }
+      } else {
+        setIsGroupAdmin(false)
+      }
+      
       // Mark all messages in this chat as read
       if (profile?.id) {
         await markChatMessagesAsRead(chatId, profile.id)
@@ -97,7 +114,7 @@ export default function ChatPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [chatId, profile?.fid])
+  }, [chatId, profile?.fid, profile?.id])
 
   // Load chat when component mounts or chatId changes
   useEffect(() => {
@@ -151,6 +168,30 @@ export default function ChatPage() {
     
     return 'Direct message'
   }
+
+  // Handle admin menu actions
+  const handleManageMembers = () => {
+    if (chat?.group_id) {
+      router.push(`/groups/${chat.group_id}/members`)
+    }
+    setShowAdminMenu(false)
+  }
+
+  const handleEditGroup = () => {
+    if (chat?.group_id) {
+      router.push(`/groups/${chat.group_id}/edit`)
+    }
+    setShowAdminMenu(false)
+  }
+
+  // Close admin menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowAdminMenu(false)
+    if (showAdminMenu) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showAdminMenu])
 
   if (!isAuthenticated) {
     return (
@@ -232,9 +273,41 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Chat actions (future: settings, info, etc.) */}
+        {/* Chat actions */}
         <div className="flex items-center space-x-2">
-          {chat?.type === 'group' && (
+          {chat?.type === 'group' && isGroupAdmin && (
+            <div className="relative">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowAdminMenu(!showAdminMenu)
+                }}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <FaEllipsisV className="w-4 h-4" />
+              </button>
+              
+              {showAdminMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-20">
+                  <button
+                    onClick={handleManageMembers}
+                    className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 flex items-center space-x-2 rounded-t-lg transition-colors"
+                  >
+                    <FaUsers className="w-4 h-4" />
+                    <span>Manage Members</span>
+                  </button>
+                  <button
+                    onClick={handleEditGroup}
+                    className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 flex items-center space-x-2 rounded-b-lg transition-colors"
+                  >
+                    <FaEdit className="w-4 h-4" />
+                    <span>Edit Group Settings</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          {chat?.type === 'group' && !isGroupAdmin && (
             <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
               <FaUsers className="w-4 h-4" />
             </button>

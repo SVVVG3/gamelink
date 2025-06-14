@@ -5,6 +5,7 @@ export interface Chat {
   id: string
   name?: string
   type: 'direct' | 'group'
+  group_id?: string
   created_by: string
   created_at: string
   updated_at: string
