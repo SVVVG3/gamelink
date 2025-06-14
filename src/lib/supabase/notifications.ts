@@ -15,7 +15,7 @@ function getSupabaseClient() {
 // Types for notification system
 export interface NotificationToken {
   id: string
-  fid: number
+  user_fid: number
   token: string
   url: string
   is_active: boolean
@@ -24,11 +24,11 @@ export interface NotificationToken {
 }
 
 export interface NotificationPreferences {
-  fid: number
-  messages: boolean
-  group_invites: boolean
-  events: boolean
-  groups: boolean
+  user_fid: number
+  messages_enabled: boolean
+  group_invites_enabled: boolean
+  events_enabled: boolean
+  groups_enabled: boolean
   created_at: string
   updated_at: string
 }
@@ -66,13 +66,13 @@ export async function storeNotificationToken(
     await supabase
       .from('notification_tokens')
       .update({ is_active: false })
-      .eq('fid', fid)
+      .eq('user_fid', fid)
     
     // Insert the new token
     const { error } = await supabase
       .from('notification_tokens')
       .insert({
-        fid,
+        user_fid: fid,
         token,
         url,
         is_active: true
@@ -130,7 +130,7 @@ export async function disableAllTokensForFid(fid: number): Promise<{ success: bo
     const { error } = await supabase
       .from('notification_tokens')
       .update({ is_active: false })
-      .eq('fid', fid)
+      .eq('user_fid', fid)
     
     if (error) {
       console.error('❌ Error disabling tokens for FID:', error)
@@ -155,7 +155,7 @@ export async function getActiveTokensForFid(fid: number): Promise<{ success: boo
     const { data, error } = await supabase
       .from('notification_tokens')
       .select('*')
-      .eq('fid', fid)
+      .eq('user_fid', fid)
       .eq('is_active', true)
     
     if (error) {
@@ -180,7 +180,7 @@ export async function getNotificationPreferences(fid: number): Promise<{ success
     const { data, error } = await supabase
       .from('notification_preferences')
       .select('*')
-      .eq('fid', fid)
+      .eq('user_fid', fid)
       .single()
     
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
@@ -191,11 +191,11 @@ export async function getNotificationPreferences(fid: number): Promise<{ success
     // If no preferences exist, return default preferences
     if (!data) {
       const defaultPreferences: NotificationPreferences = {
-        fid,
-        messages: true,
-        group_invites: true,
-        events: true,
-        groups: true,
+        user_fid: fid,
+        messages_enabled: true,
+        group_invites_enabled: true,
+        events_enabled: true,
+        groups_enabled: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -357,7 +357,7 @@ export async function sendMessageNotification(
     
     for (const fid of recipientFids) {
       const prefsResult = await getNotificationPreferences(fid)
-      if (prefsResult.success && prefsResult.preferences?.messages) {
+      if (prefsResult.success && prefsResult.preferences?.messages_enabled) {
         eligibleFids.push(fid)
       }
     }
