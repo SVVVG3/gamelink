@@ -331,7 +331,7 @@ export async function sendMessageNotification(
             name
           )
         ),
-        profiles!messages_sender_fid_fkey (
+        profiles!messages_sender_id_fkey (
           fid,
           username,
           display_name
