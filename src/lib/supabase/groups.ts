@@ -89,11 +89,20 @@ export async function getUserGroups(userId: string): Promise<GroupWithMemberCoun
 
     if (!memberships) return []
 
-    // For now, return groups with a default member count to avoid query issues
-    // We can optimize this later with a more efficient query
+    // Get member counts for all groups
+    const groupIds = memberships.map((m: any) => m.groups.id)
+    const memberCounts = await Promise.all(
+      groupIds.map(async (groupId: string) => {
+        const count = await getGroupMemberCount(groupId)
+        return { groupId, count }
+      })
+    )
+
+    const memberCountMap = new Map(memberCounts.map(({ groupId, count }) => [groupId, count]))
+
     return memberships.map((membership: any) => ({
       ...membership.groups,
-      memberCount: 1, // Default count, will be updated in future optimization
+      memberCount: memberCountMap.get(membership.groups.id) || 1,
       isUserMember: true,
       userRole: membership.role
     }))
@@ -130,11 +139,19 @@ export async function getPublicGroups(options?: { limit?: number; offset?: numbe
 
     if (!groups) return []
 
-    // For now, return groups with a default member count to avoid query issues
-    // We can optimize this later with a more efficient query
+    // Get member counts for all groups
+    const memberCounts = await Promise.all(
+      groups.map(async (group: any) => {
+        const count = await getGroupMemberCount(group.id)
+        return { groupId: group.id, count }
+      })
+    )
+
+    const memberCountMap = new Map(memberCounts.map(({ groupId, count }) => [groupId, count]))
+
     return groups.map((group: any) => ({
       ...group,
-      memberCount: 1, // Default count, will be updated in future optimization
+      memberCount: memberCountMap.get(group.id) || 1,
       isUserMember: false, // We don't know user membership status in this context
       userRole: undefined
     }))

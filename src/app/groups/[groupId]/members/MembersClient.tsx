@@ -286,13 +286,6 @@ export default function MembersClient({ params }: Props) {
           <h2 className="text-lg font-medium text-white">{group.name}</h2>
           <p className="text-gray-400 text-sm">{group.memberCount} members</p>
         </div>
-        
-        {/* Debug Section - Remove after fixing */}
-        <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg">
-          <p className="text-yellow-300 text-xs font-mono">
-            DEBUG: Admin={isUserAdmin() ? 'YES' : 'NO'} | Creator={group.createdBy === profile?.id ? 'YES' : 'NO'} | ProfileID={profile?.id?.slice(0,8)}...
-          </p>
-        </div>
       </div>
 
       {/* Members List */}
