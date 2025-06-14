@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
+import { useSocialData } from '@/contexts/SocialDataContext'
 import { createDirectChat } from '@/lib/supabase/chats'
 import { 
   FaUsers, 
@@ -89,45 +90,26 @@ export default function ProfilePage() {
   const params = useParams()
   const router = useRouter()
   const { profile: currentUser } = useUser()
+  const { mutualFollowers, isLoadingMutuals } = useSocialData()
   const { isSDKLoaded, isInFarcaster } = useFarcasterSDK()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCreatingChat, setIsCreatingChat] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copiedGamertag, setCopiedGamertag] = useState<string | null>(null)
-  const [areMutuals, setAreMutuals] = useState<boolean>(false)
-  const [isCheckingMutuals, setIsCheckingMutuals] = useState(true)
 
   const fid = params.fid ? parseInt(params.fid as string) : null
 
-  // Check if current user and profile user are mutuals
-  const checkMutualFollowers = async () => {
-    if (!currentUser?.fid || !fid || currentUser.fid === fid) {
-      setIsCheckingMutuals(false)
-      setAreMutuals(currentUser?.fid === fid) // User viewing their own profile
-      return
-    }
+  // Check if current user and profile user are mutuals using cached data
+  const areMutuals = (() => {
+    if (!currentUser?.fid || !fid) return false
+    if (currentUser.fid === fid) return true // User viewing their own profile
+    
+    // Check if the profile user's FID is in our cached mutual followers
+    return mutualFollowers.some(mutual => mutual.fid === fid)
+  })()
 
-    try {
-      setIsCheckingMutuals(true)
-      const response = await fetch(`/api/farcaster/mutual-followers?fid=${currentUser.fid}`)
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch mutual followers')
-      }
-
-      const data = await response.json()
-      const mutualFids = data.data.map((mutual: any) => mutual.fid)
-      const isMutual = mutualFids.includes(fid)
-      
-      setAreMutuals(isMutual)
-    } catch (error) {
-      console.error('Error checking mutual followers:', error)
-      setAreMutuals(false) // Default to not mutual on error
-    } finally {
-      setIsCheckingMutuals(false)
-    }
-  }
+  const isCheckingMutuals = isLoadingMutuals
 
   useEffect(() => {
     if (!fid || isNaN(fid)) {
@@ -181,12 +163,7 @@ export default function ProfilePage() {
     }
 
     fetchUserProfile()
-    
-    // Check if users are mutuals (only if current user is available)
-    if (currentUser?.fid) {
-      checkMutualFollowers()
-    }
-  }, [fid, currentUser?.fid])
+  }, [fid])
 
   const handleSendMessage = async () => {
     if (!currentUser?.fid) {
