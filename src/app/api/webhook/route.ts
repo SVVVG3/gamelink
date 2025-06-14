@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { storeNotificationToken, disableNotificationToken } from '@/lib/supabase/notifications'
+import { storeNotificationToken, disableNotificationToken, disableAllTokensForFid } from '@/lib/supabase/notifications'
 import { parseWebhookEvent, verifyAppKeyWithNeynar } from '@farcaster/frame-node'
 
 // Real Farcaster webhook event types (based on documentation)
@@ -39,17 +39,20 @@ async function handleFrameAdded(event: FarcasterWebhookEvent, fid: number): Prom
 }
 
 /**
- * Handle frame_removed event - disable notification token
+ * Handle frame_removed event - disable all notification tokens for user
  */
 async function handleFrameRemoved(event: FarcasterWebhookEvent, fid: number): Promise<{ success: boolean; error?: string }> {
   try {
     console.log(`📱 Frame removed for FID ${fid}, disabling all tokens`)
     
-    // For frame_removed, we should disable all tokens for this FID
-    // since we don't have the specific token
-    // TODO: Implement disable all tokens for FID function
+    const result = await disableAllTokensForFid(fid)
     
-    console.log(`✅ Successfully handled frame removal for FID ${fid}`)
+    if (!result.success) {
+      console.error(`❌ Failed to disable tokens for FID ${fid}:`, result.error)
+      return { success: false, error: result.error }
+    }
+
+    console.log(`✅ Successfully disabled all tokens for FID ${fid}`)
     return { success: true }
   } catch (error: any) {
     console.error('Error handling frame_removed event:', error)
@@ -58,7 +61,7 @@ async function handleFrameRemoved(event: FarcasterWebhookEvent, fid: number): Pr
 }
 
 /**
- * Handle notifications_enabled event - enable notifications for user
+ * Handle notifications_enabled event - store new notification token
  */
 async function handleNotificationsEnabled(event: FarcasterWebhookEvent, fid: number): Promise<{ success: boolean; error?: string }> {
   try {
@@ -85,16 +88,20 @@ async function handleNotificationsEnabled(event: FarcasterWebhookEvent, fid: num
 }
 
 /**
- * Handle notifications_disabled event - disable notifications for user
+ * Handle notifications_disabled event - disable all notification tokens for user
  */
 async function handleNotificationsDisabled(event: FarcasterWebhookEvent, fid: number): Promise<{ success: boolean; error?: string }> {
   try {
     console.log(`🔕 Notifications disabled for FID ${fid}`)
     
-    // For notifications_disabled, we should disable all tokens for this FID
-    // TODO: Implement disable all tokens for FID function
+    const result = await disableAllTokensForFid(fid)
     
-    console.log(`✅ Successfully disabled notifications for FID ${fid}`)
+    if (!result.success) {
+      console.error(`❌ Failed to disable tokens for FID ${fid}:`, result.error)
+      return { success: false, error: result.error }
+    }
+
+    console.log(`✅ Successfully disabled all tokens for FID ${fid}`)
     return { success: true }
   } catch (error: any) {
     console.error('Error handling notifications_disabled event:', error)
@@ -121,38 +128,63 @@ export async function POST(request: NextRequest) {
       bodyPreview: body.substring(0, 200) + (body.length > 200 ? '...' : '')
     })
 
-    // Parse the webhook event
     let parsedEvent: FarcasterWebhookEvent
     let fid: number
     
-    try {
-      parsedEvent = JSON.parse(body)
-      console.log('📋 Parsed webhook payload:', {
-        event: parsedEvent.event,
-        hasNotificationDetails: !!parsedEvent.notificationDetails,
-        tokenPreview: parsedEvent.notificationDetails?.token?.substring(0, 10) + '...'
-      })
-    } catch (parseError: any) {
-      console.error('❌ Failed to parse webhook JSON:', parseError.message)
-      console.log('📄 Raw body:', body)
-      return NextResponse.json(
-        { error: 'Invalid JSON payload' },
-        { status: 400 }
-      )
-    }
-
-    // For development/testing, extract FID from headers
+    // Check if this is a development/test request with manual FID header
     const fidHeader = request.headers.get('x-farcaster-fid')
+    
     if (fidHeader) {
-      fid = parseInt(fidHeader)
-      console.log(`🆔 Using FID from header: ${fid}`)
+      // Development mode - parse JSON directly and use header FID
+      console.log(`🧪 Development mode: Using FID from header: ${fidHeader}`)
+      
+      try {
+        parsedEvent = JSON.parse(body)
+        fid = parseInt(fidHeader)
+        
+        console.log('📋 Development webhook payload:', {
+          event: parsedEvent.event,
+          hasNotificationDetails: !!parsedEvent.notificationDetails,
+          tokenPreview: parsedEvent.notificationDetails?.token?.substring(0, 10) + '...'
+        })
+      } catch (parseError: any) {
+        console.error('❌ Failed to parse development webhook JSON:', parseError.message)
+        return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+      }
     } else {
-      console.error('❌ No FID available - missing x-farcaster-fid header')
-      console.log('📋 Available headers:', Object.fromEntries(request.headers.entries()))
-      return NextResponse.json(
-        { error: 'Missing FID in request headers (x-farcaster-fid required for testing)' },
-        { status: 400 }
-      )
+      // Production mode - verify signature and extract FID from signed payload
+      console.log(`🔐 Production mode: Verifying webhook signature`)
+      
+      try {
+        // Verify the webhook signature and extract the data
+        const webhookData = await parseWebhookEvent(JSON.parse(body), verifyAppKeyWithNeynar)
+        
+        console.log('✅ Webhook signature verified successfully')
+        console.log('📋 Verified webhook data:', webhookData)
+        
+        // Extract event and notification details from the verified data
+        const eventData = webhookData as any // Type assertion for now
+        
+        parsedEvent = {
+          event: eventData.event,
+          notificationDetails: eventData.notificationDetails
+        }
+        fid = eventData.fid
+        
+      } catch (verifyError: any) {
+        console.error('❌ Webhook signature verification failed:', verifyError.message)
+        console.log('📄 Raw body for debugging:', body)
+        
+        // For debugging, let's see what the error details are
+        if (verifyError.name) {
+          console.log('🔍 Error type:', verifyError.name)
+        }
+        
+        return NextResponse.json(
+          { error: 'Webhook signature verification failed', details: verifyError.message },
+          { status: 401 }
+        )
+      }
     }
 
     // Validate event structure
@@ -235,7 +267,7 @@ export async function GET(request: NextRequest) {
     status: 'active',
     timestamp,
     endpoint: '/api/webhook',
-    format: 'Real Farcaster webhook format (development mode - no signature verification)',
+    format: 'Real Farcaster webhook format with signature verification',
     lastCheck: timestamp
   })
 } 
