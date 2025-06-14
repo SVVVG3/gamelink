@@ -187,7 +187,8 @@ export async function POST(request: NextRequest) {
             .insert([{
               chat_id: chat.id,
               user_id: profile.id,
-              role: 'admin',
+              fid: profile.fid,
+              is_admin: true,
               joined_at: new Date().toISOString()
             }])
 

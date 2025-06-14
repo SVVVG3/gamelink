@@ -131,6 +131,200 @@ The app integrates with Farcaster for social features and uses Supabase for data
 3. **Social Sharing**: Seamless integration with Farcaster for content sharing
 4. **Performance**: Optimizing real-time features and data loading
 
+## 🔍 **Planner Analysis: Functionality Gaps & UX Improvements**
+
+*Based on comprehensive codebase analysis and user experience evaluation*
+
+### **🚨 Critical Functionality Gaps**
+
+#### **1. Event Lifecycle Management**
+- **Issue**: Events have status field (`draft`, `upcoming`, `live`, `completed`, `cancelled`) but no automated status transitions
+- **Impact**: Events remain "upcoming" forever, no way to mark events as live or completed
+- **Solution**: 
+  - Add "Start Event" button for organizers when event time arrives
+  - Auto-transition to "completed" after event end time
+  - Add manual status controls for organizers
+  - Event history and results tracking
+
+#### **2. Real-time Event Updates**
+- **Issue**: No live updates during events (scores, status changes, participant updates)
+- **Impact**: Poor experience during tournaments and competitive events
+- **Solution**:
+  - Real-time event dashboard for organizers
+  - Live score updates and leaderboards
+  - Participant status tracking (attended, no-show)
+  - Real-time notifications for event changes
+
+#### **3. Advanced Event Features**
+- **Issue**: Missing tournament brackets, scoring systems, and competitive features
+- **Impact**: Limited appeal for serious gaming communities
+- **Solution**:
+  - Tournament bracket generation and management
+  - Scoring and ranking systems
+  - Prize/reward tracking
+  - Match scheduling within events
+
+#### **4. Content Discovery & Search**
+- **Issue**: No search functionality across events, groups, or users
+- **Impact**: Users can't find relevant content or people
+- **Solution**:
+  - Global search with filters (events, groups, users, games)
+  - Advanced filtering by game, skill level, time, location
+  - Trending events and popular groups
+  - Personalized recommendations
+
+#### **5. User Onboarding & Profile Completion**
+- **Issue**: No guided onboarding flow for new users
+- **Impact**: Users may not understand features or complete their profiles
+- **Solution**:
+  - Step-by-step onboarding wizard
+  - Profile completion prompts
+  - Feature discovery tooltips
+  - Achievement system for engagement
+
+### **🎨 User Experience Improvements**
+
+#### **1. Mobile Responsiveness & Performance**
+- **Current State**: Basic responsive design but not optimized for mobile gaming
+- **Improvements**:
+  - Touch-optimized controls and gestures
+  - Offline capability for viewing events/messages
+  - Push notification integration
+  - Mobile-first navigation patterns
+
+#### **2. Notification System Enhancement**
+- **Current State**: Basic notification preferences (4 types)
+- **Improvements**:
+  - Granular notification controls (per-group, per-event)
+  - Notification scheduling (quiet hours)
+  - In-app notification center with history
+  - Smart notification batching to reduce spam
+
+#### **3. Chat Experience Improvements**
+- **Current State**: Basic messaging with real-time updates
+- **Improvements**:
+  - Message reactions and emoji support
+  - File/image sharing capabilities
+  - Voice message support
+  - Message threading for organized discussions
+  - Chat moderation tools for admins
+
+#### **4. Social Features Enhancement**
+- **Current State**: Basic mutual followers integration
+- **Improvements**:
+  - Friend requests and friend lists
+  - User blocking and reporting
+  - Activity feeds showing friend activities
+  - Social proof (mutual friends in groups/events)
+
+### **🔧 Technical Debt & Architecture Improvements**
+
+#### **1. Error Handling & User Feedback**
+- **Issue**: Inconsistent error states and loading indicators
+- **Solution**:
+  - Standardized error boundary components
+  - Consistent loading states across all interfaces
+  - Toast notification system for feedback
+  - Retry mechanisms for failed operations
+
+#### **2. Performance Optimization**
+- **Issue**: No caching strategy, potential for slow loading
+- **Solution**:
+  - Implement React Query for data caching
+  - Image optimization and lazy loading
+  - Database query optimization
+  - CDN integration for static assets
+
+#### **3. Accessibility & Internationalization**
+- **Issue**: No accessibility features or multi-language support
+- **Solution**:
+  - ARIA labels and keyboard navigation
+  - Screen reader compatibility
+  - Multi-language support (i18n)
+  - High contrast mode and font size options
+
+### **📊 Analytics & Insights**
+
+#### **1. User Analytics**
+- **Missing**: User engagement tracking and behavior analysis
+- **Solution**:
+  - Event participation analytics
+  - User activity dashboards
+  - Popular games and trends tracking
+  - Community growth metrics
+
+#### **2. Content Moderation**
+- **Missing**: Automated content moderation and reporting
+- **Solution**:
+  - Automated spam detection
+  - User reporting system
+  - Admin moderation dashboard
+  - Community guidelines enforcement
+
+### **🎮 Gaming-Specific Features**
+
+#### **1. Game Integration**
+- **Missing**: Direct game platform integration
+- **Solution**:
+  - Steam/Discord Rich Presence integration
+  - Game achievement sharing
+  - Automatic game status detection
+  - Platform-specific friend code validation
+
+#### **2. Skill-Based Matching**
+- **Missing**: Skill-based event recommendations
+- **Solution**:
+  - Skill rating system based on participation
+  - Matchmaking algorithms for balanced events
+  - Skill progression tracking
+  - Mentorship programs for beginners
+
+### **🚀 Priority Implementation Roadmap**
+
+#### **Phase 1: Critical UX Fixes (1-2 weeks)**
+1. Event status management and lifecycle
+2. Enhanced error handling and loading states
+3. Mobile responsiveness improvements
+4. Search functionality implementation
+
+#### **Phase 2: Social & Discovery (2-3 weeks)**
+1. Advanced search and filtering
+2. Friend system and social features
+3. Notification system enhancements
+4. Content discovery algorithms
+
+#### **Phase 3: Gaming Features (3-4 weeks)**
+1. Tournament brackets and scoring
+2. Real-time event management
+3. Game platform integrations
+4. Skill-based matching system
+
+#### **Phase 4: Analytics & Moderation (2-3 weeks)**
+1. User analytics dashboard
+2. Content moderation tools
+3. Community management features
+4. Performance optimization
+
+### **💡 Innovation Opportunities**
+
+#### **1. AI-Powered Features**
+- Smart event recommendations based on gaming history
+- Automated tournament bracket optimization
+- Intelligent spam detection and moderation
+- Personalized gaming buddy matching
+
+#### **2. Web3 Integration**
+- NFT-based achievements and rewards
+- Cryptocurrency prize pools for tournaments
+- Decentralized reputation system
+- Blockchain-verified gaming credentials
+
+#### **3. Advanced Social Features**
+- Video chat integration for team coordination
+- Screen sharing for coaching sessions
+- Community-driven content creation tools
+- Influencer and content creator partnerships
+
 ## Project Status Board
 
 ### ✅ Completed Tasks
