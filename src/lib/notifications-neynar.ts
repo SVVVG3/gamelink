@@ -168,11 +168,14 @@ export async function sendEventNotification(
       target_url: `https://farcaster-gamelink.vercel.app/events/${eventId}`
     }
 
-    // Temporarily remove filters to test basic functionality
-    const result = await sendNotificationToAll(notification)
+    // Use filters for mutual follower targeting
+    const result = await sendNotificationToAll(notification, filters)
     
     if (result.success) {
-      console.log(`✅ Event notification sent for: ${eventTitle}`)
+      console.log(`✅ Event notification sent for: ${eventTitle}`, {
+        filters,
+        organizer: organizerName
+      })
     }
     
     return result
@@ -203,11 +206,14 @@ export async function sendGroupCreationNotification(
       target_url: `https://farcaster-gamelink.vercel.app/groups/${groupId}`
     }
 
-    // Temporarily remove filters to test basic functionality
-    const result = await sendNotificationToAll(notification)
+    // Use filters for mutual follower targeting
+    const result = await sendNotificationToAll(notification, filters)
     
     if (result.success) {
-      console.log(`✅ Group creation notification sent for: ${groupName}`)
+      console.log(`✅ Group creation notification sent for: ${groupName}`, {
+        filters,
+        creator: creatorName
+      })
     }
     
     return result
