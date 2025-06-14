@@ -281,133 +281,138 @@ export default function GamertagForm({ onSuccess, onCancel }: GamertagFormProps)
         )}
       </div>
 
-      {/* Add/Edit Form */}
+      {/* Add/Edit Form Modal */}
       {showForm && (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-base sm:text-lg font-medium text-white">
-              {editingGamertag ? 'Edit Gamertag' : 'Add New Gamertag'}
-            </h4>
-            <button
-              onClick={() => {
-                resetForm()
-                onCancel?.()
-              }}
-              className="text-gray-400 hover:text-gray-200 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-            >
-              ✕
-            </button>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded-md">
-              <p className="text-xs sm:text-sm text-red-300">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-            {/* Platform Selection */}
-            {!editingGamertag && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Gaming Platform
-                </label>
-                <div className="relative">
-                  <div className="flex items-center space-x-3 mb-2 p-3 bg-gray-700 border border-gray-600 rounded-md">
-                    <div className="flex items-center justify-center w-6 h-6">
-                      {PLATFORMS[selectedPlatform].icon}
-                    </div>
-                    <span className="text-white font-medium">{PLATFORMS[selectedPlatform].name}</span>
-                  </div>
-                  <select
-                    value={selectedPlatform}
-                    onChange={(e) => {
-                      setSelectedPlatform(e.target.value as Platform)
-                      setUsername('')
-                      setValidationError(null)
-                    }}
-                    className="w-full px-3 py-3 text-base bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent min-h-[44px]"
-                  >
-                    {Object.entries(PLATFORMS).map(([key, platform]) => (
-                      <option key={key} value={key} className="bg-gray-700 text-white">
-                        {platform.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-base sm:text-lg font-medium text-white">
+                  {editingGamertag ? 'Edit Gamertag' : 'Add New Gamertag'}
+                </h4>
+                <button
+                  onClick={() => {
+                    resetForm()
+                    onCancel?.()
+                  }}
+                  className="text-gray-400 hover:text-gray-200 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  ✕
+                </button>
               </div>
-            )}
 
-            {/* Username Input */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {PLATFORMS[selectedPlatform].name} Username
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => handleUsernameChange(e.target.value)}
-                placeholder={PLATFORMS[selectedPlatform].placeholder}
-                className={`w-full px-3 py-3 text-base bg-gray-700 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent min-h-[44px] text-white placeholder-gray-400 ${
-                  validationError ? 'border-red-500' : 'border-gray-600'
-                }`}
-                required
-              />
-              {validationError && (
-                <p className="mt-2 text-xs sm:text-sm text-red-400">{validationError}</p>
-              )}
-            </div>
-
-            {/* Privacy Toggle */}
-            <div className="p-4 bg-gray-700 rounded-lg border border-gray-600">
-              <label className="flex items-start space-x-3">
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
-                  className="w-5 h-5 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-offset-gray-800 mt-0.5 flex-shrink-0"
-                />
-                <div>
-                  <span className="text-sm font-medium text-gray-200 block">
-                    Make this gamertag public
-                  </span>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Public gamertags are visible to your Farcaster friends. Private gamertags are only visible to you.
-                  </p>
+              {error && (
+                <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded-md">
+                  <p className="text-xs sm:text-sm text-red-300">{error}</p>
                 </div>
-              </label>
-            </div>
+              )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
-              <button
-                type="submit"
-                disabled={isLoading || !username.trim()}
-                className="inline-flex items-center justify-center px-4 py-3 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex-1 sm:flex-initial"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {editingGamertag ? 'Updating...' : 'Adding...'}
-                  </>
-                ) : (
-                  <>
-                    {editingGamertag ? '💾 Update Gamertag' : '➕ Add Gamertag'}
-                  </>
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                {/* Platform Selection */}
+                {!editingGamertag && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Gaming Platform
+                    </label>
+                    <div className="relative">
+                      <div className="flex items-center space-x-3 mb-2 p-3 bg-gray-700 border border-gray-600 rounded-md">
+                        <div className="flex items-center justify-center w-6 h-6">
+                          {PLATFORMS[selectedPlatform].icon}
+                        </div>
+                        <span className="text-white font-medium">{PLATFORMS[selectedPlatform].name}</span>
+                      </div>
+                      <select
+                        value={selectedPlatform}
+                        onChange={(e) => {
+                          setSelectedPlatform(e.target.value as Platform)
+                          setUsername('')
+                          setValidationError(null)
+                        }}
+                        className="w-full px-3 py-3 text-base bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent min-h-[44px]"
+                      >
+                        {Object.entries(PLATFORMS).map(([key, platform]) => (
+                          <option key={key} value={key} className="bg-gray-700 text-white">
+                            {platform.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 )}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  resetForm()
-                  onCancel?.()
-                }}
-                className="inline-flex items-center justify-center px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-gray-800 min-h-[44px] flex-1 sm:flex-initial"
-              >
-                Cancel
-              </button>
+
+                {/* Username Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    {PLATFORMS[selectedPlatform].name} Username
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
+                    placeholder={PLATFORMS[selectedPlatform].placeholder}
+                    className={`w-full px-3 py-3 text-base bg-gray-700 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent min-h-[44px] text-white placeholder-gray-400 ${
+                      validationError ? 'border-red-500' : 'border-gray-600'
+                    }`}
+                    required
+                    autoFocus
+                  />
+                  {validationError && (
+                    <p className="mt-2 text-xs sm:text-sm text-red-400">{validationError}</p>
+                  )}
+                </div>
+
+                {/* Privacy Toggle */}
+                <div className="p-4 bg-gray-700 rounded-lg border border-gray-600">
+                  <label className="flex items-start space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                      className="w-5 h-5 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-offset-gray-800 mt-0.5 flex-shrink-0"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-200 block">
+                        Make this gamertag public
+                      </span>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Public gamertags are visible to your Farcaster friends. Private gamertags are only visible to you.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+                  <button
+                    type="submit"
+                    disabled={isLoading || !username.trim()}
+                    className="inline-flex items-center justify-center px-4 py-3 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex-1 sm:flex-initial"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        {editingGamertag ? 'Updating...' : 'Adding...'}
+                      </>
+                    ) : (
+                      <>
+                        {editingGamertag ? '💾 Update Gamertag' : '➕ Add Gamertag'}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetForm()
+                      onCancel?.()
+                    }}
+                    className="inline-flex items-center justify-center px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-gray-800 min-h-[44px] flex-1 sm:flex-initial"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       )}
     </div>
