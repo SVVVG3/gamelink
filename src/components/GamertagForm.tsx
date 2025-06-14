@@ -71,9 +71,9 @@ const PLATFORMS: Record<Platform, {
   Discord: {
     name: 'Discord',
     icon: <SiDiscord className="w-5 h-5 text-indigo-500" />,
-    placeholder: 'e.g., svvvg3#1234',
-    validation: /^.{2,32}#\d{4}$/,
-    errorMessage: 'Format: username#1234 (2-32 characters + #discriminator)'
+    placeholder: 'e.g., svvvg3',
+    validation: /^[a-z0-9._]{2,32}$/,
+    errorMessage: '2-32 characters (lowercase letters, numbers, periods, underscores)'
   },
   Riot: {
     name: 'Riot Games',
