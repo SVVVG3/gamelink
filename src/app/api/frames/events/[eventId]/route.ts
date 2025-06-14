@@ -55,19 +55,11 @@ export async function POST(
     if (profileError || !userProfile) {
       // If profile doesn't exist, we can't proceed with RSVP
       // Return a frame that prompts them to sign up first
-      return NextResponse.json({
-        type: 'frame',
-        data: {
-          version: 'next',
-          image: generateEventImage(event, 'signup_required'),
-          buttons: [
-            {
-              label: '🎮 Sign Up for GameLink',
-              action: 'link',
-              target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/auth/login`
-            }
-          ]
-        }
+      const frameHtml = generateFrameHtml(event, 'signup_required', eventId)
+      return new Response(frameHtml, {
+        headers: {
+          'Content-Type': 'text/html',
+        },
       })
     }
 
@@ -99,23 +91,11 @@ export async function POST(
           )
         }
 
-        return NextResponse.json({
-          type: 'frame',
-          data: {
-            version: 'next',
-            image: generateEventImage(event, 'left'),
-            buttons: [
-              {
-                label: '🎮 Join Event',
-                action: 'post'
-              },
-              {
-                label: '📅 View Details',
-                action: 'link',
-                target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/events/${eventId}`
-              }
-            ]
-          }
+        const frameHtml = generateFrameHtml(event, 'left', eventId)
+        return new Response(frameHtml, {
+          headers: {
+            'Content-Type': 'text/html',
+          },
         })
       } else {
         // User is not participating - add them
@@ -136,23 +116,11 @@ export async function POST(
         }
 
         const status = event.require_approval ? 'pending' : 'joined'
-        return NextResponse.json({
-          type: 'frame',
-          data: {
-            version: 'next',
-            image: generateEventImage(event, status),
-            buttons: [
-              {
-                label: '❌ Leave Event',
-                action: 'post'
-              },
-              {
-                label: '📅 View Details',
-                action: 'link',
-                target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/events/${eventId}`
-              }
-            ]
-          }
+        const frameHtml = generateFrameHtml(event, status, eventId)
+        return new Response(frameHtml, {
+          headers: {
+            'Content-Type': 'text/html',
+          },
         })
       }
     } else if (buttonIndex === 2) {
@@ -163,23 +131,12 @@ export async function POST(
     }
 
     // Default response - show event details
-    return NextResponse.json({
-      type: 'frame',
-      data: {
-        version: 'next',
-        image: generateEventImage(event, existingParticipation ? 'participating' : 'not_participating'),
-        buttons: [
-          {
-            label: existingParticipation ? '❌ Leave Event' : '🎮 Join Event',
-            action: 'post'
-          },
-          {
-            label: '📅 View Details',
-            action: 'link',
-            target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/events/${eventId}`
-          }
-        ]
-      }
+    const status = existingParticipation ? 'participating' : 'not_participating'
+    const frameHtml = generateFrameHtml(event, status, eventId)
+    return new Response(frameHtml, {
+      headers: {
+        'Content-Type': 'text/html',
+      },
     })
 
   } catch (error) {
@@ -222,24 +179,12 @@ export async function GET(
       )
     }
 
-    // Return initial frame
-    return NextResponse.json({
-      type: 'frame',
-      data: {
-        version: 'next',
-        image: generateEventImage(event, 'initial'),
-        buttons: [
-          {
-            label: '🎮 Join Event',
-            action: 'post'
-          },
-          {
-            label: '📅 View Details',
-            action: 'link',
-            target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/events/${eventId}`
-          }
-        ]
-      }
+    // Return initial frame as HTML with meta tags
+    const frameHtml = generateFrameHtml(event, 'initial', eventId)
+    return new Response(frameHtml, {
+      headers: {
+        'Content-Type': 'text/html',
+      },
     })
 
   } catch (error) {
@@ -253,7 +198,6 @@ export async function GET(
 
 function generateEventImage(event: any, status: string): string {
   // Generate a dynamic image URL for the event frame
-  // This would typically use a service like Vercel OG or a custom image generation endpoint
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'
   
   const params = new URLSearchParams({
@@ -265,4 +209,61 @@ function generateEventImage(event: any, status: string): string {
   })
   
   return `${baseUrl}/api/og/event?${params.toString()}`
+}
+
+function generateFrameHtml(event: any, status: string, eventId: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'
+  const imageUrl = generateEventImage(event, status)
+  const frameUrl = `${baseUrl}/api/frames/events/${eventId}`
+  
+  // Determine button configuration based on status
+  let button1Content = '🎮 Join Event'
+  let button1Action = 'post'
+  let button1Target = ''
+  
+  if (status === 'signup_required') {
+    button1Content = '🎮 Sign Up for GameLink'
+    button1Action = 'link'
+    button1Target = `${baseUrl}/auth/login`
+  } else if (status === 'joined' || status === 'participating') {
+    button1Content = '❌ Leave Event'
+  } else if (status === 'left') {
+    button1Content = '🎮 Join Event'
+  }
+  
+  const button1Meta = button1Action === 'link' 
+    ? `<meta property="fc:frame:button:1:action" content="link" />
+  <meta property="fc:frame:button:1:target" content="${button1Target}" />`
+    : ''
+  
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${event.title} - GameLink Event</title>
+  
+  <!-- Frame metadata -->
+  <meta property="fc:frame" content="vNext" />
+  <meta property="fc:frame:image" content="${imageUrl}" />
+  <meta property="fc:frame:post_url" content="${frameUrl}" />
+  <meta property="fc:frame:button:1" content="${button1Content}" />
+  ${button1Meta}
+  <meta property="fc:frame:button:2" content="📅 View Details" />
+  <meta property="fc:frame:button:2:action" content="link" />
+  <meta property="fc:frame:button:2:target" content="${baseUrl}/events/${eventId}" />
+  
+  <!-- Open Graph metadata -->
+  <meta property="og:title" content="${event.title}" />
+  <meta property="og:description" content="Join this gaming event on GameLink!" />
+  <meta property="og:image" content="${imageUrl}" />
+  <meta property="og:url" content="${baseUrl}/events/${eventId}" />
+</head>
+<body>
+  <h1>${event.title}</h1>
+  <p>Game: ${event.game}</p>
+  <p>Join this event on GameLink!</p>
+  <a href="${baseUrl}/events/${eventId}">View Event Details</a>
+</body>
+</html>`
 } 

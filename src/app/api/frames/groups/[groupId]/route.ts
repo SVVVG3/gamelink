@@ -54,19 +54,11 @@ export async function POST(
 
     if (profileError || !userProfile) {
       // If profile doesn't exist, return a frame that prompts them to sign up first
-      return NextResponse.json({
-        type: 'frame',
-        data: {
-          version: 'next',
-          image: generateGroupImage(group, 'signup_required'),
-          buttons: [
-            {
-              label: '🎮 Sign Up for GameLink',
-              action: 'link',
-              target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/auth/login`
-            }
-          ]
-        }
+      const frameHtml = generateGroupFrameHtml(group, 'signup_required', groupId)
+      return new Response(frameHtml, {
+        headers: {
+          'Content-Type': 'text/html',
+        },
       })
     }
 
@@ -86,23 +78,11 @@ export async function POST(
       if (existingMembership) {
         // User is already a member - remove them (if not admin)
         if (existingMembership.role === 'admin') {
-          return NextResponse.json({
-            type: 'frame',
-            data: {
-              version: 'next',
-              image: generateGroupImage(group, 'admin_cannot_leave'),
-              buttons: [
-                {
-                  label: '👑 You\'re the Admin',
-                  action: 'post'
-                },
-                {
-                  label: '💬 View Group',
-                  action: 'link',
-                  target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/groups/${groupId}`
-                }
-              ]
-            }
+          const frameHtml = generateGroupFrameHtml(group, 'admin_cannot_leave', groupId)
+          return new Response(frameHtml, {
+            headers: {
+              'Content-Type': 'text/html',
+            },
           })
         }
 
@@ -119,23 +99,11 @@ export async function POST(
           )
         }
 
-        return NextResponse.json({
-          type: 'frame',
-          data: {
-            version: 'next',
-            image: generateGroupImage(group, 'left'),
-            buttons: [
-              {
-                label: '🎮 Join Group',
-                action: 'post'
-              },
-              {
-                label: '💬 View Group',
-                action: 'link',
-                target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/groups/${groupId}`
-              }
-            ]
-          }
+        const frameHtml = generateGroupFrameHtml(group, 'left', groupId)
+        return new Response(frameHtml, {
+          headers: {
+            'Content-Type': 'text/html',
+          },
         })
       } else {
         // User is not a member - check if group requires approval
@@ -158,23 +126,11 @@ export async function POST(
             )
           }
 
-          return NextResponse.json({
-            type: 'frame',
-            data: {
-              version: 'next',
-              image: generateGroupImage(group, 'request_sent'),
-              buttons: [
-                {
-                  label: '⏳ Request Sent',
-                  action: 'post'
-                },
-                {
-                  label: '💬 View Group',
-                  action: 'link',
-                  target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/groups/${groupId}`
-                }
-              ]
-            }
+          const frameHtml = generateGroupFrameHtml(group, 'request_sent', groupId)
+          return new Response(frameHtml, {
+            headers: {
+              'Content-Type': 'text/html',
+            },
           })
         } else {
           // Join directly
@@ -194,23 +150,11 @@ export async function POST(
             )
           }
 
-          return NextResponse.json({
-            type: 'frame',
-            data: {
-              version: 'next',
-              image: generateGroupImage(group, 'joined'),
-              buttons: [
-                {
-                  label: '❌ Leave Group',
-                  action: 'post'
-                },
-                {
-                  label: '💬 View Group',
-                  action: 'link',
-                  target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/groups/${groupId}`
-                }
-              ]
-            }
+          const frameHtml = generateGroupFrameHtml(group, 'joined', groupId)
+          return new Response(frameHtml, {
+            headers: {
+              'Content-Type': 'text/html',
+            },
           })
         }
       }
@@ -222,23 +166,12 @@ export async function POST(
     }
 
     // Default response - show group details
-    return NextResponse.json({
-      type: 'frame',
-      data: {
-        version: 'next',
-        image: generateGroupImage(group, existingMembership ? 'member' : 'not_member'),
-        buttons: [
-          {
-            label: existingMembership ? '❌ Leave Group' : '🎮 Join Group',
-            action: 'post'
-          },
-          {
-            label: '💬 View Group',
-            action: 'link',
-            target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/groups/${groupId}`
-          }
-        ]
-      }
+    const status = existingMembership ? 'member' : 'not_member'
+    const frameHtml = generateGroupFrameHtml(group, status, groupId)
+    return new Response(frameHtml, {
+      headers: {
+        'Content-Type': 'text/html',
+      },
     })
 
   } catch (error) {
@@ -281,24 +214,12 @@ export async function GET(
       )
     }
 
-    // Return initial frame
-    return NextResponse.json({
-      type: 'frame',
-      data: {
-        version: 'next',
-        image: generateGroupImage(group, 'initial'),
-        buttons: [
-          {
-            label: '🎮 Join Group',
-            action: 'post'
-          },
-          {
-            label: '💬 View Group',
-            action: 'link',
-            target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'}/groups/${groupId}`
-          }
-        ]
-      }
+    // Return initial frame as HTML with meta tags
+    const frameHtml = generateGroupFrameHtml(group, 'initial', groupId)
+    return new Response(frameHtml, {
+      headers: {
+        'Content-Type': 'text/html',
+      },
     })
 
   } catch (error) {
@@ -323,4 +244,65 @@ function generateGroupImage(group: any, status: string): string {
   })
   
   return `${baseUrl}/api/og/group?${params.toString()}`
+}
+
+function generateGroupFrameHtml(group: any, status: string, groupId: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'
+  const imageUrl = generateGroupImage(group, status)
+  const frameUrl = `${baseUrl}/api/frames/groups/${groupId}`
+  
+  // Determine button configuration based on status
+  let button1Content = '🎮 Join Group'
+  let button1Action = 'post'
+  let button1Target = ''
+  
+  if (status === 'signup_required') {
+    button1Content = '🎮 Sign Up for GameLink'
+    button1Action = 'link'
+    button1Target = `${baseUrl}/auth/login`
+  } else if (status === 'joined' || status === 'member') {
+    button1Content = '❌ Leave Group'
+  } else if (status === 'left') {
+    button1Content = '🎮 Join Group'
+  } else if (status === 'request_sent') {
+    button1Content = '⏳ Request Sent'
+  } else if (status === 'admin_cannot_leave') {
+    button1Content = '👑 You\'re the Admin'
+  }
+  
+  const button1Meta = button1Action === 'link' 
+    ? `<meta property="fc:frame:button:1:action" content="link" />
+  <meta property="fc:frame:button:1:target" content="${button1Target}" />`
+    : ''
+  
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${group.name} - GameLink Group</title>
+  
+  <!-- Frame metadata -->
+  <meta property="fc:frame" content="vNext" />
+  <meta property="fc:frame:image" content="${imageUrl}" />
+  <meta property="fc:frame:post_url" content="${frameUrl}" />
+  <meta property="fc:frame:button:1" content="${button1Content}" />
+  ${button1Meta}
+  <meta property="fc:frame:button:2" content="💬 View Group" />
+  <meta property="fc:frame:button:2:action" content="link" />
+  <meta property="fc:frame:button:2:target" content="${baseUrl}/groups/${groupId}" />
+  
+  <!-- Open Graph metadata -->
+  <meta property="og:title" content="${group.name}" />
+  <meta property="og:description" content="Join this gaming group on GameLink!" />
+  <meta property="og:image" content="${imageUrl}" />
+  <meta property="og:url" content="${baseUrl}/groups/${groupId}" />
+</head>
+<body>
+  <h1>${group.name}</h1>
+  <p>${group.description || 'Join our gaming community!'}</p>
+  <p>Members: ${group.member_count || 0}</p>
+  <a href="${baseUrl}/groups/${groupId}">View Group Details</a>
+</body>
+</html>`
 } 
