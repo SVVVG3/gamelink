@@ -163,7 +163,7 @@ export async function sendEventNotification(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const notification: NotificationPayload = {
-      title: `🎮 New Event: ${eventTitle.substring(0, 30)}${eventTitle.length > 30 ? '...' : ''}`,
+      title: `New Event: ${eventTitle.substring(0, 35)}${eventTitle.length > 35 ? '...' : ''}`,
       body: `${organizerName} created a new gaming event!`,
       target_url: `https://farcaster-gamelink.vercel.app/events/${eventId}`
     }
@@ -198,7 +198,7 @@ export async function sendGroupCreationNotification(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const notification: NotificationPayload = {
-      title: `👥 New Group: ${groupName.substring(0, 35)}${groupName.length > 35 ? '...' : ''}`,
+      title: `New Group: ${groupName.substring(0, 40)}${groupName.length > 40 ? '...' : ''}`,
       body: `${creatorName} created a new gaming group!`,
       target_url: `https://farcaster-gamelink.vercel.app/groups/${groupId}`
     }
@@ -232,7 +232,7 @@ export async function sendGroupInvitationNotification(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const notification: NotificationPayload = {
-      title: `🎮 Group Invite: ${groupName.substring(0, 30)}${groupName.length > 30 ? '...' : ''}`,
+      title: `Group Invite: ${groupName.substring(0, 35)}${groupName.length > 35 ? '...' : ''}`,
       body: `${inviterName} invited you to join!`,
       target_url: `https://farcaster-gamelink.vercel.app/groups/${groupId}`
     }
