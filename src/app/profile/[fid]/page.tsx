@@ -22,6 +22,7 @@ import {
   SiDiscord, 
   SiRiotgames 
 } from 'react-icons/si'
+import { useFarcasterSDK } from '@/components/FarcasterSDKProvider'
 
 interface UserProfile {
   fid: number
@@ -88,6 +89,7 @@ export default function ProfilePage() {
   const params = useParams()
   const router = useRouter()
   const { profile: currentUser } = useUser()
+  const { isSDKLoaded, isInFarcaster } = useFarcasterSDK()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCreatingChat, setIsCreatingChat] = useState(false)
@@ -184,9 +186,24 @@ export default function ProfilePage() {
     }
   }
 
-  const handleViewOnFarcaster = () => {
+  const handleViewOnFarcaster = async () => {
     if (userProfile) {
-      window.open(`https://warpcast.com/${userProfile.username}`, '_blank')
+      const farcasterUrl = `https://warpcast.com/${userProfile.username}`
+      
+      // Use Farcaster SDK if available and in Farcaster environment
+      if (isSDKLoaded && isInFarcaster) {
+        try {
+          const { sdk } = await import('@farcaster/frame-sdk')
+          await sdk.actions.openUrl(farcasterUrl)
+        } catch (error) {
+          console.error('Failed to open URL with Farcaster SDK:', error)
+          // Fallback to window.open if SDK fails
+          window.open(farcasterUrl, '_blank')
+        }
+      } else {
+        // Fallback for non-Farcaster environments
+        window.open(farcasterUrl, '_blank')
+      }
     }
   }
 
