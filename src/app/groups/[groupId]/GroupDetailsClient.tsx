@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@/hooks/useUser'
-import { getGroupById, getOrCreateGroupChat, isGroupMember, migrateGroupMembersToChats } from '@/lib/supabase/groups'
+import { getGroupById, getOrCreateGroupChat, isGroupMember, migrateGroupMembersToChats, addGroupMember } from '@/lib/supabase/groups'
 import { getChatById, type ChatWithParticipants, type MessageWithSender } from '@/lib/supabase/chats'
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaShare, FaTimes } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaShare, FaTimes, FaUserPlus } from 'react-icons/fa'
 import type { GroupWithMembers } from '@/types'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
 
 
 // Extended interface to include user profile data
@@ -43,6 +44,7 @@ export default function GroupDetailsClient({ params }: Props) {
   const [userRole, setUserRole] = useState<string | undefined>()
   const [showSettings, setShowSettings] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [isJoining, setIsJoining] = useState(false)
 
   useEffect(() => {
     const getGroupId = async () => {
@@ -236,7 +238,24 @@ export default function GroupDetailsClient({ params }: Props) {
     window.open(farcasterUrl, '_blank')
   }
 
-
+  // Join group
+  const joinGroup = async () => {
+    if (!group || !profile?.id) return
+    
+    setIsJoining(true)
+    try {
+      await addGroupMember(groupId, profile.id)
+      console.log('🔍 joinGroup: Group joined successfully')
+      
+      // Reload group data to get chat access
+      await loadGroupData()
+    } catch (error) {
+      console.error('🔍 joinGroup: Error joining group:', error)
+      setError(error instanceof Error ? error.message : 'Failed to join group')
+    } finally {
+      setIsJoining(false)
+    }
+  }
 
   // Loading state
   if (userLoading || isLoading) {
@@ -376,15 +395,44 @@ export default function GroupDetailsClient({ params }: Props) {
             </div>
           </div>
 
-          <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <FaLock className="w-5 h-5 text-yellow-400" />
-              <h3 className="text-yellow-400 font-medium">Members Only</h3>
+          {group.isPrivate ? (
+            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <FaLock className="w-5 h-5 text-yellow-400" />
+                <h3 className="text-yellow-400 font-medium">Private Group</h3>
+              </div>
+              <p className="text-yellow-300 text-sm">
+                This is a private group. You need an invitation to join.
+              </p>
             </div>
-            <p className="text-yellow-300 text-sm">
-              You need to be a member of this group to view the chat and participate in discussions.
-            </p>
-          </div>
+          ) : (
+            <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-6">
+              <div className="flex items-center space-x-2 mb-3">
+                <FaUsers className="w-5 h-5 text-blue-400" />
+                <h3 className="text-blue-400 font-medium">Join This Group</h3>
+              </div>
+              <p className="text-blue-300 text-sm mb-4">
+                This is a public group. Click below to join and start participating in discussions!
+              </p>
+              <button
+                onClick={joinGroup}
+                disabled={isJoining}
+                className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
+              >
+                {isJoining ? (
+                  <>
+                    <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  <>
+                    <FaUserPlus className="w-4 h-4 mr-2" />
+                    Join Group
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
         
         <BottomNavigation />

@@ -325,6 +325,15 @@ export default function EventDetailsClient({ params }: Props) {
                 </div>
               </div>
             </div>
+            
+            {/* Share Button - Available to all users */}
+            <button
+              onClick={shareEventFrame}
+              className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm ml-4"
+            >
+              <FaDiscord className="w-4 h-4 mr-2" />
+              Share
+            </button>
           </div>
         </div>
       </div>
@@ -574,14 +583,6 @@ export default function EventDetailsClient({ params }: Props) {
                   >
                     <FaTrophy className="w-4 h-4 mr-2" />
                     Manage Event
-                  </button>
-                  
-                  <button 
-                    onClick={() => shareEventFrame()}
-                    className="w-full flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm"
-                  >
-                    <FaDiscord className="w-4 h-4 mr-2" />
-                    Share on Farcaster
                   </button>
                 </div>
               </div>
