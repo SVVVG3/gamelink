@@ -298,18 +298,25 @@ export async function sendFarcasterNotification(
             continue
           }
           
-          const result: FarcasterNotificationResponse = await response.json()
+          const result = await response.json()
           
-          console.log(`✅ Notification batch sent successfully`, {
-            successful: result.successfulTokens.length,
-            invalid: result.invalidTokens.length,
-            rateLimited: result.rateLimitedTokens.length
+          console.log(`✅ Notification API response:`, result)
+          
+          // Handle the response structure safely
+          const successfulTokens = result.successfulTokens || []
+          const invalidTokens = result.invalidTokens || []
+          const rateLimitedTokens = result.rateLimitedTokens || []
+          
+          console.log(`📊 Notification results:`, {
+            successful: successfulTokens.length,
+            invalid: invalidTokens.length,
+            rateLimited: rateLimitedTokens.length
           })
           
           // Disable invalid tokens
-          if (result.invalidTokens.length > 0) {
-            console.log(`🔕 Disabling ${result.invalidTokens.length} invalid tokens`)
-            for (const invalidToken of result.invalidTokens) {
+          if (invalidTokens.length > 0) {
+            console.log(`🔕 Disabling ${invalidTokens.length} invalid tokens`)
+            for (const invalidToken of invalidTokens) {
               await disableNotificationToken(invalidToken)
             }
           }
