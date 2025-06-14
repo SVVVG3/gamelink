@@ -44,7 +44,7 @@ export const metadata: Metadata = {
       version: "next",
       imageUrl: "https://farcaster-gamelink.vercel.app/gamelinkEmbed.png",
       button: {
-        title: "🎮 Open GameLink",
+        title: "🎮 Start Gaming",
         action: {
           type: "launch_frame",
           url: "https://farcaster-gamelink.vercel.app",
