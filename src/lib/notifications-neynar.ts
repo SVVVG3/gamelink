@@ -168,7 +168,8 @@ export async function sendEventNotification(
       target_url: `https://farcaster-gamelink.vercel.app/events/${eventId}`
     }
 
-    const result = await sendNotificationToAll(notification, filters)
+    // Temporarily remove filters to test basic functionality
+    const result = await sendNotificationToAll(notification)
     
     if (result.success) {
       console.log(`✅ Event notification sent for: ${eventTitle}`)
@@ -202,7 +203,8 @@ export async function sendGroupCreationNotification(
       target_url: `https://farcaster-gamelink.vercel.app/groups/${groupId}`
     }
 
-    const result = await sendNotificationToAll(notification, filters)
+    // Temporarily remove filters to test basic functionality
+    const result = await sendNotificationToAll(notification)
     
     if (result.success) {
       console.log(`✅ Group creation notification sent for: ${groupName}`)
