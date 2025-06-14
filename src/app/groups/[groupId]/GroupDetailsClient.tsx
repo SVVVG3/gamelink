@@ -78,14 +78,21 @@ export default function GroupDetailsClient({ params }: Props) {
 
   // Load group and chat data
   const loadGroupData = useCallback(async () => {
-    if (!groupId || !profile?.id) return
+    if (!groupId || !profile?.id) {
+      console.log('🔍 loadGroupData: Missing groupId or profile', { groupId, profileId: profile?.id })
+      return
+    }
     
     try {
       setError(null)
+      console.log('🔍 loadGroupData: Starting to load group', { groupId, profileId: profile.id })
       
       // Load group information
       const groupData = await getGroupById(groupId, true)
+      console.log('🔍 loadGroupData: Group data loaded', { groupData: !!groupData, groupId })
+      
       if (!groupData) {
+        console.log('🔍 loadGroupData: Group not found')
         setError('Group not found')
         return
       }
@@ -94,21 +101,34 @@ export default function GroupDetailsClient({ params }: Props) {
       
       // Check if user is a member
       const membershipCheck = await isGroupMember(groupId, profile.id)
+      console.log('🔍 loadGroupData: Membership check', { 
+        isMember: membershipCheck.isMember, 
+        role: membershipCheck.role,
+        groupId,
+        profileId: profile.id
+      })
+      
       setIsMember(membershipCheck.isMember)
       setUserRole(membershipCheck.role)
       
       // If user is not a member, don't load chat
       if (!membershipCheck.isMember) {
+        console.log('🔍 loadGroupData: User is not a member, stopping here')
         return
       }
       
       // Get or create group chat
+      console.log('🔍 loadGroupData: Getting group chat')
       const groupChatId = await getOrCreateGroupChat(groupId, profile.id)
+      console.log('🔍 loadGroupData: Group chat ID', { groupChatId })
       setChatId(groupChatId)
       
       // Load chat data
       const chatData = await getChatById(groupChatId, profile.fid!)
+      console.log('🔍 loadGroupData: Chat data loaded', { chatData: !!chatData })
+      
       if (!chatData) {
+        console.log('🔍 loadGroupData: Failed to load chat data')
         setError('Failed to load group chat')
         return
       }
@@ -131,8 +151,9 @@ export default function GroupDetailsClient({ params }: Props) {
       }
       
       setChat(chatWithProfiles)
+      console.log('🔍 loadGroupData: Successfully loaded everything')
     } catch (err) {
-      console.error('Error loading group data:', err)
+      console.error('🔍 loadGroupData: Error loading group data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load group')
     } finally {
       setIsLoading(false)

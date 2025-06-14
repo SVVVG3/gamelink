@@ -79,13 +79,28 @@ export default function MembersClient({ params }: Props) {
   }
 
   const isUserAdmin = () => {
-    if (!group || !profile?.id) return false
-    return group.createdBy === profile.id || 
-           group.members?.some(member => 
-             member.userId === profile.id && 
-             member.role === 'admin' && 
-             member.status === 'active'
-           )
+    if (!group || !profile?.id) {
+      console.log('🔍 isUserAdmin: Missing group or profile', { group: !!group, profileId: profile?.id })
+      return false
+    }
+    
+    const isCreator = group.createdBy === profile.id
+    const isAdmin = group.members?.some(member => 
+      member.userId === profile.id && 
+      member.role === 'admin' && 
+      member.status === 'active'
+    )
+    
+    console.log('🔍 isUserAdmin check:', {
+      groupCreatedBy: group.createdBy,
+      profileId: profile.id,
+      isCreator,
+      isAdmin,
+      result: isCreator || isAdmin,
+      members: group.members?.map(m => ({ userId: m.userId, role: m.role, status: m.status }))
+    })
+    
+    return isCreator || isAdmin
   }
 
   const handleInviteMembers = async () => {
@@ -255,6 +270,13 @@ export default function MembersClient({ params }: Props) {
         <div className="mt-4">
           <h2 className="text-lg font-medium text-white">{group.name}</h2>
           <p className="text-gray-400 text-sm">{group.memberCount} members</p>
+        </div>
+        
+        {/* Debug Section - Remove after fixing */}
+        <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg">
+          <p className="text-yellow-300 text-xs font-mono">
+            DEBUG: Admin={isUserAdmin() ? 'YES' : 'NO'} | Creator={group.createdBy === profile?.id ? 'YES' : 'NO'} | ProfileID={profile?.id?.slice(0,8)}...
+          </p>
         </div>
       </div>
 
