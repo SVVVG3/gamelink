@@ -387,4 +387,75 @@ export async function sendMessageNotification(
     console.error('❌ Error in sendMessageNotification:', error)
     return { success: false, error: error.message }
   }
+}
+
+/**
+ * Send a message notification by message ID (wrapper for compatibility)
+ */
+export async function sendMessageNotificationById(
+  messageId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log(`📱 Looking up message details for ID: ${messageId}`)
+    
+    const supabase = getSupabaseClient()
+    
+    // Get message details
+    const { data: message, error: messageError } = await supabase
+      .from('messages')
+      .select(`
+        id,
+        chat_id,
+        sender_fid,
+        content,
+        created_at
+      `)
+      .eq('id', messageId)
+      .single()
+    
+    if (messageError || !message) {
+      console.error('❌ Error fetching message:', messageError)
+      return { success: false, error: 'Message not found' }
+    }
+    
+    // Get chat participants (recipients)
+    const { data: participants, error: participantsError } = await supabase
+      .from('chat_participants')
+      .select('user_fid')
+      .eq('chat_id', message.chat_id)
+      .neq('user_fid', message.sender_fid) // Exclude sender
+    
+    if (participantsError) {
+      console.error('❌ Error fetching chat participants:', participantsError)
+      return { success: false, error: 'Failed to get chat participants' }
+    }
+    
+    if (!participants || participants.length === 0) {
+      console.log('⚠️ No recipients found for message notification')
+      return { success: true }
+    }
+    
+    const recipientFids = participants.map(p => p.user_fid)
+    
+    // Get sender name (you might want to fetch from profiles table)
+    const senderName = `User ${message.sender_fid}` // Simplified for now
+    
+    // Create message preview (first 50 characters)
+    const messagePreview = message.content.length > 50 
+      ? message.content.substring(0, 50) + '...'
+      : message.content
+    
+    console.log(`📤 Sending notification to ${recipientFids.length} recipients`)
+    
+    return await sendMessageNotification(
+      recipientFids,
+      senderName,
+      messagePreview,
+      message.chat_id
+    )
+    
+  } catch (error: any) {
+    console.error('❌ Error in sendMessageNotificationById:', error)
+    return { success: false, error: error.message }
+  }
 } 

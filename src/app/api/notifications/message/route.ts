@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendMessageNotification } from '@/lib/notifications'
+import { sendMessageNotificationById } from '@/lib/supabase/notifications'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`📱 Processing message notification for ID: ${messageId}`)
     
-    const result = await sendMessageNotification(messageId)
+    const result = await sendMessageNotificationById(messageId)
     
     if (result.success) {
       return NextResponse.json(
