@@ -11,7 +11,7 @@
     "splashImageUrl": "https://farcaster-gamelink.vercel.app/gamelinkSplashImage.png",
     "splashBackgroundColor": "#000000",
     "homeUrl": "https://farcaster-gamelink.vercel.app",
-    "webhookUrl": "https://farcaster-gamelink.vercel.app/api/webhook",
+    "webhookUrl": "https://farcaster-gamelink.vercel.app/api/webhook/farcaster",
     "imageUrl": "https://farcaster-gamelink.vercel.app/gamelinkEmbed.png",
     "buttonTitle": "🎮 Start Gaming",
     "subtitle": "Connect and Game Together",

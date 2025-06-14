@@ -418,4 +418,87 @@ export async function getUserMutuals() {
     console.error('Error fetching user mutuals:', error)
     return []
   }
+}
+
+/**
+ * Send Farcaster notification via Neynar API
+ * This is a wrapper around the notification service for backward compatibility
+ */
+export async function sendFarcasterNotification(
+  targetFids: number[],
+  title: string,
+  body: string,
+  targetUrl: string,
+  filters?: { following_fid?: number; minimum_user_score?: number }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = getNeynarClient()
+    
+    console.log(`📱 Sending Farcaster notification to ${targetFids.length} users:`, {
+      title,
+      targetFids: targetFids.slice(0, 5), // Log first 5 FIDs
+      hasFilters: !!filters
+    })
+
+    const response = await client.publishFrameNotifications({
+      targetFids,
+      notification: {
+        title,
+        body,
+        target_url: targetUrl
+      },
+      ...(filters && { filters })
+    })
+
+    console.log('✅ Farcaster notification sent successfully:', response)
+    return { success: true }
+  } catch (error: any) {
+    console.error('❌ Error sending Farcaster notification:', error)
+    return { 
+      success: false, 
+      error: error?.message || 'Failed to send notification' 
+    }
+  }
+}
+
+/**
+ * Send notification to all users with optional filters (for mutual followers)
+ */
+export async function sendNotificationToMutuals(
+  creatorFid: number,
+  title: string,
+  body: string,
+  targetUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = getNeynarClient()
+    
+    console.log(`📱 Sending notification to mutuals of FID ${creatorFid}:`, {
+      title,
+      creatorFid
+    })
+
+    // Use Neynar's filtering to target only mutual followers
+    const response = await client.publishFrameNotifications({
+      targetFids: [], // Empty array means all users with notifications enabled
+      notification: {
+        title,
+        body,
+        target_url: targetUrl
+      },
+      filters: {
+        following_fid: creatorFid, // Only users who follow the creator
+        minimum_user_score: 0.1 // Active users only
+      }
+    })
+
+    console.log('✅ Notification sent to mutuals successfully:', response)
+    return { success: true }
+  } catch (error: any) {
+    console.error('❌ Error sending notification to mutuals:', error)
+    return { 
+      success: false, 
+      error: error?.message || 'Failed to send notification to mutuals' 
+    }
+  }
 } 
