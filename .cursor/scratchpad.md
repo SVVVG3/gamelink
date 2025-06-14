@@ -78,6 +78,26 @@ The app integrates with Farcaster for social features and uses Supabase for data
 
 ### ✅ Recently Completed (Latest Session)
 
+#### **💬 Event Chat UX Improvements - COMPLETED** ✅
+- **Issues Addressed**: 
+  1. ✅ **Visual Distinction**: Removed "- Event Chat" suffix from titles, added orange "Event" label instead of blue "Group"
+  2. ✅ **Share Functionality**: Share button now shares the event (not chat) for event chats using proper event URLs
+  3. ✅ **Settings Integration**: Settings button redirects to event page for event chats, group settings for regular groups
+  4. ✅ **Leave Chat**: Added leave chat functionality for all users with proper API endpoint
+  5. ✅ **Admin Menu**: Updated admin menu with context-aware labels and leave option for everyone
+- **Technical Implementation**:
+  - Added event detection logic using chat name suffix pattern
+  - Created `shareEventFrame()` function for event-specific sharing
+  - Enhanced admin menu with conditional options based on chat type
+  - Implemented `/api/chats/[chatId]/leave` endpoint for leaving chats
+  - Added proper event data fetching via `/api/events?chatId=` parameter
+- **Files Modified**: 
+  - `src/app/messages/page.tsx` - Event chat visual distinction and labeling
+  - `src/app/messages/[chatId]/page.tsx` - Share/settings functionality and leave chat
+  - `src/app/api/events/route.ts` - Added chatId filtering support
+  - `src/app/api/chats/[chatId]/leave/route.ts` - Leave chat API endpoint
+- **Result**: Event chats now have proper visual distinction, functional share/settings buttons, and complete chat management capabilities
+
 #### **💬 Event Chat Functionality Implementation**
 - **Issue**: Events had no communication channel for participants to coordinate before/during events
 - **Solution**: 
@@ -126,10 +146,11 @@ The app integrates with Farcaster for social features and uses Supabase for data
 - **Database Schema**: Added proper foreign key relationships and RLS policies for event chats
 
 ### 🎯 **Current Focus Areas**
-1. **User Experience Optimization**: Ensuring consistent navigation and functionality across all interfaces
-2. **Admin Tools**: Comprehensive group and event management capabilities
-3. **Social Sharing**: Seamless integration with Farcaster for content sharing
-4. **Performance**: Optimizing real-time features and data loading
+1. **Event Lifecycle Management**: Adding automated status transitions and real-time event controls
+2. **Content Discovery**: Implementing search functionality across events, groups, and users  
+3. **Advanced Event Features**: Tournament brackets, scoring systems, and competitive features
+4. **Mobile Experience**: Touch-optimized controls and offline capabilities
+5. **Performance**: Optimizing real-time features and data loading
 
 ## 🔍 **Planner Analysis: Functionality Gaps & UX Improvements**
 
@@ -393,24 +414,11 @@ The app integrates with Farcaster for social features and uses Supabase for data
 
 ## 🔍 **Current Issues to Address**
 
-### **🎯 Event Chat UX Improvements (High Priority)**
+### **🎯 Event Chat UX Improvements (High Priority)** - ✅ **COMPLETED**
 
-#### **1. Chat Management Features - CRITICAL**
-- **Issue**: No way for users to leave event chats or for admins to delete chats
-- **Impact**: Users stuck in chats they don't want to be in, no cleanup mechanism
-- **Solution**: Add leave chat functionality and admin delete options
-
-#### **2. Event Chat Visual Distinction - MEDIUM**
-- **Issue**: Event chats show "- Event" in title and generic "Group" label
-- **Impact**: Confusing UX, hard to distinguish event chats from group chats
-- **Solution**: Remove "- Event" from title, add colored "Event" label instead of "Group"
-
-#### **3. Event Chat Actions Broken - HIGH**
-- **Issue**: Share and settings buttons don't work in event chats
-- **Impact**: Core functionality missing, poor user experience
-- **Solution**: 
-  - Share button should share the event (not the chat)
-  - Settings should work like group chat settings
-  - Need to detect event chat context and adjust behavior
+All event chat UX issues have been successfully resolved:
+- ✅ Chat management features (leave chat functionality)  
+- ✅ Event chat visual distinction (orange "Event" labels)
+- ✅ Event chat actions (share event, proper settings)
 
 ### **🚨 Most Critical Issues (Immediate Attention Needed)**

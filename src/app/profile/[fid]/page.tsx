@@ -95,8 +95,39 @@ export default function ProfilePage() {
   const [isCreatingChat, setIsCreatingChat] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copiedGamertag, setCopiedGamertag] = useState<string | null>(null)
+  const [areMutuals, setAreMutuals] = useState<boolean>(false)
+  const [isCheckingMutuals, setIsCheckingMutuals] = useState(true)
 
   const fid = params.fid ? parseInt(params.fid as string) : null
+
+  // Check if current user and profile user are mutuals
+  const checkMutualFollowers = async () => {
+    if (!currentUser?.fid || !fid || currentUser.fid === fid) {
+      setIsCheckingMutuals(false)
+      setAreMutuals(currentUser?.fid === fid) // User viewing their own profile
+      return
+    }
+
+    try {
+      setIsCheckingMutuals(true)
+      const response = await fetch(`/api/farcaster/mutual-followers?fid=${currentUser.fid}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch mutual followers')
+      }
+
+      const data = await response.json()
+      const mutualFids = data.data.map((mutual: any) => mutual.fid)
+      const isMutual = mutualFids.includes(fid)
+      
+      setAreMutuals(isMutual)
+    } catch (error) {
+      console.error('Error checking mutual followers:', error)
+      setAreMutuals(false) // Default to not mutual on error
+    } finally {
+      setIsCheckingMutuals(false)
+    }
+  }
 
   useEffect(() => {
     if (!fid || isNaN(fid)) {
@@ -150,7 +181,12 @@ export default function ProfilePage() {
     }
 
     fetchUserProfile()
-  }, [fid])
+    
+    // Check if users are mutuals (only if current user is available)
+    if (currentUser?.fid) {
+      checkMutualFollowers()
+    }
+  }, [fid, currentUser?.fid])
 
   const handleSendMessage = async () => {
     if (!currentUser?.fid) {
@@ -289,7 +325,8 @@ export default function ProfilePage() {
                     View on Farcaster
                   </button>
                   
-                  {currentUser?.fid !== userProfile.fid && (
+                  {/* Only show Send Message button if users are mutuals and not viewing own profile */}
+                  {currentUser?.fid !== userProfile.fid && areMutuals && (
                     <button
                       onClick={handleSendMessage}
                       disabled={isCreatingChat}
@@ -314,8 +351,30 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Gamertags Section */}
-        {userProfile.gamertags && userProfile.gamertags.length > 0 && (
+        {/* Non-Mutuals Message */}
+        {currentUser?.fid && currentUser.fid !== userProfile.fid && !isCheckingMutuals && !areMutuals && (
+          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6 text-center">
+            <FaUsers className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">Connect on Farcaster</h3>
+            <p className="text-gray-400 mb-4">
+              You need to be mutual followers with {userProfile.display_name || userProfile.username} to see their gaming profiles and send messages.
+            </p>
+            <p className="text-sm text-gray-500">
+              Follow each other on Farcaster to unlock these features!
+            </p>
+          </div>
+        )}
+
+        {/* Loading Mutuals Check */}
+        {isCheckingMutuals && currentUser?.fid && currentUser.fid !== userProfile.fid && (
+          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6 text-center">
+            <FaSpinner className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
+            <p className="text-gray-400">Checking mutual connection...</p>
+          </div>
+        )}
+
+        {/* Gamertags Section - Only show for mutuals or own profile */}
+        {(areMutuals || currentUser?.fid === userProfile.fid) && userProfile.gamertags && userProfile.gamertags.length > 0 && (
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center gap-2 mb-4">
               <FaGamepad className="w-5 h-5 text-purple-400" />
@@ -374,7 +433,7 @@ export default function ProfilePage() {
         )}
 
         {/* No Gamertags Message */}
-        {(!userProfile.gamertags || userProfile.gamertags.length === 0) && (
+        {(areMutuals || currentUser?.fid === userProfile.fid) && (!userProfile.gamertags || userProfile.gamertags.length === 0) && (
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 text-center">
             <FaGamepad className="w-12 h-12 text-gray-500 mx-auto mb-4" />
             <p className="text-gray-400">No gaming profiles found for this user.</p>
