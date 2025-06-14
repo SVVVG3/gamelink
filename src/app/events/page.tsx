@@ -139,18 +139,14 @@ export default function EventsPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="w-full">
           <Link 
             href="/events/new"
-            className="flex items-center justify-center px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+            className="flex items-center justify-center px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium w-full"
           >
             <FaPlus className="w-5 h-5 mr-3" />
             Create Event
           </Link>
-          <button className="flex items-center justify-center px-6 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium">
-            <FaTrophy className="w-5 h-5 mr-3" />
-            Join Tournament
-          </button>
         </div>
 
         {/* Event Categories */}
