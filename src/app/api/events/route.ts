@@ -245,28 +245,37 @@ export async function GET(request: NextRequest) {
     const game = searchParams.get('game')
     const eventType = searchParams.get('eventType')
     const status = searchParams.get('status') || 'upcoming'
+    const chatId = searchParams.get('chatId')
 
-    console.log(`🎮 API: Fetching events with status: ${status}`)
+    console.log(`🎮 API: Fetching events with status: ${status}${chatId ? `, chatId: ${chatId}` : ''}`)
 
     // Build query for events
     let query = supabase
       .from('events')
       .select('*')
-      .eq('status', status)
-      .order('start_time', { ascending: true })
-      .range(offset, offset + limit - 1)
 
-    // Add filters
-    if (game) {
-      query = query.ilike('game', `%${game}%`)
+    // If chatId is provided, filter by it (for event chat lookups)
+    if (chatId) {
+      query = query.eq('chat_id', chatId)
+    } else {
+      // Only apply other filters if not looking up by chatId
+      query = query
+        .eq('status', status)
+        .order('start_time', { ascending: true })
+        .range(offset, offset + limit - 1)
+
+      // Add filters
+      if (game) {
+        query = query.ilike('game', `%${game}%`)
+      }
+
+      if (eventType) {
+        query = query.eq('event_type', eventType)
+      }
+
+      // Only show public events for now (TODO: add user-specific filtering)
+      query = query.eq('is_private', false)
     }
-
-    if (eventType) {
-      query = query.eq('event_type', eventType)
-    }
-
-    // Only show public events for now (TODO: add user-specific filtering)
-    query = query.eq('is_private', false)
 
     const { data: events, error } = await query
 

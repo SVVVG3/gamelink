@@ -36,6 +36,8 @@ export default function ChatPage() {
   const [isGroupAdmin, setIsGroupAdmin] = useState(false)
   const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [groupData, setGroupData] = useState<any>(null)
+  const [eventData, setEventData] = useState<any>(null)
+  const [isEventChat, setIsEventChat] = useState(false)
 
   // Fetch user profiles for chat participants
   const fetchUserProfiles = async (fids: number[]) => {
@@ -95,6 +97,40 @@ export default function ChatPage() {
     window.open(farcasterUrl, '_blank')
   }
 
+  // Share event frame function
+  const shareEventFrame = async () => {
+    if (!eventData) return
+    
+    // Share the event page URL
+    const eventPageUrl = `${window.location.origin}/events/${eventData.id}`
+    const shareText = `🎮 Join my gaming event: ${eventData.title}!\n\n${eventData.description ? eventData.description + '\n\n' : ''}${eventData.game ? `Game: ${eventData.game}\n` : ''}${eventData.gamingPlatform ? `Platform: ${eventData.gamingPlatform}\n` : ''}📅 ${new Date(eventData.startTime).toLocaleDateString()}\n\n`
+    
+    // Try to use Farcaster SDK if available (Mini App context)
+    try {
+      const { sdk } = await import('@farcaster/frame-sdk')
+      
+      // Check if we're in a Mini App context by trying to get context
+      const context = await sdk.context
+      if (context && context.client) {
+        const result = await sdk.actions.composeCast({
+          text: shareText,
+          embeds: [eventPageUrl]
+        })
+        
+        if (result?.cast) {
+          console.log('Event cast shared successfully:', result.cast.hash)
+        }
+        return
+      }
+    } catch (error) {
+      console.error('Farcaster SDK not available, using web fallback:', error)
+    }
+    
+    // Fallback for standalone web app - open Warpcast
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventPageUrl)}`
+    window.open(farcasterUrl, '_blank')
+  }
+
   // Load chat data
   const loadChat = useCallback(async () => {
     if (!chatId || !profile?.fid) return
@@ -126,6 +162,25 @@ export default function ChatPage() {
       }
       
       setChat(chatWithProfiles)
+      
+      // Check if this is an event chat
+      const isEventChatCheck = chatData.name?.endsWith(' - Event Chat') || false
+      setIsEventChat(isEventChatCheck)
+      
+      // If it's an event chat, fetch event data
+      if (isEventChatCheck) {
+        try {
+          const response = await fetch(`/api/events?chatId=${chatId}`)
+          if (response.ok) {
+            const eventsData = await response.json()
+            if (eventsData.events && eventsData.events.length > 0) {
+              setEventData(eventsData.events[0])
+            }
+          }
+        } catch (eventError) {
+          console.error('Error fetching event data:', eventError)
+        }
+      }
       
       // Check if user is admin of the group (if this is a group chat)
       if (chatData.type === 'group' && (chatData as any).group_id && profile?.id) {
@@ -180,7 +235,12 @@ export default function ChatPage() {
     if (!chat) return 'Chat'
     
     if (chat.type === 'group') {
-      return chat.name || 'Group Chat'
+      let displayName = chat.name || 'Group Chat'
+      // Remove "- Event Chat" suffix for event chats
+      if (displayName.endsWith(' - Event Chat')) {
+        displayName = displayName.replace(' - Event Chat', '')
+      }
+      return displayName
     }
     
     // For direct chats, show the other participant's name
@@ -213,6 +273,8 @@ export default function ChatPage() {
   const handleManageMembers = () => {
     if (chat?.group_id) {
       router.push(`/groups/${chat.group_id}/members`)
+    } else if (isEventChat && eventData) {
+      router.push(`/events/${eventData.id}`)
     }
     setShowAdminMenu(false)
   }
@@ -220,6 +282,36 @@ export default function ChatPage() {
   const handleEditGroup = () => {
     if (chat?.group_id) {
       router.push(`/groups/${chat.group_id}/edit`)
+    } else if (isEventChat && eventData) {
+      router.push(`/events/${eventData.id}`)
+    }
+    setShowAdminMenu(false)
+  }
+
+  const handleLeaveChat = async () => {
+    if (!profile?.fid || !chatId) return
+    
+    try {
+      const response = await fetch(`/api/chats/${chatId}/leave`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userFid: profile.fid
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to leave chat')
+      }
+
+      // Redirect back to messages page
+      router.push('/messages')
+    } catch (error) {
+      console.error('Error leaving chat:', error)
+      setError(error instanceof Error ? error.message : 'Failed to leave chat')
     }
     setShowAdminMenu(false)
   }
@@ -317,15 +409,15 @@ export default function ChatPage() {
         <div className="flex items-center space-x-2">
           {chat?.type === 'group' && (
             <button
-              onClick={shareGroupFrame}
+              onClick={isEventChat ? shareEventFrame : shareGroupFrame}
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-              title="Share Group"
+              title={isEventChat ? "Share Event" : "Share Group"}
             >
               <FarcasterIcon className="w-4 h-4" />
             </button>
           )}
           
-          {chat?.type === 'group' && isGroupAdmin && (
+          {chat?.type === 'group' && (
             <div className="relative">
               <button 
                 onClick={(e) => {
@@ -339,28 +431,36 @@ export default function ChatPage() {
               
               {showAdminMenu && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-20">
+                  {isGroupAdmin && (
+                    <>
+                      <button
+                        onClick={handleManageMembers}
+                        className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 flex items-center space-x-2 rounded-t-lg transition-colors"
+                      >
+                        <FaUsers className="w-4 h-4" />
+                        <span>{isEventChat ? 'View Event' : 'Manage Members'}</span>
+                      </button>
+                      <button
+                        onClick={handleEditGroup}
+                        className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 flex items-center space-x-2 transition-colors"
+                      >
+                        <FaEdit className="w-4 h-4" />
+                        <span>{isEventChat ? 'Event Settings' : 'Edit Group Settings'}</span>
+                      </button>
+                    </>
+                  )}
                   <button
-                    onClick={handleManageMembers}
-                    className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 flex items-center space-x-2 rounded-t-lg transition-colors"
+                    onClick={handleLeaveChat}
+                    className={`w-full px-4 py-3 text-left text-red-400 hover:bg-gray-700 flex items-center space-x-2 transition-colors ${
+                      isGroupAdmin ? '' : 'rounded-t-lg'
+                    } rounded-b-lg`}
                   >
-                    <FaUsers className="w-4 h-4" />
-                    <span>Manage Members</span>
-                  </button>
-                  <button
-                    onClick={handleEditGroup}
-                    className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 flex items-center space-x-2 rounded-b-lg transition-colors"
-                  >
-                    <FaEdit className="w-4 h-4" />
-                    <span>Edit Group Settings</span>
+                    <FaArrowLeft className="w-4 h-4" />
+                    <span>Leave Chat</span>
                   </button>
                 </div>
               )}
             </div>
-          )}
-          {chat?.type === 'group' && !isGroupAdmin && (
-            <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-              <FaUsers className="w-4 h-4" />
-            </button>
           )}
         </div>
       </div>

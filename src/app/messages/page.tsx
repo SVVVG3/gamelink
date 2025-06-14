@@ -180,23 +180,23 @@ export default function MessagesPage() {
 
   // Format chat display name
   const getChatDisplayName = (chat: ChatWithUserProfiles) => {
-    if (chat.type === 'group') {
-      return chat.name || 'Group Chat'
+    if (chat.type === 'direct') {
+      // For direct chats, show the other participant's name
+      const otherParticipant = chat.participantProfiles?.find(p => p.fid !== profile?.fid)
+      return otherParticipant?.display_name || otherParticipant?.username || 'Unknown User'
+    } else {
+      // For group chats, use the chat name but remove "- Event Chat" suffix for event chats
+      let displayName = chat.name || 'Group Chat'
+      if (displayName.endsWith(' - Event Chat')) {
+        displayName = displayName.replace(' - Event Chat', '')
+      }
+      return displayName
     }
-    
-    // For direct chats, show the other participant
-    const otherParticipantProfile = chat.participantProfiles?.find(p => p.fid !== profile?.fid)
-    if (otherParticipantProfile) {
-      return otherParticipantProfile.display_name || otherParticipantProfile.username
-    }
-    
-    // Fallback to FID if profile not found
-    const otherParticipant = chat.participants.find(p => p.fid !== profile?.fid)
-    if (otherParticipant) {
-      return `User ${otherParticipant.fid}`
-    }
-    
-    return 'Direct Chat'
+  }
+
+  // Check if a chat is an event chat
+  const isEventChat = (chat: ChatWithUserProfiles) => {
+    return chat.name?.endsWith(' - Event Chat') || false
   }
 
   // Get chat avatar URL
@@ -406,8 +406,12 @@ export default function MessagesPage() {
                             )}
                             
                             {chat.type === 'group' && (
-                              <span className="text-xs bg-blue-600/20 text-blue-400 px-2 py-1 rounded">
-                                Group
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                isEventChat(chat) 
+                                  ? 'bg-orange-600/20 text-orange-400' 
+                                  : 'bg-blue-600/20 text-blue-400'
+                              }`}>
+                                {isEventChat(chat) ? 'Event' : 'Group'}
                               </span>
                             )}
                           </div>

@@ -390,3 +390,27 @@ The app integrates with Farcaster for social features and uses Supabase for data
 2. **Graceful Fallbacks**: Web fallbacks ensure functionality works in all environments
 3. **External Links**: Use `sdk.actions.openUrl()` for external navigation in mini apps
 4. **Share Content**: Rich sharing content improves user engagement and group discovery
+
+## 🔍 **Current Issues to Address**
+
+### **🎯 Event Chat UX Improvements (High Priority)**
+
+#### **1. Chat Management Features - CRITICAL**
+- **Issue**: No way for users to leave event chats or for admins to delete chats
+- **Impact**: Users stuck in chats they don't want to be in, no cleanup mechanism
+- **Solution**: Add leave chat functionality and admin delete options
+
+#### **2. Event Chat Visual Distinction - MEDIUM**
+- **Issue**: Event chats show "- Event" in title and generic "Group" label
+- **Impact**: Confusing UX, hard to distinguish event chats from group chats
+- **Solution**: Remove "- Event" from title, add colored "Event" label instead of "Group"
+
+#### **3. Event Chat Actions Broken - HIGH**
+- **Issue**: Share and settings buttons don't work in event chats
+- **Impact**: Core functionality missing, poor user experience
+- **Solution**: 
+  - Share button should share the event (not the chat)
+  - Settings should work like group chat settings
+  - Need to detect event chat context and adjust behavior
+
+### **🚨 Most Critical Issues (Immediate Attention Needed)**
