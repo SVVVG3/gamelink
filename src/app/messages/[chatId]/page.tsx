@@ -398,10 +398,20 @@ export default function ChatPage() {
             <h1 className="text-lg font-semibold text-white">
               {getChatDisplayName()}
             </h1>
-            <p className="text-sm text-gray-400 flex items-center">
-              <FaUsers className="w-3 h-3 mr-1" />
-              {getParticipantInfo()}
-            </p>
+            {chat?.type === 'group' ? (
+              <button
+                onClick={handleManageMembers}
+                className="text-sm text-gray-400 flex items-center hover:text-gray-300 transition-colors"
+              >
+                <FaUsers className="w-3 h-3 mr-1" />
+                {getParticipantInfo()}
+              </button>
+            ) : (
+              <p className="text-sm text-gray-400 flex items-center">
+                <FaUsers className="w-3 h-3 mr-1" />
+                {getParticipantInfo()}
+              </p>
+            )}
           </div>
         </div>
 

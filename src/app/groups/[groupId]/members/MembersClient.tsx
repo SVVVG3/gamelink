@@ -345,7 +345,10 @@ export default function MembersClient({ params }: Props) {
               group.members.map((member) => (
                 <div key={member.id} className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => router.push(`/profile/${member.profile.fid}`)}
+                      className="flex items-center space-x-3 hover:bg-gray-700 rounded-lg p-2 -m-2 transition-colors"
+                    >
                       <img
                         src={member.profile.pfp_url || '/default-avatar.png'}
                         alt={member.profile.display_name || member.profile.username}
@@ -357,7 +360,7 @@ export default function MembersClient({ params }: Props) {
                         </p>
                         <p className="text-gray-400 text-sm">@{member.profile.username}</p>
                       </div>
-                    </div>
+                    </button>
                     
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center space-x-1">

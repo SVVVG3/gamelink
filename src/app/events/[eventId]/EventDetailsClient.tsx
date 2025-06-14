@@ -473,7 +473,10 @@ export default function EventDetailsClient({ params }: Props) {
                 <div className="space-y-3">
                   {event.participants.map((participant) => (
                     <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                      <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => router.push(`/profile/${participant.profile.fid}`)}
+                        className="flex items-center space-x-3 hover:bg-gray-600 rounded-lg p-2 -m-2 transition-colors"
+                      >
                         <img
                           src={participant.profile.pfp_url || '/default-avatar.png'}
                           alt={participant.profile.display_name || participant.profile.username}
@@ -485,7 +488,7 @@ export default function EventDetailsClient({ params }: Props) {
                           </p>
                           <p className="text-gray-400 text-sm">@{participant.profile.username}</p>
                         </div>
-                      </div>
+                      </button>
                       <div className="flex items-center space-x-2">
                         {getRoleIcon(participant.role)}
                         <span className="text-gray-300 text-sm capitalize">
