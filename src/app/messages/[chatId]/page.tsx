@@ -211,8 +211,8 @@ export default function ChatPage() {
 
   return (
     <main className="min-h-screen bg-gray-900 flex flex-col pb-20">
-      {/* Chat Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+      {/* Fixed Chat Header */}
+      <div className="fixed top-0 left-0 right-0 z-10 bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <button
             onClick={() => router.push('/messages')}
@@ -242,23 +242,23 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 flex flex-col min-h-0">
+      {/* Messages Area - with top padding for fixed header */}
+      <div className="flex-1 flex flex-col pt-16 pb-24">
         <MessageList
           chatId={chatId}
           onNewMessage={(message) => console.log('New message received:', message)}
           className="flex-1"
         />
-        
-        {/* Message Composer */}
-        <div className="p-4 border-t border-gray-700">
-          <MessageComposer
-            chatId={chatId}
-            onMessageSent={handleMessageSent}
-            onError={handleMessageError}
-            placeholder={`Message ${getChatDisplayName()}...`}
-          />
-        </div>
+      </div>
+
+      {/* Fixed Message Composer */}
+      <div className="fixed bottom-20 left-0 right-0 z-10 p-4 bg-gray-900 border-t border-gray-700">
+        <MessageComposer
+          chatId={chatId}
+          onMessageSent={handleMessageSent}
+          onError={handleMessageError}
+          placeholder={`Message ${getChatDisplayName()}...`}
+        />
       </div>
 
       <BottomNavigation />

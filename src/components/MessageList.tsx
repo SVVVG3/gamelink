@@ -63,16 +63,10 @@ function MessageBubble({ message, isOwn, showSender, isUnread }: MessageBubblePr
             px-4 py-2 rounded-2xl relative
             ${isOwn
               ? 'bg-blue-600 text-white rounded-br-md'
-              : isUnread
-                ? 'bg-purple-600 text-white rounded-bl-md border-l-4 border-purple-400'
-                : 'bg-gray-700 text-gray-100 rounded-bl-md'
+              : 'bg-gray-700 text-gray-100 rounded-bl-md'
             }
           `}
         >
-          {/* Unread indicator */}
-          {isUnread && !isOwn && (
-            <div className="absolute -left-2 top-2 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
-          )}
           {/* Message content */}
           <div className="break-words whitespace-pre-wrap">
             {message.content}
