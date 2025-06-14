@@ -992,7 +992,10 @@ async function addGroupMembersToChat(chatId: string, groupId: string): Promise<v
     // Get all active group members
     const { data: members, error: membersError } = await supabase
       .from('group_memberships')
-      .select('user_id, profiles!group_memberships_user_id_fkey(fid)')
+      .select(`
+        user_id,
+        profiles!group_memberships_user_id_fkey(fid)
+      `)
       .eq('group_id', groupId)
       .eq('status', 'active')
 
@@ -1162,6 +1165,90 @@ export async function getProfileIdsByFids(fids: number[]): Promise<Map<number, s
     return fidToIdMap
   } catch (error) {
     console.error('Error in getProfileIdsByFids:', error)
+    throw error
+  }
+}
+
+/**
+ * Migration function: Add existing group members to group chats
+ * This fixes the issue where users who accepted invitations before the chat fix
+ * are group members but not chat participants
+ */
+export async function migrateGroupMembersToChats(groupId: string): Promise<void> {
+  try {
+    console.log('🔧 migrateGroupMembersToChats: Starting migration for group', groupId)
+    
+    // Get all active group members
+    const { data: members, error: membersError } = await supabase
+      .from('group_memberships')
+      .select(`
+        user_id,
+        profiles!group_memberships_user_id_fkey(fid)
+      `)
+      .eq('group_id', groupId)
+      .eq('status', 'active')
+
+    if (membersError) {
+      console.error('🔧 migrateGroupMembersToChats: Error fetching members:', membersError)
+      throw membersError
+    }
+
+    if (!members || members.length === 0) {
+      console.log('🔧 migrateGroupMembersToChats: No members found')
+      return
+    }
+
+    console.log('🔧 migrateGroupMembersToChats: Found', members.length, 'members')
+
+    // Get or create group chat
+    const groupChatId = await getOrCreateGroupChat(groupId, members[0].user_id)
+    console.log('🔧 migrateGroupMembersToChats: Group chat ID:', groupChatId)
+
+    // Add each member to the chat if they're not already a participant
+    for (const member of members) {
+      const profile = member.profiles as any // Type assertion to handle Supabase join
+      if (!profile?.fid) {
+        console.warn('🔧 migrateGroupMembersToChats: Member has no FID:', member.user_id)
+        continue
+      }
+
+      try {
+        // Check if user is already a chat participant
+        const { data: existingParticipant, error: checkError } = await supabase
+          .from('chat_participants')
+          .select('id')
+          .eq('chat_id', groupChatId)
+          .eq('fid', profile.fid)
+          .is('left_at', null)
+          .single()
+
+        if (existingParticipant) {
+          console.log('🔧 migrateGroupMembersToChats: User already in chat:', profile.fid)
+          continue
+        }
+
+        // Add user to chat
+        const { error: addError } = await supabase
+          .from('chat_participants')
+          .insert({
+            chat_id: groupChatId,
+            fid: profile.fid,
+            joined_at: new Date().toISOString()
+          })
+
+        if (addError) {
+          console.error('🔧 migrateGroupMembersToChats: Error adding user to chat:', addError)
+        } else {
+          console.log('🔧 migrateGroupMembersToChats: Added user to chat:', profile.fid)
+        }
+      } catch (error) {
+        console.error('🔧 migrateGroupMembersToChats: Error processing member:', error)
+      }
+    }
+
+    console.log('🔧 migrateGroupMembersToChats: Migration completed for group', groupId)
+  } catch (error) {
+    console.error('🔧 migrateGroupMembersToChats: Migration failed:', error)
     throw error
   }
 } 

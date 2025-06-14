@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@/hooks/useUser'
-import { getGroupById, getOrCreateGroupChat, isGroupMember } from '@/lib/supabase/groups'
+import { getGroupById, getOrCreateGroupChat, isGroupMember, migrateGroupMembersToChats } from '@/lib/supabase/groups'
 import { getChatById, type ChatWithParticipants, type MessageWithSender } from '@/lib/supabase/chats'
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
@@ -43,6 +43,7 @@ export default function GroupDetailsClient({ params }: Props) {
   const [userRole, setUserRole] = useState<string | undefined>()
   const [showSettings, setShowSettings] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [isMigrating, setIsMigrating] = useState(false)
 
   useEffect(() => {
     const getGroupId = async () => {
@@ -234,6 +235,41 @@ export default function GroupDetailsClient({ params }: Props) {
     // Fallback for standalone web app - open Warpcast
     const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(groupPageUrl)}`
     window.open(farcasterUrl, '_blank')
+  }
+
+  // Migrate group members to chat (for fixing existing groups)
+  const handleMigrateMembers = async () => {
+    if (!group || !profile?.id) return
+    
+    // Check if user is admin
+    const isAdmin = group.createdBy === profile.id || 
+                   group.members?.some(member => 
+                     member.userId === profile.id && 
+                     member.role === 'admin' && 
+                     member.status === 'active'
+                   )
+    
+    if (!isAdmin) {
+      alert('Only group admins can run this migration.')
+      return
+    }
+
+    if (!confirm('This will add all group members to the group chat. This is a one-time fix for groups created before the chat integration. Continue?')) {
+      return
+    }
+
+    setIsMigrating(true)
+    try {
+      await migrateGroupMembersToChats(groupId)
+      alert('Migration completed! All group members should now have access to the group chat.')
+      // Reload the page to refresh chat data
+      window.location.reload()
+    } catch (error) {
+      console.error('Migration failed:', error)
+      alert('Migration failed. Please try again or contact support.')
+    } finally {
+      setIsMigrating(false)
+    }
   }
 
   // Loading state
@@ -511,6 +547,28 @@ export default function GroupDetailsClient({ params }: Props) {
               >
                 <FaUsers className="w-4 h-4 mr-2" />
                 Manage Members
+              </button>
+              
+              {/* Migration button for fixing chat access */}
+              <button
+                onClick={() => {
+                  setShowSettings(false)
+                  handleMigrateMembers()
+                }}
+                disabled={isMigrating}
+                className="w-full flex items-center px-4 py-3 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
+              >
+                {isMigrating ? (
+                  <>
+                    <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                    Migrating...
+                  </>
+                ) : (
+                  <>
+                    <FaGamepad className="w-4 h-4 mr-2" />
+                    Fix Chat Access
+                  </>
+                )}
               </button>
               
               <button
