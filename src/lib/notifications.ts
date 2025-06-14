@@ -413,14 +413,19 @@ export async function sendGroupInvitationNotification(
       .select(`
         id,
         group_id,
-        invited_fid,
-        invited_by_fid,
+        invitee_id,
+        inviter_id,
         created_at,
         groups (
           name,
           description
         ),
-        profiles!group_invitations_invited_by_fid_fkey (
+        inviter:profiles!group_invitations_inviter_id_fkey (
+          fid,
+          username,
+          display_name
+        ),
+        invitee:profiles!group_invitations_invitee_id_fkey (
           fid,
           username,
           display_name
@@ -435,15 +440,15 @@ export async function sendGroupInvitationNotification(
     }
 
     // Check if user has group invitation notifications enabled
-    const isEnabled = await isNotificationEnabled(invitation.invited_fid, 'group_invites')
+    const isEnabled = await isNotificationEnabled(invitation.invitee.fid, 'group_invites')
     
     if (!isEnabled) {
-      console.log(`User ${invitation.invited_fid} has group invitation notifications disabled`)
+      console.log(`User ${invitation.invitee.fid} has group invitation notifications disabled`)
       return { success: true }
     }
 
     // Create notification content
-    const inviterName = invitation.profiles?.display_name || invitation.profiles?.username || `User ${invitation.invited_by_fid}`
+    const inviterName = invitation.inviter?.display_name || invitation.inviter?.username || `User ${invitation.inviter?.fid}`
     const groupName = invitation.groups?.name || 'Gaming Group'
     
     const notification = createNotificationPayload(
@@ -453,10 +458,10 @@ export async function sendGroupInvitationNotification(
     )
 
     // Send notification to invited user
-    const result = await sendNotificationToUsers([invitation.invited_fid], notification)
+    const result = await sendNotificationToUsers([invitation.invitee.fid], notification)
     
     if (result.success) {
-      console.log(`✅ Sent group invitation notification to FID ${invitation.invited_fid}`)
+      console.log(`✅ Sent group invitation notification to FID ${invitation.invitee.fid}`)
     } else {
       console.error('❌ Failed to send group invitation notification:', result.error)
     }
@@ -485,9 +490,9 @@ export async function sendEventCreationNotification(
         title,
         description,
         game,
-        organizer_fid,
+        created_by,
         created_at,
-        profiles!events_organizer_fid_fkey (
+        organizer:profiles!events_created_by_fkey (
           fid,
           username,
           display_name
@@ -502,7 +507,7 @@ export async function sendEventCreationNotification(
     }
 
     // Create notification content
-    const creatorName = event.profiles?.display_name || event.profiles?.username || `User ${event.organizer_fid}`
+    const creatorName = event.organizer?.display_name || event.organizer?.username || `User ${event.organizer?.fid}`
     
     const notification = createNotificationPayload(
       'New Gaming Event!',
@@ -512,12 +517,12 @@ export async function sendEventCreationNotification(
 
     // Send to mutual followers using Neynar filtering
     const result = await sendNotificationToAll(notification, {
-      following_fid: event.organizer_fid, // Only mutual followers
+      following_fid: event.organizer?.fid, // Only mutual followers
       minimum_user_score: 0.1 // Active users only
     })
     
     if (result.success) {
-      console.log(`✅ Sent event creation notification to mutuals of FID ${event.organizer_fid}`)
+      console.log(`✅ Sent event creation notification to mutuals of FID ${event.organizer?.fid}`)
     } else {
       console.error('❌ Failed to send event creation notification:', result.error)
     }
@@ -546,9 +551,9 @@ export async function sendGroupCreationNotification(
         name,
         description,
         is_private,
-        created_by_fid,
+        created_by,
         created_at,
-        profiles!groups_created_by_fid_fkey (
+        creator:profiles!groups_created_by_fkey (
           fid,
           username,
           display_name
@@ -569,7 +574,7 @@ export async function sendGroupCreationNotification(
     }
 
     // Create notification content
-    const creatorName = group.profiles?.display_name || group.profiles?.username || `User ${group.created_by_fid}`
+    const creatorName = group.creator?.display_name || group.creator?.username || `User ${group.creator?.fid}`
     
     const notification = createNotificationPayload(
       'New Gaming Group!',
@@ -579,12 +584,12 @@ export async function sendGroupCreationNotification(
 
     // Send to mutual followers using Neynar filtering
     const result = await sendNotificationToAll(notification, {
-      following_fid: group.created_by_fid, // Only mutual followers
+      following_fid: group.creator?.fid, // Only mutual followers
       minimum_user_score: 0.1 // Active users only
     })
     
     if (result.success) {
-      console.log(`✅ Sent group creation notification to mutuals of FID ${group.created_by_fid}`)
+      console.log(`✅ Sent group creation notification to mutuals of FID ${group.creator?.fid}`)
     } else {
       console.error('❌ Failed to send group creation notification:', result.error)
     }

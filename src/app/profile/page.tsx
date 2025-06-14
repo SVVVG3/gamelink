@@ -5,6 +5,7 @@ import { useUser } from '@/hooks/useUser'
 import { useSignIn } from '@farcaster/auth-kit'
 import GamertagForm from '@/components/GamertagForm'
 import FriendCodeDisplay from '@/components/FriendCodeDisplay'
+import NotificationSettings from '@/components/NotificationSettings'
 import BottomNavigation from '@/components/BottomNavigation'
 import { FaGamepad, FaEdit, FaSignOutAlt, FaUser, FaEye } from 'react-icons/fa'
 
@@ -143,6 +144,11 @@ export default function ProfilePage() {
             <FriendCodeDisplay showPrivate={true} />
           )}
         </div>
+
+        {/* Notification Settings */}
+        {farcasterProfile?.fid && (
+          <NotificationSettings userFid={farcasterProfile.fid} />
+        )}
 
         {/* Profile Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
