@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { FaArrowLeft, FaUsers, FaSpinner, FaCrown, FaUserShield, FaUser } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaCrown, FaUserShield, FaUser, FaSpinner, FaPlus, FaTimes, FaUserMinus } from 'react-icons/fa'
 import { useUser } from '@/hooks/useUser'
-import { getGroupById } from '@/lib/supabase/groups'
+import { getGroupById, removeGroupMember, createGroupInvitation, getProfileIdsByFids } from '@/lib/supabase/groups'
+import { useSocialData } from '@/contexts/SocialDataContext'
 import BottomNavigation from '@/components/BottomNavigation'
 import type { GroupWithMembers } from '@/types'
 
@@ -14,11 +15,16 @@ interface Props {
 
 export default function MembersClient({ params }: Props) {
   const { isAuthenticated, isLoading: userLoading, profile } = useUser()
+  const { mutualFollowers } = useSocialData()
   
   const [groupId, setGroupId] = useState<string>('')
   const [group, setGroup] = useState<GroupWithMembers | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [selectedInvitees, setSelectedInvitees] = useState<Set<number>>(new Set())
+  const [isInviting, setIsInviting] = useState(false)
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null)
 
   useEffect(() => {
     const getGroupId = async () => {
@@ -71,6 +77,92 @@ export default function MembersClient({ params }: Props) {
       default: return 'text-gray-400'
     }
   }
+
+  const isUserAdmin = () => {
+    if (!group || !profile?.id) return false
+    return group.createdBy === profile.id || 
+           group.members?.some(member => 
+             member.userId === profile.id && 
+             member.role === 'admin' && 
+             member.status === 'active'
+           )
+  }
+
+  const handleInviteMembers = async () => {
+    if (!group || !profile?.id || selectedInvitees.size === 0) return
+
+    setIsInviting(true)
+    try {
+      // Get profile IDs for all selected FIDs
+      const fidArray = Array.from(selectedInvitees)
+      const fidToIdMap = await getProfileIdsByFids(fidArray)
+      
+      const invitationPromises = fidArray.map(async (fid) => {
+        const profileId = fidToIdMap.get(fid)
+        if (!profileId) {
+          console.warn(`No profile found for FID ${fid}`)
+          return null
+        }
+        
+        try {
+          return await createGroupInvitation(
+            group.id,
+            profile.id,
+            profileId,
+            `You've been invited to join "${group.name}"!`
+          )
+        } catch (err) {
+          console.warn(`Failed to invite user ${fid}:`, err)
+          return null
+        }
+      })
+
+      await Promise.allSettled(invitationPromises)
+      
+      // Reset and close modal
+      setSelectedInvitees(new Set())
+      setShowInviteModal(false)
+      
+      // Show success message (you could add a toast here)
+      alert(`Invitations sent to ${selectedInvitees.size} users!`)
+      
+    } catch (err) {
+      console.error('Error sending invitations:', err)
+      alert('Failed to send some invitations. Please try again.')
+    } finally {
+      setIsInviting(false)
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
+    if (!group || !profile?.id) return
+    
+    if (!confirm(`Are you sure you want to remove ${memberName} from the group?`)) {
+      return
+    }
+
+    setRemovingMemberId(memberId)
+    try {
+      await removeGroupMember(group.id, memberId)
+      
+      // Reload group data to reflect changes
+      const updatedGroup = await getGroupById(groupId, true)
+      if (updatedGroup) {
+        setGroup(updatedGroup)
+      }
+      
+    } catch (err) {
+      console.error('Error removing member:', err)
+      alert('Failed to remove member. Please try again.')
+    } finally {
+      setRemovingMemberId(null)
+    }
+  }
+
+  // Get mutual followers who aren't already members
+  const availableInvitees = mutualFollowers?.filter(follower => 
+    !group?.members?.some(member => member.profile.fid === follower.fid)
+  ) || []
 
   // Loading state
   if (userLoading || isLoading) {
@@ -149,7 +241,15 @@ export default function MembersClient({ params }: Props) {
           
           <h1 className="text-xl font-bold text-white">Manage Members</h1>
           
-          <div className="w-20"></div> {/* Spacer for centering */}
+          {isUserAdmin() && (
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <FaPlus className="w-3 h-3" />
+              <span>Invite</span>
+            </button>
+          )}
         </div>
         
         <div className="mt-4">
@@ -198,6 +298,24 @@ export default function MembersClient({ params }: Props) {
                       <div className="text-xs text-gray-500">
                         Joined {new Date(member.joinedAt).toLocaleDateString()}
                       </div>
+                      
+                      {/* Remove member button (only for admins, can't remove self or other admins) */}
+                      {isUserAdmin() && 
+                       member.userId !== profile?.id && 
+                       member.role !== 'admin' && (
+                        <button
+                          onClick={() => handleRemoveMember(member.userId, member.profile.display_name || member.profile.username)}
+                          disabled={removingMemberId === member.userId}
+                          className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                          title="Remove member"
+                        >
+                          {removingMemberId === member.userId ? (
+                            <FaSpinner className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <FaUserMinus className="w-3 h-3" />
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -210,14 +328,95 @@ export default function MembersClient({ params }: Props) {
             )}
           </div>
         </div>
-        
-        {/* Future: Add member management actions here */}
-        <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-          <p className="text-blue-300 text-sm">
-            💡 Member management features (promote, demote, remove) will be added in a future update.
-          </p>
-        </div>
       </div>
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 w-full max-w-md max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">Invite Members</h3>
+                <button
+                  onClick={() => setShowInviteModal(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-4 overflow-y-auto max-h-96">
+              {availableInvitees.length > 0 ? (
+                <div className="space-y-2">
+                  {availableInvitees.map((follower) => (
+                    <div key={follower.fid} className="flex items-center space-x-3 p-2 hover:bg-gray-700 rounded-lg">
+                      <input
+                        type="checkbox"
+                        id={`invite-${follower.fid}`}
+                        checked={selectedInvitees.has(follower.fid)}
+                        onChange={(e) => {
+                          const newSelected = new Set(selectedInvitees)
+                          if (e.target.checked) {
+                            newSelected.add(follower.fid)
+                          } else {
+                            newSelected.delete(follower.fid)
+                          }
+                          setSelectedInvitees(newSelected)
+                        }}
+                        className="rounded border-gray-600 text-blue-600 focus:ring-blue-500"
+                      />
+                      <img
+                        src={follower.pfpUrl || '/default-avatar.png'}
+                        alt={follower.displayName || follower.username}
+                        className="w-8 h-8 rounded-full"
+                      />
+                      <label htmlFor={`invite-${follower.fid}`} className="flex-1 cursor-pointer">
+                        <p className="text-white text-sm font-medium">
+                          {follower.displayName || follower.username}
+                        </p>
+                        <p className="text-gray-400 text-xs">@{follower.username}</p>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FaUsers className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400">No mutual followers available to invite</p>
+                </div>
+              )}
+            </div>
+            
+            {availableInvitees.length > 0 && (
+              <div className="p-4 border-t border-gray-700">
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowInviteModal(false)}
+                    className="flex-1 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleInviteMembers}
+                    disabled={selectedInvitees.size === 0 || isInviting}
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+                  >
+                    {isInviting ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <FaSpinner className="w-4 h-4 animate-spin" />
+                        <span>Inviting...</span>
+                      </div>
+                    ) : (
+                      `Invite ${selectedInvitees.size} ${selectedInvitees.size === 1 ? 'person' : 'people'}`
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       <BottomNavigation />
     </main>
