@@ -8,7 +8,7 @@ import { getChatById, type ChatWithParticipants, type MessageWithSender } from '
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaShare } from 'react-icons/fa'
 import type { GroupWithMembers } from '@/types'
 
 // Extended interface to include user profile data
@@ -166,6 +166,19 @@ export default function GroupPage() {
       case 'expert': return { text: 'Expert', color: 'bg-red-600' }
       default: return { text: 'Any Level', color: 'bg-gray-600' }
     }
+  }
+
+  // Share group frame
+  const shareGroupFrame = () => {
+    if (!group) return
+    
+    // Create a shareable frame URL
+    const frameUrl = `${window.location.origin}/api/frames/groups/${groupId}`
+    const shareText = `🎮 Join my gaming group: ${group.name}!\n\n${group.description ? group.description + '\n\n' : ''}${group.primaryGame ? `Game: ${group.primaryGame}\n` : ''}Members: ${group.memberCount}/${group.maxMembers}\n\n`
+    
+    // Open Farcaster with the frame URL
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(frameUrl)}`
+    window.open(farcasterUrl, '_blank')
   }
 
   if (!isAuthenticated) {
@@ -360,6 +373,13 @@ export default function GroupPage() {
 
         {/* Group actions */}
         <div className="flex items-center space-x-2">
+          <button 
+            onClick={shareGroupFrame}
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            title="Share Group"
+          >
+            <FaShare className="w-4 h-4" />
+          </button>
           <button 
             onClick={() => setShowSettings(true)}
             className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"

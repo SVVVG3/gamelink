@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { Metadata } from 'next'
 import { useUser } from '@/hooks/useUser'
 import BottomNavigation from '@/components/BottomNavigation'
 import { 
@@ -117,6 +118,18 @@ export default function EventDetailsPage() {
     } finally {
       setRsvpLoading(false)
     }
+  }
+
+  const shareEventFrame = () => {
+    if (!event) return
+    
+    // Create a shareable frame URL
+    const frameUrl = `${window.location.origin}/api/frames/events/${eventId}`
+    const shareText = `🎮 Join me for ${event.title}!\n\nGame: ${event.game}\nDate: ${formatDateTime(event.startTime).date} at ${formatDateTime(event.startTime).time}\n\n`
+    
+    // Open Farcaster with the frame URL
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(frameUrl)}`
+    window.open(farcasterUrl, '_blank')
   }
 
   const formatDateTime = (dateString: string) => {
@@ -572,7 +585,10 @@ export default function EventDetailsPage() {
                     Manage Event
                   </button>
                   
-                  <button className="w-full flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm">
+                  <button 
+                    onClick={() => shareEventFrame()}
+                    className="w-full flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  >
                     <FaDiscord className="w-4 h-4 mr-2" />
                     Share on Farcaster
                   </button>

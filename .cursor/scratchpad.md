@@ -2000,19 +2000,43 @@ The human user needs to understand that our **original planning was incomplete**
   - ✅ Handle user profile sync from Farcaster context
 - **Success Criteria**: ✅ Users automatically signed in when opening in Farcaster
 
-### **Task 7.5: Create Frame Actions for Events** 🔄 **IN PROGRESS**
+### **Task 7.5: Create Frame Actions for Events** ✅ **COMPLETE**
 - **Goal**: Enable quick event actions from Farcaster feeds
 - **Actions**:
-  - 🔄 Create event frame components
-  - 🔄 Add "Join Event" frame action
-  - 🔄 Implement event sharing to Farcaster
-- **Success Criteria**: Users can join events directly from Farcaster feed
+  - ✅ Create event frame API endpoint (`/api/frames/events/[eventId]`)
+  - ✅ Add dynamic OG image generation for event frames
+  - ✅ Implement "Join Event" frame action with user state tracking
+  - ✅ Add event sharing to Farcaster with frame embeds
+  - ✅ Handle user authentication and profile creation in frames
+- **Success Criteria**: ✅ Users can join events directly from Farcaster feed
 
-**🎯 CURRENT STATUS**: ✅ **Core Mini App Integration Complete!**
+### **Task 7.6: Create Frame Actions for Groups** ✅ **COMPLETE**
+- **Goal**: Enable quick group actions from Farcaster feeds
+- **Actions**:
+  - ✅ Create group frame API endpoint (`/api/frames/groups/[groupId]`)
+  - ✅ Add dynamic OG image generation for group frames
+  - ✅ Implement "Join Group" frame action with approval handling
+  - ✅ Add group sharing to Farcaster with frame embeds
+  - ✅ Handle admin permissions and membership validation
+- **Success Criteria**: ✅ Users can join groups directly from Farcaster feed
+
+### **Task 7.7: Test Frame Actions in Farcaster Client** 🔄 **READY FOR TESTING**
+- **Goal**: Verify frame actions work properly in Farcaster environment
+- **Actions**:
+  - 🔄 Test event frame sharing and joining
+  - 🔄 Test group frame sharing and joining
+  - 🔄 Verify OG image generation
+  - 🔄 Test authentication flow in frames
+- **Success Criteria**: All frame actions work seamlessly in Farcaster
+
+**🎯 CURRENT STATUS**: ✅ **Frame Actions Implementation Complete!**
 - ✅ **SDK Installed & Configured**: Farcaster Frame SDK v0.0.63
 - ✅ **Manifest Created**: Valid `farcaster.json` with proper metadata
 - ✅ **Context Detection**: App detects Farcaster vs standalone environment
 - ✅ **Automatic Auth**: Users auto-signed when in Farcaster Mini App
-- ✅ **Deployed**: Changes pushed to production at https://farcaster-gamelink.vercel.app/
+- ✅ **Event Frame Actions**: Complete join/leave functionality with dynamic images
+- ✅ **Group Frame Actions**: Complete join/leave functionality with approval handling
+- ✅ **Share Buttons**: Added to event and group detail pages
+- ✅ **Deployed**: Changes ready to push to production
 
-**🔄 NEXT STEPS**: Complete Frame Actions for Events and Groups (Tasks 7.5-7.7)
+**🔄 NEXT STEPS**: Test Frame Actions in Farcaster client (Task 7.7) and proceed to Phase 8
