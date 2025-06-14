@@ -11,7 +11,7 @@
     "splashImageUrl": "https://farcaster-gamelink.vercel.app/gamelinkSplashImage.png",
     "splashBackgroundColor": "#000000",
     "homeUrl": "https://farcaster-gamelink.vercel.app",
-    "webhookUrl": "https://farcaster-gamelink.vercel.app/api/webhook",
+    "webhookUrl": "https://api.neynar.com/f/app/02969c1e-72e7-4849-967b-f903f23f3d8e/event",
     "imageUrl": "https://farcaster-gamelink.vercel.app/gamelinkEmbed.png",
     "buttonTitle": "🎮 Start Gaming",
     "subtitle": "Connect and Game Together",
