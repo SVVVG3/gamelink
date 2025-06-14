@@ -86,8 +86,8 @@ export async function GET(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h1>🎮 ${event.title}</h1>
             <p><strong>Game:</strong> ${event.game || 'TBD'}</p>
-            <p><strong>Date:</strong> ${new Date(event.event_date).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${new Date(event.event_date).toLocaleTimeString()}</p>
+            <p><strong>Date:</strong> ${new Date(event.start_time).toLocaleDateString()}</p>
+            <p><strong>Time:</strong> ${new Date(event.start_time).toLocaleTimeString()}</p>
             <p><strong>Organizer:</strong> ${event.profiles?.display_name || event.profiles?.username || 'Anonymous'}</p>
             ${event.description ? `<p><strong>Description:</strong> ${event.description}</p>` : ''}
             <a href="${baseUrl}/events/${eventId}" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 20px;">

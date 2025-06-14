@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: Promise<{ eventId: 
       }
     }
 
-    const eventDate = new Date(event.event_date)
+    const eventDate = new Date(event.start_time)
     const formattedDate = eventDate.toLocaleDateString('en-US', { 
       weekday: 'long', 
       year: 'numeric', 

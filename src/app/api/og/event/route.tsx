@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         
         <!-- Date -->
         <text x="600" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#718096">
-          📅 ${new Date(event.event_date).toLocaleDateString('en-US', { 
+          📅 ${new Date(event.start_time).toLocaleDateString('en-US', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         
         <!-- Time -->
         <text x="600" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#718096">
-          🕐 ${new Date(event.event_date).toLocaleTimeString('en-US', { 
+          🕐 ${new Date(event.start_time).toLocaleTimeString('en-US', { 
             hour: 'numeric', 
             minute: '2-digit',
             timeZoneName: 'short'
