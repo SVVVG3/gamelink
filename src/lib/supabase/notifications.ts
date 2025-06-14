@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
-import type { NotificationToken, NotificationPreferences } from '../notifications'
 
-// Initialize Supabase client with service role key for admin operations
+// Create server-side Supabase client with service role key
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -13,148 +12,160 @@ function getSupabaseClient() {
   return createClient(url, key)
 }
 
+// Types for notification system
+export interface NotificationToken {
+  id: string
+  fid: number
+  token: string
+  url: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface NotificationPreferences {
+  fid: number
+  messages: boolean
+  group_invites: boolean
+  events: boolean
+  groups: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Real Farcaster notification payload structure
+interface FarcasterNotificationPayload {
+  notificationId: string
+  title: string
+  body: string
+  targetUrl: string
+  tokens: string[]
+}
+
+// Response from Farcaster notification API
+interface FarcasterNotificationResponse {
+  successfulTokens: string[]
+  invalidTokens: string[]
+  rateLimitedTokens: string[]
+}
+
 /**
- * Store or update notification token for a user
+ * Store a notification token for a user
  */
 export async function storeNotificationToken(
-  userFid: number,
-  token: string
-): Promise<{ success: boolean; tokenId?: string; error?: string }> {
-  try {
-    const supabase = getSupabaseClient()
-    
-    const { data, error } = await supabase
-      .rpc('store_notification_token', {
-        p_user_fid: userFid,
-        p_token: token
-      })
-
-    if (error) {
-      console.error('Error storing notification token:', error)
-      return { success: false, error: error.message }
-    }
-
-    console.log(`✅ Stored notification token for FID ${userFid}`)
-    return { success: true, tokenId: data }
-  } catch (error: any) {
-    console.error('Error storing notification token:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-/**
- * Disable notification token
- */
-export async function disableNotificationToken(
-  token: string
+  fid: number, 
+  token: string, 
+  url: string = 'https://api.farcaster.xyz/v1/frame-notifications'
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`💾 Storing notification token for FID ${fid}`)
+    
     const supabase = getSupabaseClient()
     
-    const { data, error } = await supabase
-      .rpc('disable_notification_token', {
-        p_token: token
+    // First, disable any existing tokens for this FID to avoid duplicates
+    await supabase
+      .from('notification_tokens')
+      .update({ is_active: false })
+      .eq('fid', fid)
+    
+    // Insert the new token
+    const { error } = await supabase
+      .from('notification_tokens')
+      .insert({
+        fid,
+        token,
+        url,
+        is_active: true
       })
-
+    
     if (error) {
-      console.error('Error disabling notification token:', error)
+      console.error('❌ Error storing notification token:', error)
       return { success: false, error: error.message }
     }
-
-    console.log(`✅ Disabled notification token: ${token.substring(0, 10)}...`)
+    
+    console.log(`✅ Successfully stored notification token for FID ${fid}`)
     return { success: true }
   } catch (error: any) {
-    console.error('Error disabling notification token:', error)
+    console.error('❌ Error in storeNotificationToken:', error)
     return { success: false, error: error.message }
   }
 }
 
 /**
- * Get all enabled notification tokens for a user
+ * Disable a specific notification token
  */
-export async function getUserNotificationTokens(
-  userFid: number
-): Promise<string[]> {
+export async function disableNotificationToken(token: string): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`🔕 Disabling notification token: ${token.substring(0, 10)}...`)
+    
     const supabase = getSupabaseClient()
     
-    const { data, error } = await supabase
-      .rpc('get_user_notification_tokens', {
-        p_user_fid: userFid
-      })
-
-    if (error) {
-      console.error('Error getting user notification tokens:', error)
-      return []
-    }
-
-    return data?.map((row: any) => row.token) || []
-  } catch (error) {
-    console.error('Error getting user notification tokens:', error)
-    return []
-  }
-}
-
-/**
- * Create default notification preferences for a user
- */
-export async function createDefaultNotificationPreferences(
-  userFid: number
-): Promise<{ success: boolean; preferenceId?: string; error?: string }> {
-  try {
-    const supabase = getSupabaseClient()
+    const { error } = await supabase
+      .from('notification_tokens')
+      .update({ is_active: false })
+      .eq('token', token)
     
-    const { data, error } = await supabase
-      .rpc('create_default_notification_preferences', {
-        p_user_fid: userFid
-      })
-
     if (error) {
-      console.error('Error creating default notification preferences:', error)
+      console.error('❌ Error disabling notification token:', error)
       return { success: false, error: error.message }
     }
-
-    console.log(`✅ Created default notification preferences for FID ${userFid}`)
-    return { success: true, preferenceId: data }
+    
+    console.log(`✅ Successfully disabled notification token`)
+    return { success: true }
   } catch (error: any) {
-    console.error('Error creating default notification preferences:', error)
+    console.error('❌ Error in disableNotificationToken:', error)
     return { success: false, error: error.message }
   }
 }
 
 /**
- * Update notification preferences for a user
+ * Disable all notification tokens for a specific FID
  */
-export async function updateNotificationPreferences(
-  userFid: number,
-  preferences: {
-    messagesEnabled?: boolean
-    groupInvitesEnabled?: boolean
-    eventsEnabled?: boolean
-    groupsEnabled?: boolean
+export async function disableAllTokensForFid(fid: number): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log(`🔕 Disabling all notification tokens for FID ${fid}`)
+    
+    const supabase = getSupabaseClient()
+    
+    const { error } = await supabase
+      .from('notification_tokens')
+      .update({ is_active: false })
+      .eq('fid', fid)
+    
+    if (error) {
+      console.error('❌ Error disabling tokens for FID:', error)
+      return { success: false, error: error.message }
+    }
+    
+    console.log(`✅ Successfully disabled all tokens for FID ${fid}`)
+    return { success: true }
+  } catch (error: any) {
+    console.error('❌ Error in disableAllTokensForFid:', error)
+    return { success: false, error: error.message }
   }
-): Promise<{ success: boolean; error?: string }> {
+}
+
+/**
+ * Get active notification tokens for a user
+ */
+export async function getActiveTokensForFid(fid: number): Promise<{ success: boolean; tokens?: NotificationToken[]; error?: string }> {
   try {
     const supabase = getSupabaseClient()
     
     const { data, error } = await supabase
-      .rpc('update_notification_preferences', {
-        p_user_fid: userFid,
-        p_messages_enabled: preferences.messagesEnabled,
-        p_group_invites_enabled: preferences.groupInvitesEnabled,
-        p_events_enabled: preferences.eventsEnabled,
-        p_groups_enabled: preferences.groupsEnabled
-      })
-
+      .from('notification_tokens')
+      .select('*')
+      .eq('fid', fid)
+      .eq('is_active', true)
+    
     if (error) {
-      console.error('Error updating notification preferences:', error)
+      console.error('❌ Error fetching tokens for FID:', error)
       return { success: false, error: error.message }
     }
-
-    console.log(`✅ Updated notification preferences for FID ${userFid}`)
-    return { success: true }
+    
+    return { success: true, tokens: data || [] }
   } catch (error: any) {
-    console.error('Error updating notification preferences:', error)
+    console.error('❌ Error in getActiveTokensForFid:', error)
     return { success: false, error: error.message }
   }
 }
@@ -162,205 +173,211 @@ export async function updateNotificationPreferences(
 /**
  * Get notification preferences for a user
  */
-export async function getNotificationPreferences(
-  userFid: number
-): Promise<NotificationPreferences | null> {
+export async function getNotificationPreferences(fid: number): Promise<{ success: boolean; preferences?: NotificationPreferences; error?: string }> {
   try {
     const supabase = getSupabaseClient()
     
     const { data, error } = await supabase
       .from('notification_preferences')
       .select('*')
-      .eq('user_fid', userFid)
+      .eq('fid', fid)
       .single()
-
+    
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error getting notification preferences:', error)
-      return null
-    }
-
-    return data
-  } catch (error) {
-    console.error('Error getting notification preferences:', error)
-    return null
-  }
-}
-
-/**
- * Check if notification type is enabled for a user
- */
-export async function isNotificationEnabled(
-  userFid: number,
-  notificationType: 'messages' | 'group_invites' | 'events' | 'groups'
-): Promise<boolean> {
-  try {
-    const supabase = getSupabaseClient()
-    
-    const { data, error } = await supabase
-      .rpc('is_notification_enabled', {
-        p_user_fid: userFid,
-        p_notification_type: notificationType
-      })
-
-    if (error) {
-      console.error('Error checking notification enabled:', error)
-      return true // Default to enabled on error
-    }
-
-    return data || true
-  } catch (error) {
-    console.error('Error checking notification enabled:', error)
-    return true // Default to enabled on error
-  }
-}
-
-/**
- * Filter user FIDs by notification preferences
- */
-export async function filterUsersByNotificationPreferences(
-  userFids: number[],
-  notificationType: 'messages' | 'group_invites' | 'events' | 'groups'
-): Promise<number[]> {
-  try {
-    const supabase = getSupabaseClient()
-    
-    const { data, error } = await supabase
-      .rpc('get_users_with_notifications_enabled', {
-        p_user_fids: userFids,
-        p_notification_type: notificationType
-      })
-
-    if (error) {
-      console.error('Error filtering users by notification preferences:', error)
-      return userFids // Return all users on error (fail open)
-    }
-
-    return data || userFids
-  } catch (error) {
-    console.error('Error filtering users by notification preferences:', error)
-    return userFids // Return all users on error (fail open)
-  }
-}
-
-/**
- * Get all notification tokens for multiple users (for bulk notifications)
- */
-export async function getNotificationTokensForUsers(
-  userFids: number[]
-): Promise<{ userFid: number; tokens: string[] }[]> {
-  try {
-    const supabase = getSupabaseClient()
-    
-    const { data, error } = await supabase
-      .from('notification_tokens')
-      .select('user_fid, token')
-      .in('user_fid', userFids)
-      .eq('enabled', true)
-
-    if (error) {
-      console.error('Error getting notification tokens for users:', error)
-      return []
-    }
-
-    // Group tokens by user FID
-    const tokensByUser: { [key: number]: string[] } = {}
-    
-    data?.forEach((row: any) => {
-      if (!tokensByUser[row.user_fid]) {
-        tokensByUser[row.user_fid] = []
-      }
-      tokensByUser[row.user_fid].push(row.token)
-    })
-
-    return Object.entries(tokensByUser).map(([userFid, tokens]) => ({
-      userFid: parseInt(userFid),
-      tokens
-    }))
-  } catch (error) {
-    console.error('Error getting notification tokens for users:', error)
-    return []
-  }
-}
-
-/**
- * Clean up expired or invalid notification tokens
- */
-export async function cleanupNotificationTokens(): Promise<{ success: boolean; deletedCount?: number; error?: string }> {
-  try {
-    const supabase = getSupabaseClient()
-    
-    // Delete tokens older than 30 days that are disabled
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    
-    const { error, count } = await supabase
-      .from('notification_tokens')
-      .delete({ count: 'exact' })
-      .eq('enabled', false)
-      .lt('updated_at', thirtyDaysAgo.toISOString())
-
-    if (error) {
-      console.error('Error cleaning up notification tokens:', error)
+      console.error('❌ Error fetching notification preferences:', error)
       return { success: false, error: error.message }
     }
-
-    const deletedCount = count || 0
-    console.log(`✅ Cleaned up ${deletedCount} expired notification tokens`)
     
-    return { success: true, deletedCount }
+    // If no preferences exist, return default preferences
+    if (!data) {
+      const defaultPreferences: NotificationPreferences = {
+        fid,
+        messages: true,
+        group_invites: true,
+        events: true,
+        groups: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      return { success: true, preferences: defaultPreferences }
+    }
+    
+    return { success: true, preferences: data }
   } catch (error: any) {
-    console.error('Error cleaning up notification tokens:', error)
+    console.error('❌ Error in getNotificationPreferences:', error)
     return { success: false, error: error.message }
   }
 }
 
 /**
- * Get notification statistics
+ * Send a notification using the real Farcaster API
  */
-export async function getNotificationStats(): Promise<{
-  totalTokens: number
-  enabledTokens: number
-  totalUsers: number
-  usersWithPreferences: number
-}> {
+export async function sendFarcasterNotification(
+  fids: number[],
+  title: string,
+  body: string,
+  targetUrl: string,
+  notificationId: string
+): Promise<{ success: boolean; results?: any; error?: string }> {
   try {
-    const supabase = getSupabaseClient()
+    console.log(`📤 Sending Farcaster notification to ${fids.length} users`)
     
-    const [tokensResult, preferencesResult] = await Promise.all([
-      supabase
-        .from('notification_tokens')
-        .select('enabled', { count: 'exact' }),
-      supabase
-        .from('notification_preferences')
-        .select('user_fid', { count: 'exact' })
-    ])
-
-    const totalTokens = tokensResult.count || 0
-    const enabledTokens = tokensResult.data?.filter(t => t.enabled).length || 0
-    const usersWithPreferences = preferencesResult.count || 0
-
-    // Get unique users with tokens
-    const uniqueUsersResult = await supabase
-      .from('notification_tokens')
-      .select('user_fid')
-      .eq('enabled', true)
-
-    const uniqueUsers = new Set(uniqueUsersResult.data?.map(t => t.user_fid) || [])
-    const totalUsers = uniqueUsers.size
-
-    return {
-      totalTokens,
-      enabledTokens,
-      totalUsers,
-      usersWithPreferences
+    // Get active tokens for all FIDs
+    const allTokens: { fid: number; token: string; url: string }[] = []
+    
+    for (const fid of fids) {
+      const tokensResult = await getActiveTokensForFid(fid)
+      if (tokensResult.success && tokensResult.tokens) {
+        for (const tokenData of tokensResult.tokens) {
+          allTokens.push({
+            fid,
+            token: tokenData.token,
+            url: tokenData.url
+          })
+        }
+      }
     }
-  } catch (error) {
-    console.error('Error getting notification stats:', error)
-    return {
-      totalTokens: 0,
-      enabledTokens: 0,
-      totalUsers: 0,
-      usersWithPreferences: 0
+    
+    if (allTokens.length === 0) {
+      console.log('⚠️ No active notification tokens found for any FIDs')
+      return { success: true, results: { message: 'No active tokens' } }
     }
+    
+    console.log(`📱 Found ${allTokens.length} active tokens`)
+    
+    // Group tokens by URL (in case different tokens use different endpoints)
+    const tokensByUrl = allTokens.reduce((acc, { token, url }) => {
+      if (!acc[url]) acc[url] = []
+      acc[url].push(token)
+      return acc
+    }, {} as Record<string, string[]>)
+    
+    const results: any[] = []
+    
+    // Send notifications to each URL endpoint
+    for (const [url, tokens] of Object.entries(tokensByUrl)) {
+      // Batch tokens in groups of 100 (Farcaster API limit)
+      const batches = []
+      for (let i = 0; i < tokens.length; i += 100) {
+        batches.push(tokens.slice(i, i + 100))
+      }
+      
+      for (const batch of batches) {
+        const payload: FarcasterNotificationPayload = {
+          notificationId,
+          title,
+          body,
+          targetUrl,
+          tokens: batch
+        }
+        
+        console.log(`📡 Sending notification batch to ${url}`, {
+          tokenCount: batch.length,
+          title,
+          notificationId
+        })
+        
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          })
+          
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error(`❌ Farcaster API error (${response.status}):`, errorText)
+            results.push({
+              url,
+              batch: batch.length,
+              success: false,
+              error: `HTTP ${response.status}: ${errorText}`
+            })
+            continue
+          }
+          
+          const result: FarcasterNotificationResponse = await response.json()
+          
+          console.log(`✅ Notification batch sent successfully`, {
+            successful: result.successfulTokens.length,
+            invalid: result.invalidTokens.length,
+            rateLimited: result.rateLimitedTokens.length
+          })
+          
+          // Disable invalid tokens
+          if (result.invalidTokens.length > 0) {
+            console.log(`🔕 Disabling ${result.invalidTokens.length} invalid tokens`)
+            for (const invalidToken of result.invalidTokens) {
+              await disableNotificationToken(invalidToken)
+            }
+          }
+          
+          results.push({
+            url,
+            batch: batch.length,
+            success: true,
+            result
+          })
+          
+        } catch (fetchError: any) {
+          console.error(`❌ Network error sending to ${url}:`, fetchError.message)
+          results.push({
+            url,
+            batch: batch.length,
+            success: false,
+            error: fetchError.message
+          })
+        }
+      }
+    }
+    
+    console.log(`✅ Completed sending notifications to ${fids.length} users`)
+    return { success: true, results }
+    
+  } catch (error: any) {
+    console.error('❌ Error in sendFarcasterNotification:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Send a message notification
+ */
+export async function sendMessageNotification(
+  recipientFids: number[],
+  senderName: string,
+  messagePreview: string,
+  chatId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Check notification preferences for each recipient
+    const eligibleFids: number[] = []
+    
+    for (const fid of recipientFids) {
+      const prefsResult = await getNotificationPreferences(fid)
+      if (prefsResult.success && prefsResult.preferences?.messages) {
+        eligibleFids.push(fid)
+      }
+    }
+    
+    if (eligibleFids.length === 0) {
+      console.log('⚠️ No users have message notifications enabled')
+      return { success: true }
+    }
+    
+    const result = await sendFarcasterNotification(
+      eligibleFids,
+      `New message from ${senderName}`,
+      messagePreview,
+      `${process.env.NEXT_PUBLIC_APP_URL}/messages/${chatId}`,
+      `message-${chatId}-${Date.now()}`
+    )
+    
+    return result
+  } catch (error: any) {
+    console.error('❌ Error in sendMessageNotification:', error)
+    return { success: false, error: error.message }
   }
 } 
