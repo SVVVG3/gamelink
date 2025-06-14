@@ -31,50 +31,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Status-specific styling and messages
-    const getStatusConfig = (status: string) => {
-      switch (status) {
-        case 'joined':
-          return {
-            bgColor: 'linear-gradient(135deg, #10b981, #059669)',
-            statusText: '✅ You\'re Participating!',
-            statusColor: '#ecfdf5'
-          }
-        case 'pending':
-          return {
-            bgColor: 'linear-gradient(135deg, #f59e0b, #d97706)',
-            statusText: '⏳ Approval Pending',
-            statusColor: '#fffbeb'
-          }
-        case 'left':
-          return {
-            bgColor: 'linear-gradient(135deg, #6b7280, #4b5563)',
-            statusText: '👋 You Left the Event',
-            statusColor: '#f9fafb'
-          }
-        case 'signup_required':
-          return {
-            bgColor: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-            statusText: '🎮 Sign Up to Join!',
-            statusColor: '#f3e8ff'
-          }
-        case 'participating':
-          return {
-            bgColor: 'linear-gradient(135deg, #10b981, #059669)',
-            statusText: '🎮 You\'re In!',
-            statusColor: '#ecfdf5'
-          }
-        default:
-          return {
-            bgColor: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-            statusText: '🎮 Join the Action!',
-            statusColor: '#eff6ff'
-          }
-      }
-    }
-
-    const statusConfig = getStatusConfig(status)
-
     return new ImageResponse(
       (
         <div
@@ -85,148 +41,35 @@ export async function GET(request: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: statusConfig.bgColor,
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            background: '#3b82f6',
+            color: 'white',
+            fontFamily: 'system-ui',
           }}
         >
-          {/* Background Pattern */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%)',
-            }}
-          />
-          
-          {/* Main Content */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(255,255,255,0.95)',
-              borderRadius: '24px',
-              padding: '48px',
-              margin: '40px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              maxWidth: '800px',
-              width: '90%',
-            }}
-          >
-            {/* GameLink Logo */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '24px',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '32px',
-                  marginRight: '12px',
-                }}
-              >
-                🎮
-              </div>
-              <div
-                style={{
-                  fontSize: '24px',
-                  fontWeight: 'bold',
-                  color: '#1f2937',
-                }}
-              >
-                GameLink
-              </div>
+          <div style={{ fontSize: '60px', marginBottom: '20px' }}>🎮</div>
+          <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
+            {title}
+          </div>
+          <div style={{ fontSize: '32px', marginBottom: '20px' }}>
+            {game}
+          </div>
+          {formattedDate && (
+            <div style={{ fontSize: '24px', marginBottom: '20px' }}>
+              {formattedDate}
             </div>
-
-            {/* Event Title */}
-            <div
-              style={{
-                fontSize: '48px',
-                fontWeight: 'bold',
-                color: '#111827',
-                textAlign: 'center',
-                marginBottom: '16px',
-                lineHeight: 1.2,
-              }}
-            >
-              {title}
-            </div>
-
-            {/* Game */}
-            <div
-              style={{
-                fontSize: '32px',
-                color: '#4b5563',
-                textAlign: 'center',
-                marginBottom: '24px',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <span style={{ marginRight: '12px' }}>🎯</span>
-              {game}
-            </div>
-
-            {/* Date & Time */}
-            {formattedDate && (
-              <div
-                style={{
-                  fontSize: '24px',
-                  color: '#6b7280',
-                  textAlign: 'center',
-                  marginBottom: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <span style={{ marginRight: '12px' }}>📅</span>
-                {formattedDate}
-              </div>
-            )}
-
-            {/* Organizer */}
-            <div
-              style={{
-                fontSize: '20px',
-                color: '#9ca3af',
-                textAlign: 'center',
-                marginBottom: '32px',
-              }}
-            >
-              Organized by {organizer}
-            </div>
-
-            {/* Status Badge */}
-            <div
-              style={{
-                background: statusConfig.bgColor,
-                color: statusConfig.statusColor,
-                fontSize: '24px',
-                fontWeight: 'bold',
-                padding: '16px 32px',
-                borderRadius: '16px',
-                textAlign: 'center',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              }}
-            >
-              {statusConfig.statusText}
-            </div>
+          )}
+          <div style={{ fontSize: '20px' }}>
+            by {organizer}
           </div>
         </div>
       ),
       {
         width: 1200,
-        height: 630,
+        height: 800,
       }
     )
   } catch (e) {
     console.error('Error generating OG image:', e)
-    return new Response('Failed to generate image', { status: 500 })
+    return new Response(`Error: ${e instanceof Error ? e.message : 'Unknown error'}`, { status: 500 })
   }
 } 
