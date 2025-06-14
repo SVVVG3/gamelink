@@ -112,7 +112,7 @@ export default function EditGroupClient({ params }: Props) {
     setError(null)
 
     try {
-      await updateGroup(groupId, formData)
+      await updateGroup({ ...formData, id: groupId })
       
       // Navigate back to group details
       router.push(`/groups/${groupId}`)

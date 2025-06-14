@@ -32,7 +32,7 @@ export default function EditEventClient({ params }: Props) {
     eventTime: '',
     maxParticipants: 8,
     minParticipants: 2,
-    eventType: 'casual' as 'casual' | 'competitive' | 'tournament',
+    eventType: 'casual' as 'casual' | 'tournament' | 'practice' | 'scrimmage' | 'ranked',
     locationType: 'online' as 'online' | 'in_person' | 'hybrid',
     connectionDetails: '',
     physicalLocation: '',
@@ -97,7 +97,7 @@ export default function EditEventClient({ params }: Props) {
           connectionDetails: eventData.connectionDetails || '',
           physicalLocation: eventData.physicalLocation || '',
           allowSpectators: eventData.allowSpectators || false,
-          requiresApproval: eventData.requiresApproval || false,
+          requiresApproval: eventData.requireApproval || false,
           registrationDeadline
         })
       } catch (err) {
@@ -156,7 +156,7 @@ export default function EditEventClient({ params }: Props) {
         physicalLocation: formData.physicalLocation,
         allowSpectators: formData.allowSpectators,
         requireApproval: formData.requiresApproval,
-        registrationDeadline: registrationDeadline?.toISOString() || null
+        registrationDeadline: registrationDeadline?.toISOString() || undefined
       }
 
       await updateEvent(eventId, updateData)
@@ -370,8 +370,10 @@ export default function EditEventClient({ params }: Props) {
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="casual">Casual</option>
-                  <option value="competitive">Competitive</option>
                   <option value="tournament">Tournament</option>
+                  <option value="practice">Practice</option>
+                  <option value="scrimmage">Scrimmage</option>
+                  <option value="ranked">Ranked</option>
                 </select>
               </div>
 
