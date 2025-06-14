@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: `${baseUrl}/events/${eventId}`,
           name: "GameLink",
           splashImageUrl: `${baseUrl}/gamelinkSplashImage.png`,
-          splashBackgroundColor: "#667eea"
+          splashBackgroundColor: "#000000"
         }
       }
     }

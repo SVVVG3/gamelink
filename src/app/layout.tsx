@@ -19,6 +19,22 @@ export const metadata: Metadata = {
   title: "GameLink - Connect with Fellow Gamers on Farcaster",
   description: "Share your gamertags, organize events, and chat with fellow gamers on Farcaster",
   manifest: "/.well-known/farcaster.json",
+  other: {
+    'fc:frame': JSON.stringify({
+      version: "next",
+      imageUrl: "https://farcaster-gamelink.vercel.app/gamelinkEmbed.png",
+      button: {
+        title: "🎮 Open GameLink",
+        action: {
+          type: "launch_frame",
+          url: "https://farcaster-gamelink.vercel.app",
+          name: "GameLink",
+          splashImageUrl: "https://farcaster-gamelink.vercel.app/gamelinkSplashImage.png",
+          splashBackgroundColor: "#000000"
+        }
+      }
+    }),
+  },
 };
 
 export default function RootLayout({

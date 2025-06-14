@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: `${baseUrl}/groups/${groupId}`,
           name: "GameLink",
           splashImageUrl: `${baseUrl}/gamelinkSplashImage.png`,
-          splashBackgroundColor: "#48bb78"
+          splashBackgroundColor: "#000000"
         }
       }
     }
