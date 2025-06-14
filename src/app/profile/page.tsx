@@ -2,20 +2,14 @@
 
 import { useState } from 'react'
 import { useUser } from '@/hooks/useUser'
-import { useSignIn } from '@farcaster/auth-kit'
 import GamertagForm from '@/components/GamertagForm'
 import FriendCodeDisplay from '@/components/FriendCodeDisplay'
 import NotificationSettings from '@/components/NotificationSettings'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaGamepad, FaEdit, FaSignOutAlt, FaUser, FaEye } from 'react-icons/fa'
+import { FaGamepad, FaEdit, FaUser, FaEye } from 'react-icons/fa'
 
 export default function ProfilePage() {
   const { isAuthenticated, isLoading, farcasterProfile, profile, refreshData } = useUser()
-  const { signOut } = useSignIn({
-    onSuccess: ({ fid, username }) => {
-      console.log(`Signed in as ${username} (FID: ${fid})`);
-    },
-  })
 
   const [showGamertagForm, setShowGamertagForm] = useState(false)
 
@@ -63,14 +57,6 @@ export default function ProfilePage() {
               Manage your gamertags and gaming identity
             </p>
           </div>
-
-          <button 
-            onClick={signOut}
-            className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 focus:ring-offset-gray-900 transition-colors"
-          >
-            <FaSignOutAlt className="w-4 h-4 mr-2" />
-            Sign Out
-          </button>
         </div>
 
         {/* Profile Card */}
