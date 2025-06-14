@@ -129,7 +129,7 @@ export async function sendMessageNotification(
     }
 
     const notification: NotificationPayload = {
-      title: `💬 New message from ${senderName}`,
+      title: `New message from ${senderName}`,
       body: messagePreview.length > 100 ? messagePreview.substring(0, 97) + '...' : messagePreview,
       target_url: `https://farcaster-gamelink.vercel.app/messages/${chatId}`
     }
