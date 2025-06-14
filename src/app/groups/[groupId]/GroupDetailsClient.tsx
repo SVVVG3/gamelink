@@ -7,7 +7,8 @@ import { getChatById, type ChatWithParticipants, type MessageWithSender } from '
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaShare, FaTimes, FaUserPlus } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaTimes, FaUserPlus } from 'react-icons/fa'
+import FarcasterIcon from '@/components/FarcasterIcon'
 import type { GroupWithMembers } from '@/types'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -324,9 +325,9 @@ export default function GroupDetailsClient({ params }: Props) {
             
             <button
               onClick={shareGroupFrame}
-              className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+              className="flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
             >
-              <FaShare className="w-4 h-4 mr-2" />
+              <FarcasterIcon className="w-4 h-4 mr-2" />
               Share
             </button>
           </div>
@@ -369,6 +370,35 @@ export default function GroupDetailsClient({ params }: Props) {
             <h2 className="text-lg font-bold text-white mb-4">Group Information</h2>
             
             <div className="space-y-4">
+              {/* Group Creator */}
+              <div>
+                <label className="text-sm text-gray-400 block mb-1">Created by</label>
+                <div className="flex items-center space-x-2">
+                  {/* Find creator from members list */}
+                  {(() => {
+                    const creator = group.members?.find(member => 
+                      member.userId === group.createdBy && member.role === 'admin'
+                    )
+                    return creator ? (
+                      <>
+                        {creator.profile?.pfp_url && (
+                          <img
+                            src={creator.profile.pfp_url}
+                            alt={creator.profile.display_name || creator.profile.username}
+                            className="w-6 h-6 rounded-full"
+                          />
+                        )}
+                        <p className="text-white font-medium">
+                          {creator.profile?.display_name || creator.profile?.username || 'Group Creator'}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-white font-medium">Group Creator</p>
+                    )
+                  })()}
+                </div>
+              </div>
+              
               {group.primaryGame && (
                 <div>
                   <label className="text-sm text-gray-400 block mb-1">Primary Game</label>
@@ -457,9 +487,9 @@ export default function GroupDetailsClient({ params }: Props) {
           <div className="flex items-center space-x-2">
             <button
               onClick={shareGroupFrame}
-              className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+              className="flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
             >
-              <FaShare className="w-4 h-4 mr-2" />
+              <FarcasterIcon className="w-4 h-4 mr-2" />
               Share
             </button>
             

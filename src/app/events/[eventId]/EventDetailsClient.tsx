@@ -15,11 +15,11 @@ import {
   FaEye,
   FaCrown,
   FaArrowLeft,
-  FaDiscord,
   FaGlobe,
   FaLock,
   FaUnlock
 } from 'react-icons/fa'
+import FarcasterIcon from '@/components/FarcasterIcon'
 import { FaShield } from 'react-icons/fa6'
 import Link from 'next/link'
 import { Event, EventParticipant, Profile } from '@/types'
@@ -329,9 +329,9 @@ export default function EventDetailsClient({ params }: Props) {
             {/* Share Button - Available to all users */}
             <button
               onClick={shareEventFrame}
-              className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm ml-4"
+              className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm ml-4"
             >
-              <FaDiscord className="w-4 h-4 mr-2" />
+              <FarcasterIcon className="w-4 h-4 mr-2" />
               Share
             </button>
           </div>

@@ -134,6 +134,12 @@ export default function MessageComposer({
           textareaRef.current.style.height = 'auto'
         }
 
+        // Immediately add message to the list (optimistic update)
+        // This ensures the user sees their message right away
+        if (typeof window !== 'undefined' && (window as any).addMessageToList) {
+          (window as any).addMessageToList(sentMessage)
+        }
+
         // Notify parent component
         onMessageSent?.(sentMessage)
         
