@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { FaArrowLeft, FaUsers, FaCrown, FaUserShield, FaUser, FaSpinner, FaPlus, FaTimes, FaUserMinus } from 'react-icons/fa'
 import { useUser } from '@/hooks/useUser'
-import { getGroupById, removeGroupMember, createGroupInvitation, getProfileIdsByFids } from '@/lib/supabase/groups'
+import { getGroupById, removeGroupMember, createGroupInvitation, getProfileIdsByFids, getOrCreateGroupChat } from '@/lib/supabase/groups'
 import { useSocialData } from '@/contexts/SocialDataContext'
 import BottomNavigation from '@/components/BottomNavigation'
 import type { GroupWithMembers } from '@/types'
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function MembersClient({ params }: Props) {
+  const router = useRouter()
   const { isAuthenticated, isLoading: userLoading, profile } = useUser()
   const { mutualFollowers } = useSocialData()
   
@@ -26,6 +28,7 @@ export default function MembersClient({ params }: Props) {
   const [isInviting, setIsInviting] = useState(false)
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isNavigating, setIsNavigating] = useState(false)
 
   useEffect(() => {
     const getGroupId = async () => {
@@ -211,6 +214,23 @@ export default function MembersClient({ params }: Props) {
     return isNotMember && matchesSearch
   }) || []
 
+  // Handle back navigation to group chat
+  const handleBackToGroup = async () => {
+    if (!groupId || !profile?.id) return
+    
+    setIsNavigating(true)
+    try {
+      const chatId = await getOrCreateGroupChat(groupId, profile.id)
+      router.push(`/messages/${chatId}`)
+    } catch (error) {
+      console.error('Error navigating to group chat:', error)
+      // Fallback to group details page
+      router.push(`/groups/${groupId}`)
+    } finally {
+      setIsNavigating(false)
+    }
+  }
+
   // Loading state
   if (userLoading || isLoading) {
     return (
@@ -277,24 +297,29 @@ export default function MembersClient({ params }: Props) {
     <main className="min-h-screen bg-gray-900 pb-20">
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 p-4">
-        <div className="flex items-center justify-between">
-          <Link 
-            href={`/groups/${groupId}`}
-            className="flex items-center text-gray-300 hover:text-white transition-colors"
+        <div className="flex items-center justify-between mb-4">
+          <button 
+            onClick={handleBackToGroup}
+            disabled={isNavigating}
+            className="flex items-center text-gray-300 hover:text-white transition-colors disabled:opacity-50"
           >
-            <FaArrowLeft className="w-4 h-4 mr-2" />
+            {isNavigating ? (
+              <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <FaArrowLeft className="w-4 h-4 mr-2" />
+            )}
             Back to Group
-          </Link>
+          </button>
           
           <h1 className="text-xl font-bold text-white">Manage Members</h1>
           
           {isUserAdmin() && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="flex items-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
             >
-              <FaPlus className="w-3 h-3" />
-              <span>Invite</span>
+              <FaPlus className="w-4 h-4 mr-2" />
+              Invite
             </button>
           )}
         </div>

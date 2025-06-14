@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { getChatById, markChatMessagesAsRead, type ChatWithParticipants, type MessageWithSender } from '@/lib/supabase/chats'
-import { isGroupMember } from '@/lib/supabase/groups'
+import { isGroupMember, getGroupById } from '@/lib/supabase/groups'
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
+import FarcasterIcon from '@/components/FarcasterIcon'
 import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV } from 'react-icons/fa'
 
 // Extended interface to include user profile data and group info
@@ -34,6 +35,7 @@ export default function ChatPage() {
   const [error, setError] = useState<string | null>(null)
   const [isGroupAdmin, setIsGroupAdmin] = useState(false)
   const [showAdminMenu, setShowAdminMenu] = useState(false)
+  const [groupData, setGroupData] = useState<any>(null)
 
   // Fetch user profiles for chat participants
   const fetchUserProfiles = async (fids: number[]) => {
@@ -57,6 +59,40 @@ export default function ChatPage() {
       console.error('Error fetching user profiles:', error)
       return {}
     }
+  }
+
+  // Share group frame function
+  const shareGroupFrame = async () => {
+    if (!chat?.group_id || !groupData) return
+    
+    // Share the group page URL, not the frame endpoint
+    const groupPageUrl = `${window.location.origin}/groups/${chat.group_id}`
+    const shareText = `🎮 Join my gaming group: ${groupData.name}!\n\n${groupData.description ? groupData.description + '\n\n' : ''}${groupData.primaryGame ? `Game: ${groupData.primaryGame}\n` : ''}Members: ${groupData.memberCount}/${groupData.maxMembers}\n\n`
+    
+    // Try to use Farcaster SDK if available (Mini App context)
+    try {
+      const { sdk } = await import('@farcaster/frame-sdk')
+      
+      // Check if we're in a Mini App context by trying to get context
+      const context = await sdk.context
+      if (context && context.client) {
+        const result = await sdk.actions.composeCast({
+          text: shareText,
+          embeds: [groupPageUrl]
+        })
+        
+        if (result?.cast) {
+          console.log('Cast shared successfully:', result.cast.hash)
+        }
+        return
+      }
+    } catch (error) {
+      console.error('Farcaster SDK not available, using web fallback:', error)
+    }
+    
+    // Fallback for standalone web app - open Warpcast
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(groupPageUrl)}`
+    window.open(farcasterUrl, '_blank')
   }
 
   // Load chat data
@@ -96,6 +132,10 @@ export default function ChatPage() {
         try {
           const membershipInfo = await isGroupMember((chatData as any).group_id, profile.id)
           setIsGroupAdmin(membershipInfo.isMember && (membershipInfo.role === 'admin' || membershipInfo.role === 'moderator'))
+          
+          // Also fetch group data for sharing
+          const groupInfo = await getGroupById((chatData as any).group_id, false)
+          setGroupData(groupInfo)
         } catch (adminError) {
           console.error('Error checking admin status:', adminError)
           setIsGroupAdmin(false)
@@ -275,6 +315,16 @@ export default function ChatPage() {
 
         {/* Chat actions */}
         <div className="flex items-center space-x-2">
+          {chat?.type === 'group' && (
+            <button
+              onClick={shareGroupFrame}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Share Group"
+            >
+              <FarcasterIcon className="w-4 h-4" />
+            </button>
+          )}
+          
           {chat?.type === 'group' && isGroupAdmin && (
             <div className="relative">
               <button 

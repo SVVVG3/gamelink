@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FaArrowLeft, FaSave, FaSpinner } from 'react-icons/fa'
 import { useUser } from '@/hooks/useUser'
-import { getGroupById, updateGroup } from '@/lib/supabase/groups'
+import { getGroupById, updateGroup, getOrCreateGroupChat } from '@/lib/supabase/groups'
 import BottomNavigation from '@/components/BottomNavigation'
 import type { Group } from '@/types'
 
@@ -22,6 +22,7 @@ export default function EditGroupClient({ params }: Props) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isNavigating, setIsNavigating] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -144,6 +145,23 @@ export default function EditGroupClient({ params }: Props) {
     }
   }
 
+  // Handle back navigation to group chat
+  const handleBackToGroup = async () => {
+    if (!groupId || !profile?.id) return
+    
+    setIsNavigating(true)
+    try {
+      const chatId = await getOrCreateGroupChat(groupId, profile.id)
+      router.push(`/messages/${chatId}`)
+    } catch (error) {
+      console.error('Error navigating to group chat:', error)
+      // Fallback to group details page
+      router.push(`/groups/${groupId}`)
+    } finally {
+      setIsNavigating(false)
+    }
+  }
+
   // Loading state
   if (userLoading || isLoading) {
     return (
@@ -161,13 +179,18 @@ export default function EditGroupClient({ params }: Props) {
     return (
       <main className="min-h-screen bg-gray-900 pb-20">
         <div className="bg-gray-800 border-b border-gray-700 p-4">
-          <Link 
-            href={`/groups/${groupId}`}
-            className="flex items-center text-gray-300 hover:text-white transition-colors"
+          <button 
+            onClick={handleBackToGroup}
+            disabled={isNavigating}
+            className="flex items-center text-gray-300 hover:text-white transition-colors disabled:opacity-50"
           >
-            <FaArrowLeft className="w-4 h-4 mr-2" />
+            {isNavigating ? (
+              <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <FaArrowLeft className="w-4 h-4 mr-2" />
+            )}
             Back to Group
-          </Link>
+          </button>
         </div>
         
         <div className="p-4">
@@ -187,13 +210,18 @@ export default function EditGroupClient({ params }: Props) {
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 p-4">
         <div className="flex items-center justify-between">
-          <Link 
-            href={`/groups/${groupId}`}
-            className="flex items-center text-gray-300 hover:text-white transition-colors"
+          <button 
+            onClick={handleBackToGroup}
+            disabled={isNavigating}
+            className="flex items-center text-gray-300 hover:text-white transition-colors disabled:opacity-50"
           >
-            <FaArrowLeft className="w-4 h-4 mr-2" />
+            {isNavigating ? (
+              <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <FaArrowLeft className="w-4 h-4 mr-2" />
+            )}
             Back to Group
-          </Link>
+          </button>
           
           <h1 className="text-xl font-bold text-white">Edit Group</h1>
           
