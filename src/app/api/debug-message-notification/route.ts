@@ -6,10 +6,10 @@ export async function POST(request: NextRequest) {
     console.log('🧪 Testing message notification with mock data')
     
     // Mock data simulating KatKartel sending you a message
-    const mockChatParticipantFids = [466111, 14369] // You and KatKartel
-    const mockSenderFid = 14369 // KatKartel's FID (assuming)
+    const mockChatParticipantFids = [466111, 481970] // You and KatKartel (correct FID)
+    const mockSenderFid = 481970 // KatKartel's correct FID
     const mockSenderName = "KatKartel"
-    const mockMessagePreview = "Hey! Just testing the notification system"
+    const mockMessagePreview = "Hey! Just testing the notification system with correct FID"
     const mockChatId = "test-chat-123"
 
     console.log('📱 Sending mock message notification:', {
