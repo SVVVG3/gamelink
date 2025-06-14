@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Extract participant FIDs and sender info
-    const chat = message.chats[0] // Get the first (and only) chat
+    const chat = message.chats // chats is a single object, not an array
     const participantFids = chat.participants.map((p: any) => p.fid)
     const senderProfile = chat.participants.find((p: any) => p.fid === message.sender_fid)
     const senderName = senderProfile?.profiles?.[0]?.display_name || 
