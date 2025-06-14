@@ -106,10 +106,20 @@ async function handleNotificationsDisabled(event: FarcasterWebhookEvent, fid: nu
  * Main webhook handler for real Farcaster webhooks
  */
 export async function POST(request: NextRequest) {
+  const timestamp = new Date().toISOString()
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+  const origin = request.headers.get('origin') || 'unknown'
+  
   try {
     const body = await request.text()
     
-    console.log('📥 Received Farcaster webhook at /api/webhook')
+    console.log(`📥 [${timestamp}] Received webhook request:`, {
+      userAgent,
+      origin,
+      contentType: request.headers.get('content-type'),
+      contentLength: body.length,
+      bodyPreview: body.substring(0, 200) + (body.length > 200 ? '...' : '')
+    })
 
     // Parse the webhook event
     let parsedEvent: FarcasterWebhookEvent
@@ -119,10 +129,12 @@ export async function POST(request: NextRequest) {
       parsedEvent = JSON.parse(body)
       console.log('📋 Parsed webhook payload:', {
         event: parsedEvent.event,
-        hasNotificationDetails: !!parsedEvent.notificationDetails
+        hasNotificationDetails: !!parsedEvent.notificationDetails,
+        tokenPreview: parsedEvent.notificationDetails?.token?.substring(0, 10) + '...'
       })
     } catch (parseError: any) {
       console.error('❌ Failed to parse webhook JSON:', parseError.message)
+      console.log('📄 Raw body:', body)
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
         { status: 400 }
@@ -136,6 +148,7 @@ export async function POST(request: NextRequest) {
       console.log(`🆔 Using FID from header: ${fid}`)
     } else {
       console.error('❌ No FID available - missing x-farcaster-fid header')
+      console.log('📋 Available headers:', Object.fromEntries(request.headers.entries()))
       return NextResponse.json(
         { error: 'Missing FID in request headers (x-farcaster-fid required for testing)' },
         { status: 400 }
@@ -199,7 +212,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('❌ Error processing Farcaster webhook:', error)
+    console.error(`❌ [${timestamp}] Error processing webhook:`, error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -211,11 +224,18 @@ export async function POST(request: NextRequest) {
  * Handle GET requests - webhook health check
  */
 export async function GET(request: NextRequest) {
+  const timestamp = new Date().toISOString()
+  console.log(`📋 [${timestamp}] Webhook health check from:`, {
+    userAgent: request.headers.get('user-agent'),
+    origin: request.headers.get('origin')
+  })
+  
   return NextResponse.json({
     message: 'Farcaster notification webhook endpoint',
     status: 'active',
-    timestamp: new Date().toISOString(),
+    timestamp,
     endpoint: '/api/webhook',
-    format: 'Real Farcaster webhook format (development mode - no signature verification)'
+    format: 'Real Farcaster webhook format (development mode - no signature verification)',
+    lastCheck: timestamp
   })
 } 
