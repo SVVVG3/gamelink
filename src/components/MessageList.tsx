@@ -7,6 +7,7 @@ import {
   subscribeToChatMessages,
   type MessageWithSender 
 } from '@/lib/supabase/chats'
+import { createClient } from '@/lib/supabase/client'
 import { FaSpinner, FaExclamationTriangle } from 'react-icons/fa'
 
 interface MessageListProps {
@@ -19,9 +20,10 @@ interface MessageBubbleProps {
   message: MessageWithSender
   isOwn: boolean
   showSender: boolean
+  isUnread: boolean
 }
 
-function MessageBubble({ message, isOwn, showSender }: MessageBubbleProps) {
+function MessageBubble({ message, isOwn, showSender, isUnread }: MessageBubbleProps) {
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
@@ -61,10 +63,16 @@ function MessageBubble({ message, isOwn, showSender }: MessageBubbleProps) {
             px-4 py-2 rounded-2xl relative
             ${isOwn
               ? 'bg-blue-600 text-white rounded-br-md'
-              : 'bg-gray-700 text-gray-100 rounded-bl-md'
+              : isUnread
+                ? 'bg-purple-600 text-white rounded-bl-md border-l-4 border-purple-400'
+                : 'bg-gray-700 text-gray-100 rounded-bl-md'
             }
           `}
         >
+          {/* Unread indicator */}
+          {isUnread && !isOwn && (
+            <div className="absolute -left-2 top-2 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+          )}
           {/* Message content */}
           <div className="break-words whitespace-pre-wrap">
             {message.content}
@@ -91,6 +99,7 @@ export default function MessageList({ chatId, onNewMessage, className = "" }: Me
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
+  const [readMessageIds, setReadMessageIds] = useState<Set<string>>(new Set())
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -102,6 +111,30 @@ export default function MessageList({ chatId, onNewMessage, className = "" }: Me
     messagesEndRef.current?.scrollIntoView({ 
       behavior: smooth ? 'smooth' : 'auto' 
     })
+  }
+
+  // Fetch read status for messages
+  const fetchReadStatus = async (messageIds: string[]) => {
+    if (!profile?.id || messageIds.length === 0) return
+    
+    try {
+      const supabase = createClient()
+      const { data: readMessages, error } = await supabase
+        .from('message_read_status')
+        .select('message_id')
+        .eq('user_id', profile.id)
+        .in('message_id', messageIds)
+      
+      if (error) {
+        console.error('Error fetching read status:', error)
+        return
+      }
+      
+      const readIds = new Set(readMessages?.map(r => r.message_id) || [])
+      setReadMessageIds(readIds)
+    } catch (err) {
+      console.error('Error fetching read status:', err)
+    }
   }
 
   // Load messages
@@ -121,6 +154,10 @@ export default function MessageList({ chatId, onNewMessage, className = "" }: Me
       }
       
       setHasMore(newMessages.length === 50)
+      
+      // Fetch read status for the loaded messages
+      const messageIds = newMessages.map(m => m.id)
+      await fetchReadStatus(messageIds)
     } catch (err) {
       console.error('Error loading messages:', err)
       setError(err instanceof Error ? err.message : 'Failed to load messages')
@@ -265,6 +302,7 @@ export default function MessageList({ chatId, onNewMessage, className = "" }: Me
           const showSender = !prevMessage || 
             prevMessage.sender_fid !== message.sender_fid ||
             (new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime()) > 300000 // 5 minutes
+          const isUnread = !isOwn && !readMessageIds.has(message.id)
 
           return (
             <MessageBubble
@@ -272,6 +310,7 @@ export default function MessageList({ chatId, onNewMessage, className = "" }: Me
               message={message}
               isOwn={isOwn}
               showSender={showSender}
+              isUnread={isUnread}
             />
           )
         })}
