@@ -145,6 +145,32 @@ export default function EditGroupClient({ params }: Props) {
     }
   }
 
+  const handleDeleteGroup = async () => {
+    if (!group || !profile?.id) return
+    
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete "${group.name}"? This action cannot be undone and will remove all members and messages.`
+    )
+    
+    if (!confirmDelete) return
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const { deleteGroup } = await import('@/lib/supabase/groups')
+      await deleteGroup(groupId)
+      
+      // Navigate back to groups page
+      router.push('/groups')
+    } catch (err) {
+      console.error('Error deleting group:', err)
+      setError(err instanceof Error ? err.message : 'Failed to delete group')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   // Handle back navigation to group chat
   const handleBackToGroup = async () => {
     if (!groupId || !profile?.id) return
@@ -408,6 +434,36 @@ export default function EditGroupClient({ params }: Props) {
             </button>
           </div>
         </form>
+      </div>
+      
+      {/* Danger Zone */}
+      <div className="p-4">
+        <div className="bg-red-900/20 border border-red-700 rounded-lg p-6">
+          <h2 className="text-lg font-bold text-red-400 mb-2">Danger Zone</h2>
+          <p className="text-red-300 text-sm mb-4">
+            Once you delete a group, there is no going back. This will permanently delete the group, remove all members, and delete all messages.
+          </p>
+          <button
+            type="button"
+            onClick={handleDeleteGroup}
+            disabled={isSaving}
+            className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors"
+          >
+            {isSaving ? (
+              <>
+                <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Group
+              </>
+            )}
+          </button>
+        </div>
       </div>
       
       <BottomNavigation />

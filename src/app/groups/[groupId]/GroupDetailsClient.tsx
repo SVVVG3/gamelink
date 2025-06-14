@@ -306,7 +306,7 @@ export default function GroupDetailsClient({ params }: Props) {
     )
   }
 
-  // Not a member view
+  // Non-member view - show group preview with join option
   if (!isMember) {
     const skillBadge = getSkillBadge(group.skillLevel)
     
@@ -339,12 +339,9 @@ export default function GroupDetailsClient({ params }: Props) {
             
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-white mb-2">{group.name}</h1>
-              {group.description && (
-                <p className="text-gray-300 mb-3">{group.description}</p>
-              )}
               
-              <div className="flex items-center space-x-4 text-sm">
-                <div className="flex items-center text-gray-400">
+              <div className="flex items-center space-x-4 text-sm text-gray-400 mb-2">
+                <div className="flex items-center">
                   <FaUsers className="w-4 h-4 mr-1" />
                   <span>{group.memberCount}/{group.maxMembers} members</span>
                 </div>
@@ -356,7 +353,7 @@ export default function GroupDetailsClient({ params }: Props) {
                   </div>
                 )}
                 
-                <span className={`px-2 py-1 rounded-full text-xs ${skillBadge.color} text-white`}>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${skillBadge.color}`}>
                   {skillBadge.text}
                 </span>
               </div>
@@ -364,105 +361,79 @@ export default function GroupDetailsClient({ params }: Props) {
           </div>
         </div>
 
-        {/* Group Info */}
+        {/* Group Details */}
         <div className="p-4 space-y-6">
+          {/* Description */}
+          {group.description && (
+            <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+              <h2 className="text-lg font-bold text-white mb-3">About</h2>
+              <p className="text-gray-300">{group.description}</p>
+            </div>
+          )}
+
+          {/* Game Info */}
           <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-            <h2 className="text-lg font-bold text-white mb-4">Group Information</h2>
-            
-            <div className="space-y-4">
-              {/* Group Creator */}
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">Created by</label>
-                <div className="flex items-center space-x-2">
-                  {/* Find creator from members list */}
-                  {(() => {
-                    const creator = group.members?.find(member => 
-                      member.userId === group.createdBy && member.role === 'admin'
-                    )
-                    return creator ? (
-                      <>
-                        {creator.profile?.pfp_url && (
-                          <img
-                            src={creator.profile.pfp_url}
-                            alt={creator.profile.display_name || creator.profile.username}
-                            className="w-6 h-6 rounded-full"
-                          />
-                        )}
-                        <p className="text-white font-medium">
-                          {creator.profile?.display_name || creator.profile?.username || 'Group Creator'}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-white font-medium">Group Creator</p>
-                    )
-                  })()}
-                </div>
-              </div>
-              
+            <h2 className="text-lg font-bold text-white mb-4">Game Details</h2>
+            <div className="space-y-3">
               {group.primaryGame && (
-                <div>
-                  <label className="text-sm text-gray-400 block mb-1">Primary Game</label>
-                  <p className="text-white font-medium">{group.primaryGame}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Primary Game</span>
+                  <span className="text-white font-medium">{group.primaryGame}</span>
                 </div>
               )}
               
-                             {group.gamingPlatform && (
-                 <div>
-                   <label className="text-sm text-gray-400 block mb-1">Platform</label>
-                   <p className="text-white font-medium flex items-center">
-                     {getPlatformIcon(group.gamingPlatform)} 
-                     <span className="ml-2">{group.gamingPlatform}</span>
-                   </p>
-                 </div>
-               )}
+              {group.gamingPlatform && (
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Platform</span>
+                  <span className="text-white font-medium flex items-center">
+                    <span className="mr-2">{getPlatformIcon(group.gamingPlatform)}</span>
+                    {group.gamingPlatform}
+                  </span>
+                </div>
+              )}
               
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">Skill Level</label>
-                <span className={`inline-block px-3 py-1 rounded-full text-sm ${skillBadge.color} text-white`}>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Skill Level</span>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${skillBadge.color}`}>
                   {skillBadge.text}
                 </span>
               </div>
             </div>
           </div>
 
-          {group.isPrivate ? (
-            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <FaLock className="w-5 h-5 text-yellow-400" />
-                <h3 className="text-yellow-400 font-medium">Private Group</h3>
-              </div>
-              <p className="text-yellow-300 text-sm">
-                This is a private group. You need an invitation to join.
+          {/* Join Button */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h2 className="text-lg font-bold text-white mb-3">Join Group</h2>
+            <p className="text-gray-400 mb-4">
+              Join this group to start chatting with other members and participate in gaming sessions.
+            </p>
+            
+            <button
+              onClick={joinGroup}
+              disabled={isJoining || (group.memberCount >= group.maxMembers)}
+              className="w-full flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
+            >
+              {isJoining ? (
+                <>
+                  <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                  Joining...
+                </>
+              ) : group.memberCount >= group.maxMembers ? (
+                'Group Full'
+              ) : (
+                <>
+                  <FaUserPlus className="w-4 h-4 mr-2" />
+                  Join Group
+                </>
+              )}
+            </button>
+            
+            {group.requireAdminApproval && (
+              <p className="text-yellow-400 text-sm mt-2 text-center">
+                ⚠️ This group requires admin approval for new members
               </p>
-            </div>
-          ) : (
-            <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-6">
-              <div className="flex items-center space-x-2 mb-3">
-                <FaUsers className="w-5 h-5 text-blue-400" />
-                <h3 className="text-blue-400 font-medium">Join This Group</h3>
-              </div>
-              <p className="text-blue-300 text-sm mb-4">
-                This is a public group. Click below to join and start participating in discussions!
-              </p>
-              <button
-                onClick={joinGroup}
-                disabled={isJoining}
-                className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
-              >
-                {isJoining ? (
-                  <>
-                    <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
-                    Joining...
-                  </>
-                ) : (
-                  <>
-                    <FaUserPlus className="w-4 h-4 mr-2" />
-                    Join Group
-                  </>
-                )}
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         
         <BottomNavigation />

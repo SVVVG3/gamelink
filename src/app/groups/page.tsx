@@ -358,25 +358,13 @@ function GroupCard({ group }: { group: GroupWithMemberCount }) {
 
   const skillBadge = getSkillBadge(group.skillLevel)
 
-  // Navigate directly to group chat instead of group details
-  const handleGroupClick = async () => {
-    if (!profile?.id || isNavigating) return
+  // Navigate to group details page (will show preview for non-members, chat for members)
+  const handleGroupClick = () => {
+    if (isNavigating) return
     
     setIsNavigating(true)
-    try {
-      // Get or create the group chat
-      const { getOrCreateGroupChat } = await import('@/lib/supabase/groups')
-      const chatId = await getOrCreateGroupChat(group.id, profile.id)
-      
-      // Navigate to the chat
-      window.location.href = `/messages/${chatId}`
-    } catch (error) {
-      console.error('Error navigating to group chat:', error)
-      // Fallback to group details page
-      window.location.href = `/groups/${group.id}`
-    } finally {
-      setIsNavigating(false)
-    }
+    // Navigate to group details page
+    window.location.href = `/groups/${group.id}`
   }
 
   return (
