@@ -243,7 +243,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages Area - with top padding for fixed header */}
-      <div className="flex-1 flex flex-col pt-16 pb-24">
+      <div className="flex-1 flex flex-col pt-16 pb-32">
         <MessageList
           chatId={chatId}
           onNewMessage={(message) => console.log('New message received:', message)}
