@@ -19,6 +19,26 @@ export const metadata: Metadata = {
   title: "GameLink - Connect with Fellow Gamers on Farcaster",
   description: "Share your gamertags, organize events, and chat with fellow gamers on Farcaster",
   manifest: "/.well-known/farcaster.json",
+  openGraph: {
+    title: "GameLink - Connect with Fellow Gamers on Farcaster",
+    description: "Share your gamertags, organize events, and chat with fellow gamers on Farcaster",
+    images: [
+      {
+        url: "https://farcaster-gamelink.vercel.app/gamelinkEmbed.png",
+        width: 600,
+        height: 400,
+        alt: "GameLink - Connect with Fellow Gamers",
+      },
+    ],
+    type: "website",
+    url: "https://farcaster-gamelink.vercel.app",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GameLink - Connect with Fellow Gamers on Farcaster",
+    description: "Share your gamertags, organize events, and chat with fellow gamers on Farcaster",
+    images: ["https://farcaster-gamelink.vercel.app/gamelinkEmbed.png"],
+  },
   other: {
     'fc:frame': JSON.stringify({
       version: "next",
