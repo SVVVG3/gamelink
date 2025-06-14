@@ -348,9 +348,9 @@ export async function sendMessageNotification(
     // Get chat participants (exclude sender)
     const { data: participants, error: participantsError } = await supabase
       .from('chat_participants')
-      .select('user_fid')
+      .select('fid')
       .eq('chat_id', message.chat_id)
-      .neq('user_fid', message.sender_fid)
+      .neq('fid', message.sender_fid)
 
     if (participantsError) {
       console.error('Error fetching chat participants:', participantsError)
@@ -362,7 +362,7 @@ export async function sendMessageNotification(
       return { success: true }
     }
 
-    const recipientFids = participants.map((p: { user_fid: number }) => p.user_fid)
+    const recipientFids = participants.map((p: { fid: number }) => p.fid)
     
     // Filter by notification preferences
     const enabledFids = await filterUsersByNotificationPreferences(recipientFids, 'messages')
