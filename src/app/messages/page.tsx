@@ -7,6 +7,7 @@ import { getUserChats, type ChatWithParticipants } from '@/lib/supabase/chats'
 import BottomNavigation from '@/components/BottomNavigation'
 import NewChatModal from '@/components/NewChatModal'
 import { FaComments, FaPlus, FaSearch, FaUsers, FaUser, FaSpinner } from 'react-icons/fa'
+import { createClient } from '@/lib/supabase/client'
 
 // Extended interface to include user profile data
 interface ChatWithUserProfiles extends ChatWithParticipants {
@@ -28,6 +29,7 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false)
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
   // Fetch user profiles for chat participants
   const fetchUserProfiles = async (fids: number[]) => {
@@ -50,6 +52,57 @@ export default function MessagesPage() {
     } catch (error) {
       console.error('Error fetching user profiles:', error)
       return {}
+    }
+  }
+
+  // Fetch unread message counts for each chat
+  const fetchUnreadCounts = async (chatIds: string[]) => {
+    if (!profile?.id || chatIds.length === 0) return
+    
+    try {
+      const supabase = createClient()
+      const counts: Record<string, number> = {}
+      
+      for (const chatId of chatIds) {
+        // Get all messages in this chat (excluding own messages)
+        const { data: allMessages, error: messagesError } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('chat_id', chatId)
+          .neq('sender_id', profile.id)
+
+        if (messagesError) {
+          console.error('Error fetching messages for chat:', chatId, messagesError)
+          counts[chatId] = 0
+          continue
+        }
+
+        const messageIds = allMessages?.map((msg: any) => msg.id) || []
+        
+        if (messageIds.length > 0) {
+          // Get read message IDs for this user
+          const { data: readMessages, error: readError } = await supabase
+            .from('message_read_status')
+            .select('message_id')
+            .eq('user_id', profile.id)
+            .in('message_id', messageIds)
+
+          if (readError) {
+            console.error('Error fetching read status for chat:', chatId, readError)
+            counts[chatId] = 0
+          } else {
+            const readMessageIds = new Set(readMessages?.map((r: any) => r.message_id) || [])
+            const unreadCount = messageIds.filter((id: string) => !readMessageIds.has(id)).length
+            counts[chatId] = unreadCount
+          }
+        } else {
+          counts[chatId] = 0
+        }
+      }
+      
+      setUnreadCounts(counts)
+    } catch (error) {
+      console.error('Error fetching unread counts:', error)
     }
   }
 
@@ -86,6 +139,10 @@ export default function MessagesPage() {
       }))
       
       setChats(chatsWithProfiles)
+      
+      // Fetch unread counts for all chats
+      const chatIds = chatsWithProfiles.map(chat => chat.id)
+      await fetchUnreadCounts(chatIds)
     } catch (err) {
       console.error('Error loading chats:', err)
       setError(err instanceof Error ? err.message : 'Failed to load chats')
@@ -278,60 +335,88 @@ export default function MessagesPage() {
                 </span>
               </div>
               
-              {filteredChats.map((chat) => (
-                <div
-                  key={chat.id}
-                  onClick={() => router.push(`/messages/${chat.id}`)}
-                  className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 hover:border-gray-600 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center space-x-4">
-                    {/* Chat Avatar */}
-                    <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center group-hover:bg-gray-600 transition-colors overflow-hidden">
-                      {getChatAvatarUrl(chat) ? (
-                        <img
-                          src={getChatAvatarUrl(chat)!}
-                          alt={getChatDisplayName(chat)}
-                          className="w-full h-full object-cover rounded-full"
-                        />
-                      ) : chat.type === 'group' ? (
-                        <FaUsers className="w-6 h-6 text-gray-400" />
-                      ) : (
-                        <FaUser className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-
-                    {/* Chat Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-white font-medium truncate">
-                          {getChatDisplayName(chat)}
-                        </h3>
-                        <span className="text-xs text-gray-400 ml-2">
-                          {formatLastMessageTime(chat.last_message_at)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-sm text-gray-400 truncate">
-                          {chat.type === 'group' 
-                            ? `${chat.participant_count} members`
-                            : 'Direct message'
-                          }
-                        </p>
+              {filteredChats.map((chat) => {
+                const hasUnread = unreadCounts[chat.id] > 0
+                
+                return (
+                  <div
+                    key={chat.id}
+                    onClick={() => router.push(`/messages/${chat.id}`)}
+                    className={`
+                      border rounded-lg p-4 hover:border-gray-600 transition-all cursor-pointer group
+                      ${hasUnread 
+                        ? 'bg-purple-900/20 border-purple-700/50 hover:bg-purple-900/30' 
+                        : 'bg-gray-800 border-gray-700 hover:bg-gray-750'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center space-x-4">
+                      {/* Chat Avatar */}
+                      <div className={`
+                        w-12 h-12 rounded-full flex items-center justify-center transition-colors overflow-hidden relative
+                        ${hasUnread 
+                          ? 'bg-purple-700 group-hover:bg-purple-600' 
+                          : 'bg-gray-700 group-hover:bg-gray-600'
+                        }
+                      `}>
+                        {/* Unread indicator dot */}
+                        {hasUnread && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-gray-900"></div>
+                        )}
                         
-                        {/* Chat type indicator */}
-                        <div className="flex items-center space-x-1">
-                          {chat.type === 'group' && (
-                            <span className="text-xs bg-blue-600/20 text-blue-400 px-2 py-1 rounded">
-                              Group
-                            </span>
-                          )}
+                        {getChatAvatarUrl(chat) ? (
+                          <img
+                            src={getChatAvatarUrl(chat)!}
+                            alt={getChatDisplayName(chat)}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : chat.type === 'group' ? (
+                          <FaUsers className="w-6 h-6 text-gray-400" />
+                        ) : (
+                          <FaUser className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
+
+                      {/* Chat Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className={`font-medium truncate ${hasUnread ? 'text-white font-semibold' : 'text-white'}`}>
+                            {getChatDisplayName(chat)}
+                          </h3>
+                          <span className="text-xs text-gray-400 ml-2">
+                            {formatLastMessageTime(chat.last_message_at)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm text-gray-400 truncate">
+                            {chat.type === 'group' 
+                              ? `${chat.participant_count} members`
+                              : 'Direct message'
+                            }
+                          </p>
+                          
+                          {/* Chat type indicator */}
+                          <div className="flex items-center space-x-1">
+                            {/* Unread count indicator */}
+                            {unreadCounts[chat.id] > 0 && (
+                              <span className="bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                                {unreadCounts[chat.id]}
+                              </span>
+                            )}
+                            
+                            {chat.type === 'group' && (
+                              <span className="text-xs bg-blue-600/20 text-blue-400 px-2 py-1 rounded">
+                                Group
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </>
           ) : (
             <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 sm:p-12 text-center">
