@@ -120,14 +120,35 @@ export default function EventDetailsPage() {
     }
   }
 
-  const shareEventFrame = () => {
+  const shareEventFrame = async () => {
     if (!event) return
     
     // Create a shareable frame URL
     const frameUrl = `${window.location.origin}/api/frames/events/${eventId}`
     const shareText = `🎮 Join me for ${event.title}!\n\nGame: ${event.game}\nDate: ${formatDateTime(event.startTime).date} at ${formatDateTime(event.startTime).time}\n\n`
     
-    // Open Farcaster with the frame URL
+    // Try to use Farcaster SDK if available (Mini App context)
+    try {
+      const { sdk } = await import('@farcaster/frame-sdk')
+      
+      // Check if we're in a Mini App context by trying to get context
+      const context = await sdk.context
+      if (context && context.client) {
+        const result = await sdk.actions.composeCast({
+          text: shareText,
+          embeds: [frameUrl]
+        })
+        
+        if (result?.cast) {
+          console.log('Cast shared successfully:', result.cast.hash)
+        }
+        return
+      }
+    } catch (error) {
+      console.error('Farcaster SDK not available, using web fallback:', error)
+    }
+    
+    // Fallback for standalone web app - open Warpcast
     const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(frameUrl)}`
     window.open(farcasterUrl, '_blank')
   }
