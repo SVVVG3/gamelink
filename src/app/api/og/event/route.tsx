@@ -28,72 +28,105 @@ export async function GET(request: NextRequest) {
       return new NextResponse('Event not found', { status: 404 });
     }
 
-    // Create a simple PNG using a data URL approach
-    const canvas = `
-      <svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-          </linearGradient>
-        </defs>
-        
-        <!-- Background -->
-        <rect width="1200" height="800" fill="url(#bg)"/>
-        
-        <!-- Content Container -->
-        <rect x="80" y="80" width="1040" height="640" fill="rgba(255,255,255,0.95)" rx="20"/>
-        
-        <!-- Header -->
-        <text x="600" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#2d3748">
-          🎮 GameLink Event
-        </text>
-        
-        <!-- Event Title -->
-        <text x="600" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="600" fill="#4a5568">
-          ${event.title.length > 40 ? event.title.substring(0, 40) + '...' : event.title}
-        </text>
-        
-        <!-- Game -->
-        <text x="600" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#718096">
-          Game: ${event.game || 'TBD'}
-        </text>
-        
-        <!-- Date -->
-        <text x="600" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#718096">
-          📅 ${new Date(event.start_time).toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
-        </text>
-        
-        <!-- Time -->
-        <text x="600" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#718096">
-          🕐 ${new Date(event.start_time).toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            timeZoneName: 'short'
-          })}
-        </text>
-        
-        <!-- Organizer -->
-        <text x="600" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#a0aec0">
-          Organized by ${event.profiles?.display_name || event.profiles?.username || 'Anonymous'}
-        </text>
-        
-        <!-- CTA -->
-        <rect x="450" y="580" width="300" height="60" fill="#667eea" rx="30"/>
-        <text x="600" y="620" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="white">
-          Join Event
-        </text>
-      </svg>
+    // Create HTML page that generates an image
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              width: 1200px;
+              height: 800px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              font-family: Arial, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .container {
+              width: 1040px;
+              height: 640px;
+              background: rgba(255,255,255,0.95);
+              border-radius: 20px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              text-align: center;
+              padding: 40px;
+              box-sizing: border-box;
+            }
+            .header {
+              font-size: 48px;
+              font-weight: bold;
+              color: #2d3748;
+              margin-bottom: 40px;
+            }
+            .title {
+              font-size: 36px;
+              font-weight: 600;
+              color: #4a5568;
+              margin-bottom: 30px;
+              max-width: 800px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+            .game {
+              font-size: 28px;
+              color: #718096;
+              margin-bottom: 20px;
+            }
+            .date, .time {
+              font-size: 24px;
+              color: #718096;
+              margin-bottom: 15px;
+            }
+            .organizer {
+              font-size: 20px;
+              color: #a0aec0;
+              margin-bottom: 40px;
+            }
+            .cta {
+              background: #667eea;
+              color: white;
+              padding: 15px 40px;
+              border-radius: 30px;
+              font-size: 24px;
+              font-weight: 600;
+              border: none;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">🎮 GameLink Event</div>
+            <div class="title">${event.title}</div>
+            <div class="game">Game: ${event.game || 'TBD'}</div>
+            <div class="date">📅 ${new Date(event.start_time).toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</div>
+            <div class="time">🕐 ${new Date(event.start_time).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              timeZoneName: 'short'
+            })}</div>
+            <div class="organizer">Organized by ${event.profiles?.display_name || event.profiles?.username || 'Anonymous'}</div>
+            <div class="cta">Join Event</div>
+          </div>
+        </body>
+      </html>
     `;
 
-    return new NextResponse(canvas, {
+    return new NextResponse(html, {
       headers: {
-        'Content-Type': 'image/svg+xml',
+        'Content-Type': 'text/html',
         'Cache-Control': 'public, immutable, no-transform, max-age=300',
       },
     });

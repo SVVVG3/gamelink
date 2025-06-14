@@ -19,9 +19,6 @@ export async function GET(request: NextRequest) {
         profiles:created_by (
           display_name,
           username
-        ),
-        group_members!inner (
-          id
         )
       `)
       .eq('id', groupId)
@@ -31,8 +28,12 @@ export async function GET(request: NextRequest) {
       return new NextResponse('Group not found', { status: 404 });
     }
 
-    // Count members
-    const memberCount = group.group_members?.length || 0;
+    // Count members separately
+    const { count } = await supabase
+      .from('group_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('group_id', groupId);
+    const memberCount = count || 0;
 
     // Create SVG image
     const canvas = `

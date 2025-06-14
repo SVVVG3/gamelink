@@ -19,13 +19,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         profiles:created_by (
           display_name,
           username
-        ),
-        group_members!inner (
-          id
         )
       `)
       .eq('id', groupId)
       .single()
+
+    // Get member count separately
+    let memberCount = 0
+    if (group) {
+      const { count } = await supabase
+        .from('group_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('group_id', groupId)
+      memberCount = count || 0
+    }
 
     if (error || !group) {
       return {
@@ -35,19 +42,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-gamelink.vercel.app'
-    const memberCount = group.group_members?.length || 0
     
     // Create Mini App Embed JSON
     const frameEmbed = {
       version: "next",
-      imageUrl: `${baseUrl}/api/og/group?groupId=${groupId}`,
+      imageUrl: `${baseUrl}/gamelinkEmbed.png`,
       button: {
         title: "👥 Join Group",
         action: {
           type: "launch_frame",
           url: `${baseUrl}/groups/${groupId}`,
           name: "GameLink",
-          splashImageUrl: `${baseUrl}/logo.png`,
+          splashImageUrl: `${baseUrl}/gamelinkSplashImage.png`,
           splashBackgroundColor: "#48bb78"
         }
       }
@@ -59,7 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title: `${group.name} - GameLink Group`,
         description: `Join ${group.name} on GameLink - ${group.description || 'Gaming group'}`,
-        images: [`${baseUrl}/api/og/group?groupId=${groupId}`],
+        images: [`${baseUrl}/gamelinkEmbed.png`],
         url: `${baseUrl}/groups/${groupId}`,
         type: 'website',
       },
@@ -67,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title: `${group.name} - GameLink Group`,
         description: `Join ${group.name} on GameLink`,
-        images: [`${baseUrl}/api/og/group?groupId=${groupId}`],
+        images: [`${baseUrl}/gamelinkEmbed.png`],
       },
       other: {
         'fc:frame': JSON.stringify(frameEmbed),

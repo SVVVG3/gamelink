@@ -36,14 +36,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Create Mini App Embed JSON
     const frameEmbed = {
       version: "next",
-      imageUrl: `${baseUrl}/api/og/event?eventId=${eventId}`,
+      imageUrl: `${baseUrl}/gamelinkEmbed.png`,
       button: {
         title: "🎮 Join Event",
         action: {
           type: "launch_frame",
           url: `${baseUrl}/events/${eventId}`,
           name: "GameLink",
-          splashImageUrl: `${baseUrl}/logo.png`,
+          splashImageUrl: `${baseUrl}/gamelinkSplashImage.png`,
           splashBackgroundColor: "#667eea"
         }
       }
@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title: `${event.title} - GameLink Event`,
         description: `Join ${event.title} on GameLink - ${event.game ? `Playing ${event.game}` : 'Gaming event'}`,
-        images: [`${baseUrl}/api/og/event?eventId=${eventId}`],
+        images: [`${baseUrl}/gamelinkEmbed.png`],
         url: `${baseUrl}/events/${eventId}`,
         type: 'website',
       },
@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title: `${event.title} - GameLink Event`,
         description: `Join ${event.title} on GameLink`,
-        images: [`${baseUrl}/api/og/event?eventId=${eventId}`],
+        images: [`${baseUrl}/gamelinkEmbed.png`],
       },
       other: {
         'fc:frame': JSON.stringify(frameEmbed),
