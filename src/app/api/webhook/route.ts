@@ -116,16 +116,25 @@ export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString()
   const userAgent = request.headers.get('user-agent') || 'unknown'
   const origin = request.headers.get('origin') || 'unknown'
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
   
   try {
     const body = await request.text()
     
-    console.log(`📥 [${timestamp}] Received webhook request:`, {
+    // Log ALL headers for debugging
+    const allHeaders = Object.fromEntries(request.headers.entries())
+    
+    console.log(`📥 [${timestamp}] WEBHOOK REQUEST RECEIVED:`, {
+      ip,
       userAgent,
       origin,
+      method: request.method,
+      url: request.url,
       contentType: request.headers.get('content-type'),
       contentLength: body.length,
-      bodyPreview: body.substring(0, 200) + (body.length > 200 ? '...' : '')
+      allHeaders,
+      bodyPreview: body.substring(0, 500) + (body.length > 500 ? '...' : ''),
+      timestamp
     })
 
     let parsedEvent: FarcasterWebhookEvent
@@ -154,6 +163,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Production mode - verify signature and extract FID from signed payload
       console.log(`🔐 Production mode: Verifying webhook signature`)
+      console.log(`🔍 Raw body for verification:`, body)
       
       try {
         // Verify the webhook signature and extract the data
@@ -174,11 +184,11 @@ export async function POST(request: NextRequest) {
       } catch (verifyError: any) {
         console.error('❌ Webhook signature verification failed:', verifyError.message)
         console.log('📄 Raw body for debugging:', body)
-        
-        // For debugging, let's see what the error details are
-        if (verifyError.name) {
-          console.log('🔍 Error type:', verifyError.name)
-        }
+        console.log('🔍 Error details:', {
+          name: verifyError.name,
+          message: verifyError.message,
+          stack: verifyError.stack
+        })
         
         return NextResponse.json(
           { error: 'Webhook signature verification failed', details: verifyError.message },
@@ -245,6 +255,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error(`❌ [${timestamp}] Error processing webhook:`, error)
+    console.log(`🔍 Error details:`, {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    })
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
