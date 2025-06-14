@@ -61,14 +61,17 @@ export async function POST(request: NextRequest) {
     const chat = message.chats as any
     const participantFids = chat.participants.map((p: any) => p.fid)
     const senderProfile = chat.participants.find((p: any) => p.fid === message.sender_fid)
-    const senderName = senderProfile?.profiles?.[0]?.display_name || 
-                      senderProfile?.profiles?.[0]?.username || 
+    
+    // Fix: profiles is an object, not an array
+    const senderName = senderProfile?.profiles?.display_name || 
+                      senderProfile?.profiles?.username || 
                       `User ${message.sender_fid}`
 
     console.log('📊 Chat participants:', {
       all_participants: participantFids,
       sender_fid: message.sender_fid,
       sender_name: senderName,
+      sender_profile_debug: senderProfile?.profiles,
       recipients: participantFids.filter((fid: number) => fid !== message.sender_fid)
     })
 
