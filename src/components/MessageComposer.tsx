@@ -126,6 +126,28 @@ export default function MessageComposer({
 
         const sentMessage = await sendMessage(messageData, profile?.fid)
         
+        // Send notification to other chat participants
+        try {
+          const response = await fetch('/api/notifications/message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messageId: sentMessage.id
+            })
+          })
+          
+          if (!response.ok) {
+            console.warn('Failed to send message notification:', await response.text())
+          } else {
+            console.log('✅ Message notification sent successfully')
+          }
+        } catch (notificationError) {
+          console.warn('Error sending message notification:', notificationError)
+          // Don't fail the message send if notification fails
+        }
+        
         // Clear the input
         setMessage('')
         

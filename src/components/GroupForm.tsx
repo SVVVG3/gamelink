@@ -116,6 +116,21 @@ export default function GroupForm({ onSuccess, onCancel, className = '' }: Group
       // Create the group
       const group = await createGroup(formData, profile.id)
 
+      // Send notification for public groups (async, don't wait for completion)
+      if (!group.isPrivate) {
+        fetch('/api/notifications/group-creation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            groupId: group.id
+          })
+        }).catch(error => {
+          console.warn('Failed to send group creation notification:', error)
+        })
+      }
+
       // Send invitations to selected mutual followers
       if (selectedInvitees.size > 0) {
         try {
@@ -131,12 +146,29 @@ export default function GroupForm({ onSuccess, onCancel, className = '' }: Group
             }
             
             try {
-              return await createGroupInvitation(
+              const invitation = await createGroupInvitation(
                 group.id,
                 profile.id,
                 profileId, // Now using the correct profile ID
                 `You've been invited to join "${group.name}"!`
               )
+              
+              // Send notification for the invitation (async, don't wait for completion)
+              if (invitation) {
+                fetch('/api/notifications/group-invitation', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    invitationId: invitation.id
+                  })
+                }).catch(error => {
+                  console.warn('Failed to send group invitation notification:', error)
+                })
+              }
+              
+              return invitation
             } catch (err) {
               console.warn(`Failed to invite user ${fid}:`, err)
               return null

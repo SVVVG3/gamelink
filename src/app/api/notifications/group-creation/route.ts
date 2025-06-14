@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendGroupCreationNotification } from '@/lib/notifications'
+import { createClient } from '@/lib/supabase/server'
+import { sendGroupCreationNotification } from '@/lib/notifications-neynar'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,17 +13,69 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`📱 Processing group creation notification for ID: ${groupId}`)
+    console.log(`📱 Processing group creation notification for ID: ${groupId} via Neynar`)
     
-    const result = await sendGroupCreationNotification(groupId)
+    const supabase = await createClient()
+    
+    // Get group details with creator info
+    const { data: group, error: groupError } = await supabase
+      .from('groups')
+      .select(`
+        id,
+        name,
+        description,
+        created_by,
+        is_private,
+        profiles!groups_created_by_fkey (
+          fid,
+          display_name,
+          username
+        )
+      `)
+      .eq('id', groupId)
+      .single()
+
+    if (groupError || !group) {
+      console.error('Error fetching group:', groupError)
+      return NextResponse.json(
+        { error: 'Group not found' },
+        { status: 404 }
+      )
+    }
+
+    // Only send notifications for public groups
+    if (group.is_private) {
+      console.log('ℹ️ Skipping notification for private group')
+      return NextResponse.json(
+        { message: 'Private group - no notification sent', groupId },
+        { status: 200 }
+      )
+    }
+
+    const creatorProfile = group.profiles?.[0] // Get first profile from array
+    const creatorName = creatorProfile?.display_name || 
+                       creatorProfile?.username || 
+                       `User ${creatorProfile?.fid}`
+
+    // Send notification via Neynar with mutual follower filtering
+    const result = await sendGroupCreationNotification(
+      group.name,
+      group.description || '',
+      group.id,
+      creatorName,
+      {
+        following_fid: creatorProfile?.fid // Only send to mutual followers of the creator
+      }
+    )
     
     if (result.success) {
+      console.log(`✅ Group creation notification sent via Neynar for group ${groupId}`)
       return NextResponse.json(
-        { message: 'Group creation notification sent successfully', groupId },
+        { message: 'Group creation notification sent successfully via Neynar', groupId },
         { status: 200 }
       )
     } else {
-      console.error('Failed to send group creation notification:', result.error)
+      console.error('Failed to send group creation notification via Neynar:', result.error)
       return NextResponse.json(
         { error: 'Failed to send notification', details: result.error },
         { status: 500 }

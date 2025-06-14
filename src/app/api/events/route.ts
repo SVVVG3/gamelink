@@ -148,6 +148,21 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Event created successfully:', event.id)
 
+    // Send notification for public events (async, don't wait for completion)
+    if (!event.is_private) {
+      fetch('/api/notifications/event-creation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId: event.id
+        })
+      }).catch(error => {
+        console.warn('Failed to send event creation notification:', error)
+      })
+    }
+
     return NextResponse.json({
       success: true,
       event: event,

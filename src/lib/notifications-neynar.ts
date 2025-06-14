@@ -183,4 +183,71 @@ export async function sendEventNotification(
       error: error instanceof Error ? error.message : 'Failed to send event notification'
     }
   }
+}
+
+/**
+ * Send notification about a new public group created by mutual followers
+ */
+export async function sendGroupCreationNotification(
+  groupName: string,
+  groupDescription: string,
+  groupId: string,
+  creatorName: string,
+  filters?: NotificationFilters
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const notification: NotificationPayload = {
+      title: `👥 New Gaming Group: ${groupName}`,
+      body: `${creatorName} created a new gaming group. ${groupDescription ? groupDescription.substring(0, 80) + '...' : 'Join now!'}`,
+      target_url: `https://farcaster-gamelink.vercel.app/groups/${groupId}`
+    }
+
+    const result = await sendNotificationToAll(notification, filters)
+    
+    if (result.success) {
+      console.log(`✅ Group creation notification sent for: ${groupName}`)
+    }
+    
+    return result
+    
+  } catch (error) {
+    console.error('❌ Error sending group creation notification:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send group creation notification'
+    }
+  }
+}
+
+/**
+ * Send notification about a group invitation
+ */
+export async function sendGroupInvitationNotification(
+  inviteeFid: number,
+  groupName: string,
+  groupId: string,
+  inviterName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const notification: NotificationPayload = {
+      title: `🎮 Group Invitation: ${groupName}`,
+      body: `${inviterName} invited you to join "${groupName}". Tap to accept or decline!`,
+      target_url: `https://farcaster-gamelink.vercel.app/groups/${groupId}`
+    }
+
+    const result = await sendNotificationToFids([inviteeFid], notification)
+    
+    if (result.success) {
+      console.log(`✅ Group invitation notification sent to FID ${inviteeFid} for group: ${groupName}`)
+    }
+    
+    return result
+    
+  } catch (error) {
+    console.error('❌ Error sending group invitation notification:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send group invitation notification'
+    }
+  }
 } 

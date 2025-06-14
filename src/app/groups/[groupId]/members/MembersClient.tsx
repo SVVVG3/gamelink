@@ -131,12 +131,29 @@ export default function MembersClient({ params }: Props) {
         }
         
         try {
-          return await createGroupInvitation(
+          const invitation = await createGroupInvitation(
             group.id,
             profile.id,
             profileId,
             `You've been invited to join "${group.name}"!`
           )
+          
+          // Send notification for the invitation (async, don't wait for completion)
+          if (invitation) {
+            fetch('/api/notifications/group-invitation', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                invitationId: invitation.id
+              })
+            }).catch(error => {
+              console.warn('Failed to send group invitation notification:', error)
+            })
+          }
+          
+          return invitation
         } catch (err) {
           console.warn(`Failed to invite user ${fid}:`, err)
           return null
