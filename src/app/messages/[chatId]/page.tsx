@@ -9,7 +9,7 @@ import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
 import FarcasterIcon from '@/components/FarcasterIcon'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV, FaTimes } from 'react-icons/fa'
 
 // Extended interface to include user profile data and group info
 interface ChatWithUserProfiles extends ChatWithParticipants {
@@ -38,6 +38,7 @@ export default function ChatPage() {
   const [groupData, setGroupData] = useState<any>(null)
   const [eventData, setEventData] = useState<any>(null)
   const [isEventChat, setIsEventChat] = useState(false)
+  const [showMemberList, setShowMemberList] = useState(false)
 
   // Fetch user profiles for chat participants
   const fetchUserProfiles = async (fids: number[]) => {
@@ -269,6 +270,11 @@ export default function ChatPage() {
     return 'Direct message'
   }
 
+  // Handle showing member list
+  const handleShowMemberList = () => {
+    setShowMemberList(true)
+  }
+
   // Handle admin menu actions
   const handleManageMembers = () => {
     if (chat?.group_id) {
@@ -400,7 +406,7 @@ export default function ChatPage() {
             </h1>
             {chat?.type === 'group' ? (
               <button
-                onClick={handleManageMembers}
+                onClick={handleShowMemberList}
                 className="text-sm text-gray-400 flex items-center hover:text-gray-300 transition-colors"
               >
                 <FaUsers className="w-3 h-3 mr-1" />
@@ -493,6 +499,64 @@ export default function ChatPage() {
           placeholder={`Message ${getChatDisplayName()}...`}
         />
       </div>
+
+      {/* Member List Modal */}
+      {showMemberList && chat && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 w-full max-w-md max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">
+                  {isEventChat ? 'Event Participants' : 'Group Members'}
+                </h3>
+                <button
+                  onClick={() => setShowMemberList(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-gray-400 text-sm mt-1">
+                {chat.participant_count} {chat.participant_count === 1 ? 'member' : 'members'}
+              </p>
+            </div>
+            
+            <div className="p-4 overflow-y-auto max-h-96">
+              {chat.participantProfiles && chat.participantProfiles.length > 0 ? (
+                <div className="space-y-3">
+                  {chat.participantProfiles.map((participant) => (
+                    <button
+                      key={participant.fid}
+                      onClick={() => {
+                        setShowMemberList(false)
+                        router.push(`/profile/${participant.fid}`)
+                      }}
+                      className="w-full flex items-center space-x-3 p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      <img
+                        src={participant.pfp_url || '/default-avatar.png'}
+                        alt={participant.display_name || participant.username}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <div className="flex-1 text-left">
+                        <p className="text-white font-medium">
+                          {participant.display_name || participant.username}
+                        </p>
+                        <p className="text-gray-400 text-sm">@{participant.username}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FaUsers className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400">No members found</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNavigation />
     </main>
