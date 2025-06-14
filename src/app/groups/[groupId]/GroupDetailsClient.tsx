@@ -7,10 +7,11 @@ import { getChatById, type ChatWithParticipants, type MessageWithSender } from '
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaShare } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaShare, FaTimes } from 'react-icons/fa'
 import type { GroupWithMembers } from '@/types'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
 
 // Extended interface to include user profile data
 interface ChatWithUserProfiles extends ChatWithParticipants {
@@ -451,6 +452,57 @@ export default function GroupDetailsClient({ params }: Props) {
       )}
       
       <BottomNavigation />
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h2 className="text-lg font-bold text-white">Group Settings</h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              <button
+                onClick={() => {
+                  setShowSettings(false)
+                  // Navigate to edit group page
+                  window.location.href = `/groups/${groupId}/edit`
+                }}
+                className="w-full flex items-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                <FaCog className="w-4 h-4 mr-2" />
+                Edit Group Details
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowSettings(false)
+                  // Navigate to manage members page
+                  window.location.href = `/groups/${groupId}/members`
+                }}
+                className="w-full flex items-center px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              >
+                <FaUsers className="w-4 h-4 mr-2" />
+                Manage Members
+              </button>
+              
+              <button
+                onClick={() => setShowSettings(false)}
+                className="w-full flex items-center px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                <FaTimes className="w-4 h-4 mr-2" />
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 } 

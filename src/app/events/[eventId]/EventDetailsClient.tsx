@@ -568,7 +568,10 @@ export default function EventDetailsClient({ params }: Props) {
                 <h3 className="text-lg font-bold text-white mb-4">Organizer Actions</h3>
                 
                 <div className="space-y-3">
-                  <button className="w-full flex items-center justify-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm">
+                  <button 
+                    onClick={() => window.location.href = `/events/${eventId}/edit`}
+                    className="w-full flex items-center justify-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  >
                     <FaTrophy className="w-4 h-4 mr-2" />
                     Manage Event
                   </button>
