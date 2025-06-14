@@ -42,10 +42,7 @@ export async function POST(request: NextRequest) {
           'Test Gaming Tournament',
           'Join us for an epic gaming tournament! This is a test event notification.',
           'test-event-id',
-          'GameLink Test',
-          {
-            following_fid: 466111 // Only send to mutual followers
-          }
+          'GameLink Test'
         )
         break
         
@@ -55,10 +52,7 @@ export async function POST(request: NextRequest) {
           'Test Gaming Squad',
           'A new gaming group has been created! Join us for epic gaming sessions.',
           'test-group-id',
-          'GameLink Test',
-          {
-            following_fid: 466111 // Only send to mutual followers
-          }
+          'GameLink Test'
         )
         break
         
