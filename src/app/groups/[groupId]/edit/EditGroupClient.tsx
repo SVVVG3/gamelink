@@ -51,15 +51,31 @@ export default function EditGroupClient({ params }: Props) {
 
       try {
         setError(null)
-        const groupData = await getGroupById(groupId)
+        const groupData = await getGroupById(groupId, true) // true to include members
         
         if (!groupData) {
           setError('Group not found')
           return
         }
 
-        // Check if user is admin (you might need to check membership role)
-        if (groupData.createdBy !== profile.id) {
+        // Check if user is authorized to edit (creator or admin)
+        const isCreator = groupData.createdBy === profile.id
+        const isAdmin = groupData.members?.some(member => 
+          member.userId === profile.id && 
+          member.role === 'admin' && 
+          member.status === 'active'
+        )
+        
+        console.log('Authorization check:', {
+          groupCreatedBy: groupData.createdBy,
+          profileId: profile.id,
+          profileFid: profile.fid,
+          isCreator,
+          isAdmin,
+          authorized: isCreator || isAdmin
+        })
+        
+        if (!isCreator && !isAdmin) {
           setError('You are not authorized to edit this group')
           return
         }
