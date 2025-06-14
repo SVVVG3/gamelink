@@ -77,6 +77,7 @@ export interface Event {
   status: 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled'
   createdBy: string
   groupId?: string
+  chatId?: string
   createdAt: string
   updatedAt: string
 }

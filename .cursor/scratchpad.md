@@ -78,6 +78,24 @@ The app integrates with Farcaster for social features and uses Supabase for data
 
 ### ✅ Recently Completed (Latest Session)
 
+#### **💬 Event Chat Functionality Implementation**
+- **Issue**: Events had no communication channel for participants to coordinate before/during events
+- **Solution**: 
+  - Added `chat_id` field to events table via database migration
+  - Modified event creation API to automatically create group chat when event is created
+  - Added "Join Group Chat" button to event details page for registered participants
+  - Created `/api/events/[eventId]/join-chat` endpoint for chat participation
+  - Updated Event interface and all API endpoints to include `chatId` field
+  - Implemented proper RLS policies for event chat access
+- **Files Modified**: 
+  - `database/migrations/010_add_event_chat_support.sql` (new migration)
+  - `src/types/index.ts` (Event interface)
+  - `src/app/api/events/route.ts` (event creation with chat)
+  - `src/app/api/events/[eventId]/route.ts` (include chatId)
+  - `src/app/api/events/[eventId]/join-chat/route.ts` (new endpoint)
+  - `src/lib/supabase/events.ts` (include chatId in transformations)
+  - `src/app/events/[eventId]/EventDetailsClient.tsx` (Join Group Chat button)
+
 #### **🔧 Back Navigation Fix**
 - **Issue**: Admin pages (Edit Group, Manage Members) were navigating back to old group details page instead of group chat
 - **Solution**: 
@@ -100,10 +118,12 @@ The app integrates with Farcaster for social features and uses Supabase for data
 - **Files Modified**: `src/app/messages/[chatId]/page.tsx`
 
 #### **🔄 Technical Implementation Details**
+- **Event Chat Flow**: Event creation → Auto-create group chat → Link via `chat_id` → Participants can join chat
 - **Navigation Pattern**: `getOrCreateGroupChat(groupId, userId)` → `router.push(/messages/${chatId})`
 - **Share Integration**: Farcaster SDK with graceful fallback to web
 - **State Management**: Loading states and error handling for better UX
 - **Admin Detection**: Proper role checking for admin functionality visibility
+- **Database Schema**: Added proper foreign key relationships and RLS policies for event chats
 
 ### 🎯 **Current Focus Areas**
 1. **User Experience Optimization**: Ensuring consistent navigation and functionality across all interfaces
@@ -121,6 +141,7 @@ The app integrates with Farcaster for social features and uses Supabase for data
 - [x] **Messaging**: Real-time direct and group messaging
 - [x] **Groups**: Creation, management, and membership
 - [x] **Events**: Tournament and gaming event system
+- [x] **Event Communication**: Auto-created group chats for event coordination
 - [x] **Notifications**: Comprehensive notification system via Neynar
 - [x] **UX Fixes**: Consistent navigation and admin functionality
 - [x] **Share Features**: Group sharing via Farcaster

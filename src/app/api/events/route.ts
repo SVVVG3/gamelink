@@ -148,6 +148,61 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Event created successfully:', event.id)
 
+    // Create group chat for the event
+    try {
+      console.log('💬 Creating group chat for event:', event.id)
+      
+      const chatName = `${event.title} - Event Chat`
+      const { data: chat, error: chatError } = await supabase
+        .from('chats')
+        .insert([{
+          name: chatName,
+          type: 'group',
+          created_by: profile.id,
+          is_active: true
+        }])
+        .select()
+        .single()
+
+      if (chatError) {
+        console.error('❌ Error creating event chat:', chatError)
+        // Don't fail the entire event creation if chat creation fails
+      } else {
+        console.log('✅ Event chat created successfully:', chat.id)
+        
+        // Update the event with the chat_id
+        const { error: updateError } = await supabase
+          .from('events')
+          .update({ chat_id: chat.id })
+          .eq('id', event.id)
+
+        if (updateError) {
+          console.error('❌ Error linking chat to event:', updateError)
+        } else {
+          console.log('✅ Event linked to chat successfully')
+          
+          // Add the event creator to the chat
+          const { error: participantError } = await supabase
+            .from('chat_participants')
+            .insert([{
+              chat_id: chat.id,
+              user_id: profile.id,
+              role: 'admin',
+              joined_at: new Date().toISOString()
+            }])
+
+          if (participantError) {
+            console.error('❌ Error adding creator to event chat:', participantError)
+          } else {
+            console.log('✅ Event creator added to chat successfully')
+          }
+        }
+      }
+    } catch (chatCreationError) {
+      console.error('❌ Unexpected error during chat creation:', chatCreationError)
+      // Continue with event creation even if chat fails
+    }
+
     // Send notification for public events (async, don't wait for completion)
     if (!event.is_private) {
       fetch('/api/notifications/event-creation', {
@@ -257,6 +312,7 @@ export async function GET(request: NextRequest) {
           status: event.status,
           createdBy: event.created_by,
           groupId: event.group_id,
+          chatId: event.chat_id,
           createdAt: event.created_at,
           updatedAt: event.updated_at,
           participantCount: participants?.length || 0

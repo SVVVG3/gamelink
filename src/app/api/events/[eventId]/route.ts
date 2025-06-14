@@ -118,6 +118,7 @@ export async function GET(
       status: event.status,
       createdBy: event.created_by,
       groupId: event.group_id,
+      chatId: event.chat_id,
       createdAt: event.created_at,
       updatedAt: event.updated_at,
       organizer: event.organizer,

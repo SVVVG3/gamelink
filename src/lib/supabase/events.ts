@@ -44,6 +44,7 @@ export async function getEventById(eventId: string): Promise<Event | null> {
       status: event.status,
       createdBy: event.created_by,
       groupId: event.group_id,
+      chatId: event.chat_id,
       createdAt: event.created_at,
       updatedAt: event.updated_at
     }
@@ -121,6 +122,7 @@ export async function updateEvent(eventId: string, updateData: Partial<UpdateEve
       status: event.status,
       createdBy: event.created_by,
       groupId: event.group_id,
+      chatId: event.chat_id,
       createdAt: event.created_at,
       updatedAt: event.updated_at
     }

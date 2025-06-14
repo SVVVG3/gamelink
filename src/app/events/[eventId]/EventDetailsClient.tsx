@@ -17,12 +17,14 @@ import {
   FaArrowLeft,
   FaGlobe,
   FaLock,
-  FaUnlock
+  FaUnlock,
+  FaComments
 } from 'react-icons/fa'
 import FarcasterIcon from '@/components/FarcasterIcon'
 import { FaShield } from 'react-icons/fa6'
 import Link from 'next/link'
 import { Event, EventParticipant, Profile } from '@/types'
+import { useRouter } from 'next/navigation'
 
 interface EventWithDetails extends Event {
   participants: (EventParticipant & { profile: Profile })[]
@@ -37,10 +39,12 @@ interface Props {
 
 export default function EventDetailsClient({ params }: Props) {
   const { isAuthenticated, isLoading, profile } = useUser()
+  const router = useRouter()
   const [event, setEvent] = useState<EventWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rsvpLoading, setRsvpLoading] = useState(false)
+  const [chatLoading, setChatLoading] = useState(false)
   const [eventId, setEventId] = useState<string>('')
 
   useEffect(() => {
@@ -125,6 +129,39 @@ export default function EventDetailsClient({ params }: Props) {
       setError(err instanceof Error ? err.message : `Failed to ${action} event`)
     } finally {
       setRsvpLoading(false)
+    }
+  }
+
+  const handleJoinEventChat = async () => {
+    if (!isAuthenticated || !profile || !event || !event.chatId) return
+
+    try {
+      setChatLoading(true)
+      setError(null)
+
+      const response = await fetch(`/api/events/${eventId}/join-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userFid: profile.fid
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to join event chat')
+      }
+
+      // Navigate to the chat
+      router.push(`/messages/${data.chatId}`)
+    } catch (err) {
+      console.error('Error joining event chat:', err)
+      setError(err instanceof Error ? err.message : 'Failed to join event chat')
+    } finally {
+      setChatLoading(false)
     }
   }
 
@@ -483,6 +520,22 @@ export default function EventDetailsClient({ params }: Props) {
                       Status: {event.userParticipation?.status?.replace('_', ' ') || 'registered'}
                     </p>
                   </div>
+                  
+                  {/* Join Group Chat Button */}
+                  {event.chatId && (
+                    <button
+                      onClick={handleJoinEventChat}
+                      disabled={chatLoading}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors font-medium"
+                    >
+                      {chatLoading ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      ) : (
+                        <FaComments className="w-4 h-4 mr-2" />
+                      )}
+                      Join Group Chat
+                    </button>
+                  )}
                   
                   {!isOrganizer && (
                     <button
