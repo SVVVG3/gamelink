@@ -9,6 +9,7 @@ import {
 } from '@/lib/supabase/chats'
 import { createClient } from '@/lib/supabase/client'
 import { FaSpinner, FaExclamationTriangle } from 'react-icons/fa'
+import { useRouter } from 'next/navigation'
 
 interface MessageListProps {
   chatId: string
@@ -24,6 +25,8 @@ interface MessageBubbleProps {
 }
 
 function MessageBubble({ message, isOwn, showSender, isUnread }: MessageBubbleProps) {
+  const router = useRouter()
+  
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
@@ -38,6 +41,12 @@ function MessageBubble({ message, isOwn, showSender, isUnread }: MessageBubblePr
     }
   }
 
+  const handleAvatarClick = () => {
+    if (message.sender_fid && !isOwn) {
+      router.push(`/profile/${message.sender_fid}`)
+    }
+  }
+
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`max-w-xs sm:max-w-md lg:max-w-lg ${isOwn ? 'order-2' : 'order-1'}`}>
@@ -48,10 +57,16 @@ function MessageBubble({ message, isOwn, showSender, isUnread }: MessageBubblePr
               <img
                 src={message.sender.pfp_url}
                 alt={message.sender.username}
-                className="w-4 h-4 rounded-full mr-2"
+                className="w-4 h-4 rounded-full mr-2 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+                onClick={handleAvatarClick}
+                title={`View ${message.sender.display_name || message.sender.username}'s profile`}
               />
             )}
-            <span className="text-xs text-gray-400 font-medium">
+            <span 
+              className="text-xs text-gray-400 font-medium cursor-pointer hover:text-blue-400 transition-colors"
+              onClick={handleAvatarClick}
+              title={`View ${message.sender?.display_name || message.sender?.username || `User ${message.sender_fid}`}'s profile`}
+            >
               {message.sender?.display_name || message.sender?.username || `User ${message.sender_fid}`}
             </span>
           </div>

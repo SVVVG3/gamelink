@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useUser } from '@/hooks/useUser'
 import { useInvitations } from '@/hooks/useInvitations'
-import { getUserGroups, getPublicGroups, acceptGroupInvitation, declineGroupInvitation } from '@/lib/supabase/groups'
-import BottomNavigation from '@/components/BottomNavigation'
+import { getUserGroups, getPublicGroups, acceptGroupInvitation, declineGroupInvitation, getUserInvitations } from '@/lib/supabase/groups'
 import type { GroupWithMemberCount, GroupInvitationWithDetails } from '@/types'
+import BottomNavigation from '@/components/BottomNavigation'
+import { FaPlus, FaUsers, FaSpinner, FaExclamationTriangle, FaGamepad, FaLock, FaCheck, FaTimes } from 'react-icons/fa'
 
 export default function GroupsPage() {
   const { isAuthenticated, profile, isLoading: userLoading } = useUser()
@@ -331,6 +332,9 @@ export default function GroupsPage() {
 
 // Group Card Component
 function GroupCard({ group }: { group: GroupWithMemberCount }) {
+  const { profile } = useUser()
+  const [isNavigating, setIsNavigating] = useState(false)
+
   const getPlatformIcon = (platform?: string) => {
     switch (platform) {
       case 'PC': return '💻'
@@ -354,14 +358,39 @@ function GroupCard({ group }: { group: GroupWithMemberCount }) {
 
   const skillBadge = getSkillBadge(group.skillLevel)
 
+  // Navigate directly to group chat instead of group details
+  const handleGroupClick = async () => {
+    if (!profile?.id || isNavigating) return
+    
+    setIsNavigating(true)
+    try {
+      // Get or create the group chat
+      const { getOrCreateGroupChat } = await import('@/lib/supabase/groups')
+      const chatId = await getOrCreateGroupChat(group.id, profile.id)
+      
+      // Navigate to the chat
+      window.location.href = `/messages/${chatId}`
+    } catch (error) {
+      console.error('Error navigating to group chat:', error)
+      // Fallback to group details page
+      window.location.href = `/groups/${group.id}`
+    } finally {
+      setIsNavigating(false)
+    }
+  }
+
   return (
-    <Link href={`/groups/${group.id}`}>
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors cursor-pointer">
+    <div 
+      onClick={handleGroupClick}
+      className={`cursor-pointer ${isNavigating ? 'opacity-50 pointer-events-none' : ''}`}
+    >
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-white mb-1 line-clamp-1">
               {group.name}
+              {isNavigating && <FaSpinner className="inline ml-2 w-4 h-4 animate-spin" />}
             </h3>
             {group.primaryGame && (
               <div className="flex items-center space-x-2 text-sm text-gray-400">
@@ -403,7 +432,7 @@ function GroupCard({ group }: { group: GroupWithMemberCount }) {
           </span>
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
 
