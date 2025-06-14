@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Extract participant FIDs and sender info
-    const chat = message.chats // chats is a single object, not an array
+    const chat = message.chats as any
     const participantFids = chat.participants.map((p: any) => p.fid)
     const senderProfile = chat.participants.find((p: any) => p.fid === message.sender_fid)
     const senderName = senderProfile?.profiles?.[0]?.display_name || 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       all_participants: participantFids,
       sender_fid: message.sender_fid,
       sender_name: senderName,
-      recipients: participantFids.filter(fid => fid !== message.sender_fid)
+      recipients: participantFids.filter((fid: number) => fid !== message.sender_fid)
     })
 
     // Send notification via Neynar
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
             participants: participantFids,
             sender: message.sender_fid,
             sender_name: senderName,
-            recipients: participantFids.filter(fid => fid !== message.sender_fid)
+            recipients: participantFids.filter((fid: number) => fid !== message.sender_fid)
           }
         },
         { status: 200 }
