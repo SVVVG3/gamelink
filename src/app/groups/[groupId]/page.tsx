@@ -172,8 +172,8 @@ export default function GroupPage() {
   const shareGroupFrame = async () => {
     if (!group) return
     
-    // Create a shareable frame URL
-    const frameUrl = `${window.location.origin}/api/frames/groups/${groupId}`
+    // Share the group page URL, not the frame endpoint
+    const groupPageUrl = `${window.location.origin}/groups/${groupId}`
     const shareText = `🎮 Join my gaming group: ${group.name}!\n\n${group.description ? group.description + '\n\n' : ''}${group.primaryGame ? `Game: ${group.primaryGame}\n` : ''}Members: ${group.memberCount}/${group.maxMembers}\n\n`
     
     // Try to use Farcaster SDK if available (Mini App context)
@@ -185,7 +185,7 @@ export default function GroupPage() {
       if (context && context.client) {
         const result = await sdk.actions.composeCast({
           text: shareText,
-          embeds: [frameUrl]
+          embeds: [groupPageUrl]
         })
         
         if (result?.cast) {
@@ -198,7 +198,7 @@ export default function GroupPage() {
     }
     
     // Fallback for standalone web app - open Warpcast
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(frameUrl)}`
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(groupPageUrl)}`
     window.open(farcasterUrl, '_blank')
   }
 
