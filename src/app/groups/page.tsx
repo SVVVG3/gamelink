@@ -31,7 +31,9 @@ export default function GroupsPage() {
     
     try {
       const groups = await getUserGroups(profile.id)
-      setUserGroups(groups)
+      // Sort groups by member count (descending - most members first)
+      const sortedGroups = groups.sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0))
+      setUserGroups(sortedGroups)
     } catch (err) {
       console.error('Error loading user groups:', err)
       setError('Failed to load your groups')

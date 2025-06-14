@@ -248,8 +248,9 @@ export default function GroupDetailsClient({ params }: Props) {
       await addGroupMember(groupId, profile.id)
       console.log('🔍 joinGroup: Group joined successfully')
       
-      // Reload group data to get chat access
-      await loadGroupData()
+      // Get the group chat ID and redirect to Messages page
+      const groupChatId = await getOrCreateGroupChat(groupId, profile.id)
+      router.push(`/messages/${groupChatId}`)
     } catch (error) {
       console.error('🔍 joinGroup: Error joining group:', error)
       setError(error instanceof Error ? error.message : 'Failed to join group')
@@ -436,6 +437,21 @@ export default function GroupDetailsClient({ params }: Props) {
           </div>
         </div>
         
+        <BottomNavigation />
+      </main>
+    )
+  }
+
+  // Member view - redirect to chat
+  if (isMember && chatId) {
+    // Redirect to the messages page for the group chat
+    router.push(`/messages/${chatId}`)
+    return (
+      <main className="min-h-screen bg-gray-900 pb-20 flex items-center justify-center">
+        <div className="text-center">
+          <FaSpinner className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-gray-300">Redirecting to chat...</p>
+        </div>
         <BottomNavigation />
       </main>
     )
