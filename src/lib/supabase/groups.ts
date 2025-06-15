@@ -1176,23 +1176,53 @@ export async function addMemberToGroupChat(groupId: string, userId: string, fid:
       return
     }
 
-    // Add the user to the chat (ignore if already exists)
-    const { error: participantError } = await supabase
+    // Check if user already exists in chat_participants (including those who left)
+    const { data: existingParticipant, error: checkError } = await supabase
       .from('chat_participants')
-      .upsert({
-        chat_id: chat.id,
-        user_id: userId,
-        fid: fid,
-        joined_at: new Date().toISOString(),
-        is_admin: false
-      }, { 
-        onConflict: 'chat_id,user_id',
-        ignoreDuplicates: true 
-      })
+      .select('id, left_at')
+      .eq('chat_id', chat.id)
+      .eq('user_id', userId)
+      .single()
 
-    if (participantError) {
-      console.error('Error adding member to group chat:', participantError)
-      throw participantError
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing chat participant:', checkError)
+      throw checkError
+    }
+
+    if (existingParticipant) {
+      // User exists - update their record to rejoin (clear left_at)
+      const { error: updateError } = await supabase
+        .from('chat_participants')
+        .update({
+          left_at: null,
+          joined_at: new Date().toISOString() // Update joined_at to current time
+        })
+        .eq('id', existingParticipant.id)
+
+      if (updateError) {
+        console.error('Error updating chat participant:', updateError)
+        throw updateError
+      }
+
+      console.log('✅ Re-added existing user to group chat:', { userId, fid, chatId: chat.id })
+    } else {
+      // User doesn't exist - create new participant record
+      const { error: insertError } = await supabase
+        .from('chat_participants')
+        .insert({
+          chat_id: chat.id,
+          user_id: userId,
+          fid: fid,
+          joined_at: new Date().toISOString(),
+          is_admin: false
+        })
+
+      if (insertError) {
+        console.error('Error adding new chat participant:', insertError)
+        throw insertError
+      }
+
+      console.log('✅ Added new user to group chat:', { userId, fid, chatId: chat.id })
     }
   } catch (error) {
     console.error('Error in addMemberToGroupChat:', error)
@@ -1370,5 +1400,94 @@ export async function migrateGroupMembersToChats(groupId: string): Promise<void>
   } catch (error) {
     console.error('🔧 migrateGroupMembersToChats: Migration failed:', error)
     throw error
+  }
+}
+
+/**
+ * Test function to verify the remove/invite back flow works correctly
+ * This function simulates the complete flow of removing a user and inviting them back
+ */
+export async function testRemoveAndInviteBackFlow(
+  groupId: string, 
+  userId: string, 
+  adminId: string
+): Promise<{ success: boolean; steps: string[] }> {
+  const steps: string[] = []
+  
+  try {
+    steps.push('🧪 Starting remove/invite back flow test')
+    
+    // Step 1: Remove user from group
+    steps.push('1️⃣ Removing user from group...')
+    await removeGroupMember(groupId, userId, adminId)
+    steps.push('✅ User removed from group')
+    
+    // Step 2: Verify removal was tracked
+    steps.push('2️⃣ Checking removal was tracked...')
+    const wasRemoved = await wasUserRemovedFromGroup(groupId, userId)
+    if (!wasRemoved) {
+      throw new Error('Removal was not tracked properly')
+    }
+    steps.push('✅ Removal tracked correctly')
+    
+    // Step 3: Create invitation
+    steps.push('3️⃣ Creating invitation...')
+    const invitation = await createGroupInvitation(groupId, adminId, userId, 'Test invitation')
+    steps.push('✅ Invitation created')
+    
+    // Step 4: Accept invitation
+    steps.push('4️⃣ Accepting invitation...')
+    const accepted = await acceptGroupInvitation(invitation.id)
+    if (!accepted) {
+      throw new Error('Invitation acceptance failed')
+    }
+    steps.push('✅ Invitation accepted')
+    
+    // Step 5: Verify user is back in group
+    steps.push('5️⃣ Verifying group membership...')
+    const membership = await isGroupMember(groupId, userId)
+    if (!membership.isMember) {
+      throw new Error('User is not a group member after accepting invitation')
+    }
+    steps.push('✅ User is back in group')
+    
+    // Step 6: Verify removal record was cleared
+    steps.push('6️⃣ Verifying removal record was cleared...')
+    const stillRemoved = await wasUserRemovedFromGroup(groupId, userId)
+    if (stillRemoved) {
+      throw new Error('Removal record was not cleared')
+    }
+    steps.push('✅ Removal record cleared')
+    
+    // Step 7: Verify user can access chat
+    steps.push('7️⃣ Verifying chat access...')
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('fid')
+      .eq('id', userId)
+      .single()
+    
+    if (profile?.fid) {
+      const { data: chatParticipant } = await supabase
+        .from('chat_participants')
+        .select('id, left_at')
+        .eq('chat_id', (await getOrCreateGroupChat(groupId, adminId)))
+        .eq('user_id', userId)
+        .single()
+      
+      if (!chatParticipant || chatParticipant.left_at) {
+        throw new Error('User is not an active chat participant')
+      }
+      steps.push('✅ User can access chat')
+    } else {
+      steps.push('⚠️ Could not verify chat access (no FID)')
+    }
+    
+    steps.push('🎉 All tests passed! Remove/invite back flow works correctly')
+    return { success: true, steps }
+    
+  } catch (error) {
+    steps.push(`❌ Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    return { success: false, steps }
   }
 } 

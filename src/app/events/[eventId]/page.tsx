@@ -51,14 +51,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const eventDate = new Date(event.start_time)
     const formattedDate = eventDate.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
     })
     const formattedTime = eventDate.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
+        hour: 'numeric', 
+        minute: '2-digit',
       timeZoneName: 'short'
     })
 

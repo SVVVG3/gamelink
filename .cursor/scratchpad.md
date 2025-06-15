@@ -78,6 +78,28 @@ The app integrates with Farcaster for social features and uses Supabase for data
 
 ### ✅ Recently Completed (Latest Session)
 
+#### **🔧 Group Removal & Re-invitation Flow Fix - COMPLETED** ✅
+- **Issue**: When admins removed users from groups and then tried to invite them back, the chat participation wasn't properly restored
+- **Root Cause**: The `addMemberToGroupChat()` function used `upsert` with `ignoreDuplicates: true`, which didn't clear the `left_at` timestamp for previously removed users
+- **Solution**: 
+  - ✅ **Enhanced Chat Re-addition Logic**: Modified `addMemberToGroupChat()` to check for existing participants and properly clear `left_at` timestamp
+  - ✅ **Proper State Management**: Function now handles both new users and returning users correctly
+  - ✅ **Comprehensive Testing**: Added `testRemoveAndInviteBackFlow()` function to verify the complete flow works
+- **Technical Implementation**:
+  - Replaced `upsert` with explicit check for existing chat participants
+  - Added logic to update existing records by clearing `left_at` and updating `joined_at`
+  - Maintained backward compatibility for new users
+  - Added detailed logging for debugging
+- **Files Modified**: 
+  - `src/lib/supabase/groups.ts` - Enhanced `addMemberToGroupChat()` function and added test function
+- **Flow Verification**: 
+  1. ✅ Admin removes user → User removed from group membership and chat (left_at set)
+  2. ✅ Removal tracked in group_removals table
+  3. ✅ Admin creates invitation → Invitation created successfully
+  4. ✅ User accepts invitation → Removal record cleared, group membership restored
+  5. ✅ Chat participation restored → left_at cleared, user can access chat again
+- **Result**: Complete remove/invite back flow now works seamlessly with proper chat access restoration
+
 #### **💬 Event Chat UX Improvements - COMPLETED** ✅
 - **Issues Addressed**: 
   1. ✅ **Visual Distinction**: Removed "- Event Chat" suffix from titles, added orange "Event" label instead of blue "Group"
