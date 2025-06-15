@@ -469,6 +469,19 @@ export async function addGroupMember(
   invitedBy?: string
 ): Promise<GroupMembership> {
   try {
+    // Check if user was previously removed from this group
+    const wasRemoved = await wasUserRemovedFromGroup(groupId, userId)
+    
+    // If user was removed and this is not an invitation, prevent joining
+    if (wasRemoved && !invitedBy) {
+      throw new Error('You cannot rejoin this group. Please contact an admin for an invitation.')
+    }
+    
+    // If user was removed but is being invited back, clear the removal record
+    if (wasRemoved && invitedBy) {
+      await clearGroupRemoval(groupId, userId)
+    }
+
     // Check if user is already a member
     const { data: existingMembership, error: checkError } = await supabase
       .from('group_memberships')
@@ -578,9 +591,9 @@ export async function updateGroupMembership(
 }
 
 /**
- * Remove a user from a group
+ * Remove a user from a group and track the removal
  */
-export async function removeGroupMember(groupId: string, userId: string): Promise<void> {
+export async function removeGroupMember(groupId: string, userId: string, removedBy?: string): Promise<void> {
   try {
     // Remove user from group
     const { error } = await supabase
@@ -592,6 +605,21 @@ export async function removeGroupMember(groupId: string, userId: string): Promis
     if (error) {
       console.error('Error removing group member:', error)
       throw error
+    }
+
+    // Track the removal to prevent rejoining without invitation
+    const { error: trackError } = await supabase
+      .from('group_removals')
+      .insert({
+        group_id: groupId,
+        user_id: userId,
+        removed_by: removedBy,
+        removed_at: new Date().toISOString()
+      })
+
+    if (trackError) {
+      console.warn('Failed to track group removal:', trackError)
+      // Don't fail the entire operation if tracking fails
     }
 
     // Remove user from group chat
@@ -629,6 +657,52 @@ export async function isGroupMember(groupId: string, userId: string): Promise<{ 
     return { isMember: true, role: membership.role }
   } catch (error) {
     console.error('Error in isGroupMember:', error)
+    throw error
+  }
+}
+
+/**
+ * Check if a user was previously removed from a group
+ */
+export async function wasUserRemovedFromGroup(groupId: string, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('group_removals')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('user_id', userId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return false // Not found
+      console.error('Error checking group removal:', error)
+      throw error
+    }
+
+    return !!data
+  } catch (error) {
+    console.error('Error in wasUserRemovedFromGroup:', error)
+    throw error
+  }
+}
+
+/**
+ * Clear a user's removal record (used when they're invited back)
+ */
+export async function clearGroupRemoval(groupId: string, userId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('group_removals')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Error clearing group removal:', error)
+      throw error
+    }
+  } catch (error) {
+    console.error('Error in clearGroupRemoval:', error)
     throw error
   }
 }
@@ -794,18 +868,16 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
 
     console.log('🔍 acceptGroupInvitation: Invitation status updated')
 
-    // 2. Add group membership
-    const { error: membershipError } = await supabase
-      .from('group_memberships')
-      .insert({
-        group_id: invitation.group_id,
-        user_id: invitation.invitee_id,
-        role: 'member',
-        status: 'active',
-        invited_by: invitation.inviter_id
-      })
-
-    if (membershipError) {
+    // 2. Add group membership using addGroupMember to handle removal checks
+    try {
+      await addGroupMember(
+        invitation.group_id,
+        invitation.invitee_id,
+        'member',
+        invitation.inviter_id
+      )
+      console.log('🔍 acceptGroupInvitation: Membership created via addGroupMember')
+    } catch (membershipError) {
       console.error('🔍 acceptGroupInvitation: Error creating membership:', membershipError)
       // Try to rollback invitation status
       await supabase
@@ -819,8 +891,6 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
       
       throw membershipError
     }
-
-    console.log('🔍 acceptGroupInvitation: Membership created')
 
     // 3. Get user's FID for chat participation
     const { data: profile, error: profileError } = await supabase

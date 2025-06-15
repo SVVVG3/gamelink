@@ -189,7 +189,7 @@ export default function MembersClient({ params }: Props) {
 
     setRemovingMemberId(memberId)
     try {
-      await removeGroupMember(group.id, memberId)
+      await removeGroupMember(group.id, memberId, profile.id)
       
       // Reload group data to reflect changes
       const updatedGroup = await getGroupById(groupId, true)
