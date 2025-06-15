@@ -7,7 +7,7 @@ import { getChatById, type ChatWithParticipants, type MessageWithSender } from '
 import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaTimes, FaUserPlus } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaGamepad, FaLock, FaTimes, FaUserPlus, FaUserMinus } from 'react-icons/fa'
 import FarcasterIcon from '@/components/FarcasterIcon'
 import type { GroupWithMembers } from '@/types'
 import { useRouter } from 'next/navigation'
@@ -253,7 +253,14 @@ export default function GroupDetailsClient({ params }: Props) {
       router.push(`/messages/${groupChatId}`)
     } catch (error) {
       console.error('🔍 joinGroup: Error joining group:', error)
-      setError(error instanceof Error ? error.message : 'Failed to join group')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to join group'
+      
+      // Check if this is a removal-related error
+      if (errorMessage.includes('cannot rejoin this group')) {
+        setError('You were removed from this group and cannot rejoin without an invitation from an admin.')
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setIsJoining(false)
     }
@@ -288,19 +295,65 @@ export default function GroupDetailsClient({ params }: Props) {
 
   // Error state
   if (error || !group) {
+    const isRemovalError = error?.includes('removed from this group')
+    const isNotFoundError = !group || error?.includes('not found')
+    
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-900 pb-20">
         <div className="text-center space-y-6 max-w-md mx-auto">
-          <FaExclamationTriangle className="w-16 h-16 text-red-500 mx-auto" />
-          <h1 className="text-2xl font-bold text-white">Group Not Found</h1>
-          <p className="text-gray-300">{error || 'This group could not be found or you don\'t have permission to view it.'}</p>
-          <Link 
-            href="/groups"
-            className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-          >
-            <FaArrowLeft className="w-4 h-4 mr-2" />
-            Back to Groups
-          </Link>
+          {isRemovalError ? (
+            <>
+              <FaUserMinus className="w-16 h-16 text-orange-500 mx-auto" />
+              <h1 className="text-2xl font-bold text-white">Access Restricted</h1>
+              <p className="text-gray-300">{error}</p>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-400">
+                  Contact a group admin if you believe this was a mistake.
+                </p>
+                <Link 
+                  href="/groups"
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  <FaArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Groups
+                </Link>
+              </div>
+            </>
+          ) : isNotFoundError ? (
+            <>
+              <FaExclamationTriangle className="w-16 h-16 text-red-500 mx-auto" />
+              <h1 className="text-2xl font-bold text-white">Group Not Found</h1>
+              <p className="text-gray-300">This group could not be found or you don't have permission to view it.</p>
+              <Link 
+                href="/groups"
+                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
+                <FaArrowLeft className="w-4 h-4 mr-2" />
+                Back to Groups
+              </Link>
+            </>
+          ) : (
+            <>
+              <FaExclamationTriangle className="w-16 h-16 text-red-500 mx-auto" />
+              <h1 className="text-2xl font-bold text-white">Error</h1>
+              <p className="text-gray-300">{error || 'Something went wrong while loading this group.'}</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  Try Again
+                </button>
+                <Link 
+                  href="/groups"
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  <FaArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Groups
+                </Link>
+              </div>
+            </>
+          )}
         </div>
         <BottomNavigation />
       </main>

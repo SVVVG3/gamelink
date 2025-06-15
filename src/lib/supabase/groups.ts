@@ -115,7 +115,11 @@ export async function getUserGroups(userId: string): Promise<GroupWithMemberCoun
 /**
  * Get public groups for discovery
  */
-export async function getPublicGroups(options?: { limit?: number; offset?: number }): Promise<GroupWithMemberCount[]> {
+export async function getPublicGroups(options?: { 
+  limit?: number; 
+  offset?: number; 
+  userId?: string; 
+}): Promise<GroupWithMemberCount[]> {
   try {
     let query = supabase
       .from('groups')
@@ -139,9 +143,36 @@ export async function getPublicGroups(options?: { limit?: number; offset?: numbe
 
     if (!groups) return []
 
-    // Get member counts for all groups
+    let filteredGroups = groups
+
+    // Filter out groups the user is already a member of or was removed from
+    if (options?.userId) {
+      // Get user's current memberships
+      const { data: memberships } = await supabase
+        .from('group_memberships')
+        .select('group_id')
+        .eq('user_id', options.userId)
+        .eq('status', 'active')
+
+      const memberGroupIds = new Set(memberships?.map(m => m.group_id) || [])
+
+      // Get groups the user was removed from
+      const { data: removals } = await supabase
+        .from('group_removals')
+        .select('group_id')
+        .eq('user_id', options.userId)
+
+      const removedGroupIds = new Set(removals?.map(r => r.group_id) || [])
+
+      // Filter out both member groups and removed groups
+      filteredGroups = groups.filter(group => 
+        !memberGroupIds.has(group.id) && !removedGroupIds.has(group.id)
+      )
+    }
+
+    // Get member counts for filtered groups
     const memberCounts = await Promise.all(
-      groups.map(async (group: any) => {
+      filteredGroups.map(async (group: any) => {
         const count = await getGroupMemberCount(group.id)
         return { groupId: group.id, count }
       })
@@ -149,10 +180,10 @@ export async function getPublicGroups(options?: { limit?: number; offset?: numbe
 
     const memberCountMap = new Map(memberCounts.map(({ groupId, count }) => [groupId, count]))
 
-    return groups.map((group: any) => ({
+    return filteredGroups.map((group: any) => ({
       ...group,
       memberCount: memberCountMap.get(group.id) || 1,
-      isUserMember: false, // We don't know user membership status in this context
+      isUserMember: false,
       userRole: undefined
     }))
   } catch (error) {
@@ -747,6 +778,8 @@ export async function createGroupInvitation(
     if (membership) {
       throw new Error('User is already a member of this group')
     }
+
+    // Note: We don't check for removal records here because admins should be able to invite removed users back
 
     const { data: invitation, error } = await supabase
       .from('group_invitations')

@@ -48,7 +48,10 @@ export default function GroupsPage() {
     setError(null)
     
     try {
-      const groups = await getPublicGroups({ limit: 20 })
+      const groups = await getPublicGroups({ 
+        limit: 20,
+        userId: profile?.id // Filter out user's groups and removed groups
+      })
       // Sort groups by member count (descending - most members first)
       const sortedGroups = groups.sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0))
       setPublicGroups(sortedGroups)
