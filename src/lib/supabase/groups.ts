@@ -638,6 +638,22 @@ export async function removeGroupMember(groupId: string, userId: string, removed
       throw error
     }
 
+    // Clean up old invitation records to prevent unique constraint issues when re-inviting
+    // We keep declined invitations for audit purposes, but remove accepted ones since they're no longer relevant
+    const { error: inviteCleanupError } = await supabase
+      .from('group_invitations')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('invitee_id', userId)
+      .eq('status', 'accepted')
+
+    if (inviteCleanupError) {
+      console.warn('Failed to clean up old invitation records:', inviteCleanupError)
+      // Don't fail the entire operation if invitation cleanup fails
+    } else {
+      console.log('✅ Cleaned up old accepted invitation records for removed user')
+    }
+
     // Track the removal to prevent rejoining without invitation
     const { error: trackError } = await supabase
       .from('group_removals')
@@ -660,6 +676,8 @@ export async function removeGroupMember(groupId: string, userId: string, removed
       console.warn('Failed to remove member from group chat:', chatError)
       // Don't fail the entire operation if chat removal fails
     }
+
+    console.log('✅ Successfully removed group member and cleaned up related records')
   } catch (error) {
     console.error('Error in removeGroupMember:', error)
     throw error
@@ -883,6 +901,22 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
       return false
     }
 
+    // Clean up any old accepted invitations to prevent unique constraint violations
+    // This handles cases where users were removed after previously accepting invitations
+    const { error: cleanupError } = await supabase
+      .from('group_invitations')
+      .delete()
+      .eq('group_id', invitation.group_id)
+      .eq('invitee_id', invitation.invitee_id)
+      .eq('status', 'accepted')
+
+    if (cleanupError) {
+      console.warn('🔍 acceptGroupInvitation: Failed to clean up old accepted invitations:', cleanupError)
+      // Continue anyway - the constraint error will be more informative
+    } else {
+      console.log('🔍 acceptGroupInvitation: Cleaned up old accepted invitations')
+    }
+
     // Start transaction-like operations
     // 1. Update invitation status
     const { error: updateError } = await supabase
@@ -896,6 +930,12 @@ export async function acceptGroupInvitation(invitationId: string): Promise<boole
 
     if (updateError) {
       console.error('🔍 acceptGroupInvitation: Error updating invitation:', updateError)
+      
+      // Provide more helpful error message for unique constraint violations
+      if (updateError.code === '23505') {
+        throw new Error('Unable to accept invitation due to existing records. Please try again or contact support.')
+      }
+      
       throw updateError
     }
 

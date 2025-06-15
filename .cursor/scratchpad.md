@@ -78,6 +78,28 @@ The app integrates with Farcaster for social features and uses Supabase for data
 
 ### ✅ Recently Completed (Latest Session)
 
+#### **🔧 Group Invitation Unique Constraint Fix - COMPLETED** ✅
+- **Issue**: Users who were removed from groups after previously accepting invitations couldn't accept new invitations due to database unique constraint violations
+- **Root Cause**: The `unique_pending_invitation` constraint prevents multiple invitations with the same status for the same user/group combination. When users were removed after accepting invitations, old "accepted" invitation records remained, blocking future invitation acceptances
+- **Comprehensive Solution**: 
+  - ✅ **Enhanced removeGroupMember()**: Now cleans up old "accepted" invitation records when removing users to prevent future constraint violations
+  - ✅ **Enhanced acceptGroupInvitation()**: Added cleanup of old "accepted" invitations before updating current invitation to "accepted" status
+  - ✅ **Defensive Programming**: Both functions handle the cleanup gracefully with proper error handling and logging
+  - ✅ **Audit Trail Preservation**: Only removes "accepted" invitations, keeps "declined" ones for audit purposes
+- **Technical Implementation**:
+  - Modified `removeGroupMember()` to delete old accepted invitations during user removal
+  - Enhanced `acceptGroupInvitation()` to clean up conflicting records before status update
+  - Added comprehensive error handling with specific messages for constraint violations
+  - Maintained backward compatibility and proper logging throughout
+- **Files Modified**: 
+  - `src/lib/supabase/groups.ts` - Enhanced both `removeGroupMember()` and `acceptGroupInvitation()` functions
+- **Flow Verification**: 
+  1. ✅ User accepts invitation → Invitation marked as "accepted"
+  2. ✅ Admin removes user → User removed from group AND old "accepted" invitation cleaned up
+  3. ✅ Admin creates new invitation → New "pending" invitation created successfully
+  4. ✅ User accepts new invitation → Any remaining old "accepted" invitations cleaned up, new invitation accepted
+- **Result**: Complete remove/invite back flow now works seamlessly without database constraint violations
+
 #### **🔧 Group Removal & Re-invitation Flow Fix - COMPLETED** ✅
 - **Issue**: When admins removed users from groups and then tried to invite them back, the chat participation wasn't properly restored
 - **Root Cause**: The `addMemberToGroupChat()` function used `upsert` with `ignoreDuplicates: true`, which didn't clear the `left_at` timestamp for previously removed users
