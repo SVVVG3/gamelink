@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { updateEvent, validateEventStatusTransition, type EventStatus } from '@/lib/supabase/events'
 
 export async function GET(
   request: NextRequest,
@@ -135,6 +136,134 @@ export async function GET(
 
   } catch (error) {
     console.error('❌ API Error fetching event details:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ eventId: string }> }
+) {
+  try {
+    const { eventId } = await params
+    const { status, userFid } = await request.json()
+
+    console.log(`🎮 API: Updating event status for ID: ${eventId}`, { status, userFid })
+
+    // Validate required fields
+    if (!status) {
+      return NextResponse.json(
+        { error: 'Status is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!userFid) {
+      return NextResponse.json(
+        { error: 'User authentication is required' },
+        { status: 401 }
+      )
+    }
+
+    // Validate status value
+    const validStatuses = ['draft', 'upcoming', 'live', 'completed', 'cancelled']
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    const supabase = await createClient()
+
+    // Get user profile to verify authentication
+    const { data: userProfile, error: userError } = await supabase
+      .from('profiles')
+      .select('id, fid, username')
+      .eq('fid', parseInt(userFid))
+      .single()
+
+    if (userError || !userProfile) {
+      console.error('❌ Error fetching user profile:', userError)
+      return NextResponse.json(
+        { error: 'User not found or not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    // Get current event to verify authorization and validate status transition
+    const { data: currentEvent, error: eventError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .single()
+
+    if (eventError) {
+      console.error('❌ Error fetching event:', eventError)
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    if (!currentEvent) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if user is the organizer
+    if (currentEvent.created_by !== userProfile.id) {
+      return NextResponse.json(
+        { error: 'Only the event organizer can update event status' },
+        { status: 403 }
+      )
+    }
+
+    // Comprehensive status transition validation
+    const currentStatus = currentEvent.status as EventStatus
+    const newStatus = status as EventStatus
+    
+    const validation = await validateEventStatusTransition(
+      eventId,
+      currentStatus,
+      newStatus,
+      currentEvent.start_time,
+      currentEvent.end_time,
+      currentEvent.min_participants
+    )
+
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      )
+    }
+
+    // Update the event status using the existing utility function
+    const updatedEvent = await updateEvent(eventId, { status })
+
+    if (!updatedEvent) {
+      return NextResponse.json(
+        { error: 'Failed to update event status' },
+        { status: 500 }
+      )
+    }
+
+    console.log(`✅ API: Successfully updated event status from '${currentStatus}' to '${status}'`)
+
+    return NextResponse.json({
+      success: true,
+      event: updatedEvent,
+      message: `Event status updated to '${status}'`
+    })
+
+  } catch (error) {
+    console.error('❌ API Error updating event status:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

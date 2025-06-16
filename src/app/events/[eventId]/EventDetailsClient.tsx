@@ -18,7 +18,13 @@ import {
   FaGlobe,
   FaLock,
   FaUnlock,
-  FaComments
+  FaComments,
+  FaPlay,
+  FaStop,
+  FaTimes,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaSpinner
 } from 'react-icons/fa'
 import FarcasterIcon from '@/components/FarcasterIcon'
 import { FaShield } from 'react-icons/fa6'
@@ -45,6 +51,7 @@ export default function EventDetailsClient({ params }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [chatLoading, setChatLoading] = useState(false)
+  const [statusLoading, setStatusLoading] = useState(false)
   const [eventId, setEventId] = useState<string>('')
 
   useEffect(() => {
@@ -246,6 +253,102 @@ export default function EventDetailsClient({ params }: Props) {
     }
   }
 
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (!isAuthenticated || !profile || !event) return
+
+    try {
+      setStatusLoading(true)
+      setError(null)
+
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          userFid: profile.fid
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to update event status to ${newStatus}`)
+      }
+
+      // Update the event state with the new status
+      setEvent(prev => prev ? { ...prev, status: newStatus as any } : null)
+      
+      // Show success message briefly
+      const successMessage = `Event status updated to ${newStatus}`
+      console.log('✅', successMessage)
+      
+    } catch (err) {
+      console.error(`Error updating event status to ${newStatus}:`, err)
+      setError(err instanceof Error ? err.message : `Failed to update event status`)
+    } finally {
+      setStatusLoading(false)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'text-gray-400 bg-gray-800 border-gray-600'
+      case 'upcoming': return 'text-blue-400 bg-blue-900/20 border-blue-700'
+      case 'live': return 'text-green-400 bg-green-900/20 border-green-700'
+      case 'completed': return 'text-purple-400 bg-purple-900/20 border-purple-700'
+      case 'cancelled': return 'text-red-400 bg-red-900/20 border-red-700'
+      default: return 'text-gray-400 bg-gray-800 border-gray-600'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'draft': return <FaSpinner className="w-4 h-4" />
+      case 'upcoming': return <FaClock className="w-4 h-4" />
+      case 'live': return <FaPlay className="w-4 h-4" />
+      case 'completed': return <FaCheckCircle className="w-4 h-4" />
+      case 'cancelled': return <FaTimes className="w-4 h-4" />
+      default: return <FaSpinner className="w-4 h-4" />
+    }
+  }
+
+  const getAvailableTransitions = (currentStatus: string) => {
+    const transitions: Record<string, Array<{status: string, label: string, icon: any, color: string, description: string}>> = {
+      'draft': [
+        { status: 'upcoming', label: 'Publish Event', icon: FaClock, color: 'bg-blue-600 hover:bg-blue-700', description: 'Make event public and open for registration' },
+        { status: 'cancelled', label: 'Cancel Event', icon: FaTimes, color: 'bg-red-600 hover:bg-red-700', description: 'Cancel this event permanently' }
+      ],
+      'upcoming': [
+        { status: 'live', label: 'Start Event', icon: FaPlay, color: 'bg-green-600 hover:bg-green-700', description: 'Start the event now (available 30 min before scheduled time)' },
+        { status: 'cancelled', label: 'Cancel Event', icon: FaTimes, color: 'bg-red-600 hover:bg-red-700', description: 'Cancel this event permanently' }
+      ],
+      'live': [
+        { status: 'completed', label: 'Complete Event', icon: FaCheckCircle, color: 'bg-purple-600 hover:bg-purple-700', description: 'Mark event as completed' },
+        { status: 'cancelled', label: 'Cancel Event', icon: FaTimes, color: 'bg-red-600 hover:bg-red-700', description: 'Cancel this event permanently' }
+      ],
+      'completed': [],
+      'cancelled': []
+    }
+    
+    return transitions[currentStatus] || []
+  }
+
+  const canTransitionToStatus = (currentStatus: string, targetStatus: string) => {
+    if (!event) return false
+    
+    // Time-based validation for 'live' status
+    if (targetStatus === 'live') {
+      const now = new Date()
+      const startTime = new Date(event.startTime)
+      const allowedStartTime = new Date(startTime.getTime() - 30 * 60 * 1000) // 30 minutes before
+      return now >= allowedStartTime
+    }
+    
+    return true
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 md:p-24 bg-gray-900 pb-20">
@@ -325,6 +428,12 @@ export default function EventDetailsClient({ params }: Props) {
             </Link>
             
             <div className="flex items-center space-x-2">
+              {/* Event Status Indicator */}
+              <div className={`flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(event.status)}`}>
+                {getStatusIcon(event.status)}
+                <span className="ml-1 capitalize">{event.status}</span>
+              </div>
+              
               {event.isPrivate ? (
                 <FaLock className="w-4 h-4 text-yellow-400" title="Private Event" />
               ) : (
@@ -632,14 +741,90 @@ export default function EventDetailsClient({ params }: Props) {
               <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
                 <h3 className="text-lg font-bold text-white mb-4">Organizer Actions</h3>
                 
-                <div className="space-y-3">
-                  <button 
-                    onClick={() => window.location.href = `/events/${eventId}/edit`}
-                    className="w-full flex items-center justify-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
-                  >
-                    <FaTrophy className="w-4 h-4 mr-2" />
-                    Manage Event
-                  </button>
+                <div className="space-y-4">
+                  {/* Current Status Display */}
+                  <div className="bg-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-400 text-sm">Current Status</span>
+                      <div className={`flex items-center px-2 py-1 rounded text-xs font-medium ${getStatusColor(event.status)}`}>
+                        {getStatusIcon(event.status)}
+                        <span className="ml-1 capitalize">{event.status}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Status Description */}
+                    <p className="text-gray-300 text-xs">
+                      {event.status === 'draft' && 'Event is in draft mode. Publish to make it visible to others.'}
+                      {event.status === 'upcoming' && 'Event is published and accepting registrations.'}
+                      {event.status === 'live' && 'Event is currently active and in progress.'}
+                      {event.status === 'completed' && 'Event has been completed.'}
+                      {event.status === 'cancelled' && 'Event has been cancelled.'}
+                    </p>
+                  </div>
+
+                  {/* Status Control Buttons */}
+                  {getAvailableTransitions(event.status).length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-gray-300">Status Controls</h4>
+                      {getAvailableTransitions(event.status).map((transition) => {
+                        const Icon = transition.icon
+                        const isDisabled = !canTransitionToStatus(event.status, transition.status) || statusLoading
+                        const isDestructive = transition.status === 'cancelled'
+                        
+                        return (
+                          <div key={transition.status}>
+                            <button
+                              onClick={() => {
+                                if (isDestructive) {
+                                  const confirmed = window.confirm(
+                                    `Are you sure you want to cancel this event? This action cannot be undone.`
+                                  )
+                                  if (confirmed) {
+                                    handleStatusUpdate(transition.status)
+                                  }
+                                } else {
+                                  handleStatusUpdate(transition.status)
+                                }
+                              }}
+                              disabled={isDisabled}
+                              className={`w-full flex items-center justify-center px-4 py-2 text-white rounded-lg transition-colors font-medium text-sm ${
+                                isDisabled 
+                                  ? 'bg-gray-600 cursor-not-allowed opacity-50' 
+                                  : transition.color
+                              }`}
+                              title={isDisabled && transition.status === 'live' ? 'Event can only be started 30 minutes before scheduled time' : transition.description}
+                            >
+                              {statusLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              ) : (
+                                <Icon className="w-4 h-4 mr-2" />
+                              )}
+                              {transition.label}
+                            </button>
+                            
+                            {/* Time restriction warning for live status */}
+                            {transition.status === 'live' && !canTransitionToStatus(event.status, 'live') && (
+                              <p className="text-yellow-400 text-xs mt-1 flex items-center">
+                                <FaExclamationTriangle className="w-3 h-3 mr-1" />
+                                Available 30 minutes before start time
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Manage Event Button */}
+                  <div className="pt-2 border-t border-gray-600">
+                    <button 
+                      onClick={() => window.location.href = `/events/${eventId}/edit`}
+                      className="w-full flex items-center justify-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
+                    >
+                      <FaTrophy className="w-4 h-4 mr-2" />
+                      Manage Event
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
