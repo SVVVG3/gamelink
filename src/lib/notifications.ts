@@ -614,12 +614,16 @@ export async function sendEventReminderNotification(
     const eventTitle = event.title
     const gameInfo = event.game ? ` (${event.game})` : ''
     const startTime = new Date(event.start_time)
+    
+    // Use the event's timezone for formatting, fallback to UTC if not specified
+    const eventTimezone = event.timezone || 'UTC'
     const timeString = startTime.toLocaleString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
+      timeZone: eventTimezone,
       timeZoneName: 'short'
     })
 
@@ -681,6 +685,7 @@ export async function sendEventStatusChangeNotification(
         title,
         game,
         status,
+        timezone,
         created_by,
         organizer:profiles!events_created_by_fkey (
           fid,
