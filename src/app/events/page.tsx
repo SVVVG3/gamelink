@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@/hooks/useUser'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaCalendarAlt, FaPlus, FaTrophy, FaClock, FaUsers, FaGamepad, FaMapMarkerAlt, FaGlobe } from 'react-icons/fa'
+import { FaCalendarAlt, FaPlus, FaTrophy, FaClock, FaUsers, FaGamepad, FaMapMarkerAlt, FaGlobe, FaPlay, FaCheckCircle, FaTimes, FaEye } from 'react-icons/fa'
 import Link from 'next/link'
 import { Event } from '@/types'
 
@@ -20,6 +20,9 @@ export default function EventsPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchEvents()
+      // Set up auto-refresh for live events every 30 seconds
+      const interval = setInterval(fetchEvents, 30000)
+      return () => clearInterval(interval)
     }
   }, [isAuthenticated])
 
@@ -43,6 +46,12 @@ export default function EventsPage() {
       setEventsLoading(false)
     }
   }
+
+  // Filter events by status
+  const liveEvents = events.filter(event => event.status === 'live')
+  const upcomingEvents = events.filter(event => event.status === 'upcoming')
+  const draftEvents = events.filter(event => event.status === 'draft')
+  const completedEvents = events.filter(event => event.status === 'completed')
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -81,6 +90,135 @@ export default function EventsPage() {
       default: return 'text-purple-400 bg-purple-900/20 border-purple-700'
     }
   }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'live': return 'text-green-400 bg-green-900/30 border-green-500'
+      case 'upcoming': return 'text-blue-400 bg-blue-900/30 border-blue-500'
+      case 'completed': return 'text-gray-400 bg-gray-900/30 border-gray-500'
+      case 'cancelled': return 'text-red-400 bg-red-900/30 border-red-500'
+      case 'draft': return 'text-yellow-400 bg-yellow-900/30 border-yellow-500'
+      default: return 'text-gray-400 bg-gray-900/30 border-gray-500'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'live': return <FaPlay className="w-3 h-3" />
+      case 'upcoming': return <FaClock className="w-3 h-3" />
+      case 'completed': return <FaCheckCircle className="w-3 h-3" />
+      case 'cancelled': return <FaTimes className="w-3 h-3" />
+      case 'draft': return <FaEye className="w-3 h-3" />
+      default: return <FaClock className="w-3 h-3" />
+    }
+  }
+
+  const renderEventCard = (event: EventWithParticipantCount) => {
+    const startDateTime = formatDateTime(event.startTime || new Date().toISOString())
+    const isLive = event.status === 'live'
+    
+    return (
+      <Link 
+        key={event.id} 
+        href={`/events/${event.id}`}
+        className={`bg-gray-800 border rounded-lg p-6 hover:border-blue-500 transition-all group relative ${
+          isLive ? 'border-green-500 ring-1 ring-green-500/20' : 'border-gray-700'
+        }`}
+      >
+        {/* Live indicator pulse */}
+        {isLive && (
+          <div className="absolute -top-1 -right-1">
+            <div className="relative">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
+            </div>
+          </div>
+        )}
+        
+        <div className="space-y-4">
+          {/* Event Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className={`flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(event.status || 'upcoming')}`}>
+                  {getStatusIcon(event.status || 'upcoming')}
+                  <span className="ml-1 capitalize">{event.status || 'upcoming'}</span>
+                </div>
+                {isLive && (
+                  <span className="text-green-400 text-xs font-medium animate-pulse">
+                    LIVE NOW
+                  </span>
+                )}
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2">
+                {event.title}
+              </h3>
+              {event.description && (
+                <p className="text-gray-400 text-sm mt-1 line-clamp-2">
+                  {event.description}
+                </p>
+              )}
+            </div>
+            <span className={`px-2 py-1 rounded text-xs font-medium border ${getEventTypeColor(event.eventType || 'casual')}`}>
+              {event.eventType || 'casual'}
+            </span>
+          </div>
+
+          {/* Game Info */}
+          {event.game && (
+            <div className="flex items-center space-x-2">
+              <FaGamepad className="w-4 h-4 text-blue-400" />
+              <span className="text-white font-medium">{event.game}</span>
+              {event.gamingPlatform && (
+                <span className="text-gray-400 text-sm">
+                  {getPlatformIcon(event.gamingPlatform || '')} {event.gamingPlatform}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Date & Time */}
+          <div className="flex items-center space-x-2">
+            <FaClock className="w-4 h-4 text-green-400" />
+            <div className="text-sm">
+              <span className="text-white font-medium">{startDateTime.date}</span>
+              <span className="text-gray-400 ml-2">{startDateTime.time}</span>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="flex items-center space-x-2">
+            {event.locationType === 'online' ? (
+              <FaGlobe className="w-4 h-4 text-blue-400" />
+            ) : (
+              <FaMapMarkerAlt className="w-4 h-4 text-red-400" />
+            )}
+            <span className="text-gray-300 text-sm capitalize">
+              {event.locationType?.replace('_', ' ') || 'Unknown'}
+            </span>
+          </div>
+
+          {/* Participants */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+            <div className="flex items-center space-x-2">
+              <FaUsers className="w-4 h-4 text-purple-400" />
+              <span className="text-gray-300 text-sm">
+                {event.participantCount || 0}/{event.maxParticipants || 0} players
+              </span>
+            </div>
+            
+            {event.skillLevel && (
+              <span className="text-gray-400 text-xs capitalize">
+                {event.skillLevel}
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+    )
+  }
+
+
 
   if (!isAuthenticated) {
     return (
@@ -189,9 +327,7 @@ export default function EventsPage() {
         </div>
 
         {/* Events List */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white">Upcoming Events</h2>
-          
+        <div className="space-y-8">
           {eventsLoading ? (
             <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
@@ -214,87 +350,78 @@ export default function EventsPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {events.map((event) => {
-                const startDateTime = formatDateTime(event.startTime || new Date().toISOString())
-                return (
-                  <Link 
-                    key={event.id} 
-                    href={`/events/${event.id}`}
-                    className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-blue-500 transition-colors group"
-                  >
-                    <div className="space-y-4">
-                      {/* Event Header */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2">
-                            {event.title}
-                          </h3>
-                          {event.description && (
-                            <p className="text-gray-400 text-sm mt-1 line-clamp-2">
-                              {event.description}
-                            </p>
-                          )}
-                        </div>
-                        <span className={`px-2 py-1 rounded text-xs font-medium border ${getEventTypeColor(event.eventType || 'casual')}`}>
-                          {event.eventType || 'casual'}
-                        </span>
-                      </div>
+            <>
+              {/* Live Events - Show first and prominently */}
+              {liveEvents.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <FaPlay className="w-5 h-5 text-green-400" />
+                    <h2 className="text-2xl font-bold text-white">🔴 Live Events</h2>
+                    <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium animate-pulse">
+                      {liveEvents.length} LIVE
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {liveEvents.map(renderEventCard)}
+                  </div>
+                </div>
+              )}
 
-                      {/* Game Info */}
-                      {event.game && (
-                        <div className="flex items-center space-x-2">
-                          <FaGamepad className="w-4 h-4 text-blue-400" />
-                          <span className="text-white font-medium">{event.game}</span>
-                          {event.gamingPlatform && (
-                            <span className="text-gray-400 text-sm">
-                              {getPlatformIcon(event.gamingPlatform || '')} {event.gamingPlatform}
-                            </span>
-                          )}
-                        </div>
-                      )}
+              {/* Upcoming Events */}
+              {upcomingEvents.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <FaClock className="w-5 h-5 text-blue-400" />
+                    <h2 className="text-xl font-bold text-white">Upcoming Events</h2>
+                    <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm">
+                      {upcomingEvents.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {upcomingEvents.map(renderEventCard)}
+                  </div>
+                </div>
+              )}
 
-                      {/* Date & Time */}
-                      <div className="flex items-center space-x-2">
-                        <FaClock className="w-4 h-4 text-green-400" />
-                        <div className="text-sm">
-                          <span className="text-white font-medium">{startDateTime.date}</span>
-                          <span className="text-gray-400 ml-2">{startDateTime.time}</span>
-                        </div>
-                      </div>
+              {/* Draft Events - Only show to organizers */}
+              {draftEvents.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <FaEye className="w-5 h-5 text-yellow-400" />
+                    <h2 className="text-xl font-bold text-white">Draft Events</h2>
+                    <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm">
+                      {draftEvents.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {draftEvents.map(renderEventCard)}
+                  </div>
+                </div>
+              )}
 
-                      {/* Location */}
-                      <div className="flex items-center space-x-2">
-                        {event.locationType === 'online' ? (
-                          <FaGlobe className="w-4 h-4 text-blue-400" />
-                        ) : (
-                          <FaMapMarkerAlt className="w-4 h-4 text-red-400" />
-                        )}
-                        <span className="text-gray-300 text-sm capitalize">
-                          {event.locationType?.replace('_', ' ') || 'Unknown'}
-                        </span>
-                      </div>
-
-                      {/* Participants */}
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-700">
-                        <div className="flex items-center space-x-2">
-                          <FaUsers className="w-4 h-4 text-purple-400" />
-                          <span className="text-gray-300 text-sm">
-                            {event.participantCount || 0}/{event.maxParticipants || 0} players
-                          </span>
-                        </div>
-                        
-                        {event.skillLevel && (
-                          <span className="text-gray-400 text-xs capitalize">
-                            {event.skillLevel}
-                          </span>
-                        )}
-                      </div>
+              {/* Completed Events - Collapsible section */}
+              {completedEvents.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <FaCheckCircle className="w-5 h-5 text-gray-400" />
+                    <h2 className="text-xl font-bold text-white">Recent Completed Events</h2>
+                    <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm">
+                      {completedEvents.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {completedEvents.slice(0, 6).map(renderEventCard)}
+                  </div>
+                  {completedEvents.length > 6 && (
+                    <div className="text-center">
+                      <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                        View All Completed Events ({completedEvents.length - 6} more)
+                      </button>
                     </div>
-                  </Link>
-                )
-              })}
-            </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
