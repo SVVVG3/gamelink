@@ -244,10 +244,10 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
     const game = searchParams.get('game')
     const eventType = searchParams.get('eventType')
-    const status = searchParams.get('status') || 'upcoming'
+    const status = searchParams.get('status') // Don't default to 'upcoming' - let frontend filter
     const chatId = searchParams.get('chatId')
 
-    console.log(`🎮 API: Fetching events with status: ${status}${chatId ? `, chatId: ${chatId}` : ''}`)
+    console.log(`🎮 API: Fetching events${status ? ` with status: ${status}` : ' (all statuses)'}${chatId ? `, chatId: ${chatId}` : ''}`)
 
     // Build query for events
     let query = supabase
@@ -260,9 +260,13 @@ export async function GET(request: NextRequest) {
     } else {
       // Only apply other filters if not looking up by chatId
       query = query
-        .eq('status', status)
         .order('start_time', { ascending: true })
         .range(offset, offset + limit - 1)
+
+      // Add status filter only if specifically requested
+      if (status) {
+        query = query.eq('status', status)
+      }
 
       // Add filters
       if (game) {
