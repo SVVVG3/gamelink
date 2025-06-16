@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { sendEventReminderNotification, sendEventStatusChangeNotification } from './notifications'
 
 // Create a service role client for background operations
 const supabaseAdmin = createClient(
@@ -19,6 +20,7 @@ export interface SchedulerResult {
   details: {
     transitionedToLive: number
     transitionedToCompleted: number
+    remindersSent: number
     failed: number
   }
 }
@@ -35,6 +37,7 @@ export async function processScheduledStatusTransitions(): Promise<SchedulerResu
     details: {
       transitionedToLive: 0,
       transitionedToCompleted: 0,
+      remindersSent: 0,
       failed: 0
     }
   }
@@ -54,6 +57,12 @@ export async function processScheduledStatusTransitions(): Promise<SchedulerResu
     // Find events that need to transition to 'completed'
     const eventsToComplete = await findEventsToComplete(nowWithBuffer)
     console.log(`[Event Scheduler] Found ${eventsToComplete.length} events to complete`)
+    
+    // Find events that need reminders
+    const eventsFor24hReminder = await findEventsNeedingReminder(now, '24h')
+    const eventsFor1hReminder = await findEventsNeedingReminder(now, '1h')
+    const eventsForStartingReminder = await findEventsNeedingReminder(now, 'starting')
+    console.log(`[Event Scheduler] Found ${eventsFor24hReminder.length} events for 24h reminder, ${eventsFor1hReminder.length} for 1h reminder, ${eventsForStartingReminder.length} for starting reminder`)
     
     // Process transitions to 'live'
     for (const event of eventsToStart) {
@@ -83,7 +92,27 @@ export async function processScheduledStatusTransitions(): Promise<SchedulerResu
       }
     }
     
-    result.processed = result.details.transitionedToLive + result.details.transitionedToCompleted + result.details.failed
+    // Process event reminders
+    const allReminderEvents = [
+      ...eventsFor24hReminder.map((e: any) => ({ ...e, reminderType: '24h' as const })),
+      ...eventsFor1hReminder.map((e: any) => ({ ...e, reminderType: '1h' as const })),
+      ...eventsForStartingReminder.map((e: any) => ({ ...e, reminderType: 'starting' as const }))
+    ]
+    
+    for (const event of allReminderEvents) {
+      try {
+        await sendEventReminderNotification(event.id, event.reminderType)
+        result.details.remindersSent++
+        console.log(`[Event Scheduler] Sent ${event.reminderType} reminder for event ${event.id}`)
+      } catch (error) {
+        const errorMsg = `Failed to send ${event.reminderType} reminder for event ${event.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        result.errors.push(errorMsg)
+        result.details.failed++
+        console.error(`[Event Scheduler] ${errorMsg}`)
+      }
+    }
+    
+    result.processed = result.details.transitionedToLive + result.details.transitionedToCompleted + result.details.remindersSent + result.details.failed
     result.success = result.errors.length === 0
     
     console.log(`[Event Scheduler] Completed processing. Results:`, result.details)
@@ -154,6 +183,14 @@ async function transitionEventToLive(eventId: string) {
   
   // Auto-confirm registered participants when event starts
   await autoConfirmParticipants(eventId)
+  
+  // Send status change notification to participants
+  try {
+    await sendEventStatusChangeNotification(eventId, 'live', 'upcoming')
+  } catch (error) {
+    console.error(`[Event Scheduler] Failed to send status change notification for event ${eventId}:`, error)
+    // Don't throw error - status transition succeeded, notification failure is not critical
+  }
 }
 
 /**
@@ -175,6 +212,14 @@ async function transitionEventToCompleted(eventId: string) {
   
   // Mark no-shows after event completion (with grace period)
   await markNoShows(eventId)
+  
+  // Send status change notification to participants
+  try {
+    await sendEventStatusChangeNotification(eventId, 'completed', 'live')
+  } catch (error) {
+    console.error(`[Event Scheduler] Failed to send status change notification for event ${eventId}:`, error)
+    // Don't throw error - status transition succeeded, notification failure is not critical
+  }
 }
 
 /**
@@ -230,6 +275,49 @@ async function markNoShows(eventId: string, gracePeriodMinutes: number = 15) {
   } catch (error) {
     console.error(`[Event Scheduler] Error marking no-shows for event ${eventId}:`, error)
   }
+}
+
+/**
+ * Find events that need reminders sent
+ */
+async function findEventsNeedingReminder(currentTime: Date, reminderType: '24h' | '1h' | 'starting') {
+  let timeCondition: Date
+  
+  switch (reminderType) {
+    case '24h':
+      // Events starting in 24 hours (±5 minutes window)
+      timeCondition = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000)
+      break
+    case '1h':
+      // Events starting in 1 hour (±5 minutes window)
+      timeCondition = new Date(currentTime.getTime() + 60 * 60 * 1000)
+      break
+    case 'starting':
+      // Events starting now (±2 minutes window)
+      timeCondition = currentTime
+      break
+    default:
+      throw new Error(`Invalid reminder type: ${reminderType}`)
+  }
+  
+  // Create a 5-minute window around the target time (2 minutes for 'starting')
+  const windowMinutes = reminderType === 'starting' ? 2 : 5
+  const startWindow = new Date(timeCondition.getTime() - windowMinutes * 60 * 1000)
+  const endWindow = new Date(timeCondition.getTime() + windowMinutes * 60 * 1000)
+  
+  const { data, error } = await supabaseAdmin
+    .from('events')
+    .select('id, title, start_time, status')
+    .eq('status', 'upcoming')
+    .gte('start_time', startWindow.toISOString())
+    .lte('start_time', endWindow.toISOString())
+    .order('start_time', { ascending: true })
+  
+  if (error) {
+    throw new Error(`Failed to fetch events for ${reminderType} reminder: ${error.message}`)
+  }
+  
+  return data || []
 }
 
 /**

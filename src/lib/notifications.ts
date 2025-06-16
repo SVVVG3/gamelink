@@ -535,6 +535,246 @@ export async function sendEventCreationNotification(
 }
 
 /**
+ * Send 24-hour reminder notification to event participants
+ */
+export async function sendEventReminderNotification(
+  eventId: string,
+  reminderType: '24h' | '1h' | 'starting'
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = getSupabaseClient()
+    
+    // Get event details with participants
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select(`
+        id,
+        title,
+        description,
+        game,
+        start_time,
+        end_time,
+        status,
+        created_by,
+        organizer:profiles!events_created_by_fkey (
+          fid,
+          username,
+          display_name
+        ),
+        event_participants (
+          user_id,
+          status,
+          participant:profiles!event_participants_user_id_fkey (
+            fid,
+            username,
+            display_name
+          )
+        )
+      `)
+      .eq('id', eventId)
+      .single()
+
+    if (eventError || !event) {
+      console.error('Error fetching event for reminder notification:', eventError)
+      return { success: false, error: 'Event not found' }
+    }
+
+    // Only send reminders for upcoming or live events
+    if (!['upcoming', 'live'].includes(event.status)) {
+      console.log(`Event ${eventId} status is ${event.status}, skipping reminder`)
+      return { success: true }
+    }
+
+    // Get participants who should receive reminders (registered, confirmed, or attended)
+    const eligibleParticipants = event.event_participants
+      .filter((p: any) => ['registered', 'confirmed', 'attended'].includes(p.status))
+      .map((p: any) => p.participant.fid)
+      .filter((fid: any) => fid) // Remove any null FIDs
+
+    if (eligibleParticipants.length === 0) {
+      console.log(`No eligible participants for event ${eventId} reminder`)
+      return { success: true }
+    }
+
+    // Filter participants who have event notifications enabled
+    const notificationEnabledFids = await filterUsersByNotificationPreferences(
+      eligibleParticipants,
+      'events'
+    )
+
+    if (notificationEnabledFids.length === 0) {
+      console.log(`No participants with event notifications enabled for event ${eventId}`)
+      return { success: true }
+    }
+
+    // Create notification content based on reminder type
+    let title: string
+    let body: string
+    
+    const eventTitle = event.title
+    const gameInfo = event.game ? ` (${event.game})` : ''
+    const startTime = new Date(event.start_time)
+    const timeString = startTime.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    })
+
+    switch (reminderType) {
+      case '24h':
+        title = '📅 Event Tomorrow!'
+        body = `${eventTitle}${gameInfo} starts in 24 hours (${timeString})`
+        break
+      case '1h':
+        title = '⏰ Event Starting Soon!'
+        body = `${eventTitle}${gameInfo} starts in 1 hour (${timeString})`
+        break
+      case 'starting':
+        title = '🎮 Event Starting Now!'
+        body = `${eventTitle}${gameInfo} is starting now! Join your fellow gamers.`
+        break
+      default:
+        return { success: false, error: 'Invalid reminder type' }
+    }
+
+    const notification = createNotificationPayload(
+      title,
+      body,
+      `/events/${event.id}`
+    )
+
+    // Send notification to eligible participants
+    const result = await sendNotificationToUsers(notificationEnabledFids, notification)
+    
+    if (result.success) {
+      console.log(`✅ Sent ${reminderType} reminder for event ${eventId} to ${notificationEnabledFids.length} participants`)
+    } else {
+      console.error(`❌ Failed to send ${reminderType} reminder for event ${eventId}:`, result.error)
+    }
+
+    return result
+  } catch (error: any) {
+    console.error(`Error sending ${reminderType} reminder for event ${eventId}:`, error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Send status change notification to event participants
+ */
+export async function sendEventStatusChangeNotification(
+  eventId: string,
+  newStatus: string,
+  oldStatus?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = getSupabaseClient()
+    
+    // Get event details with participants
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select(`
+        id,
+        title,
+        game,
+        status,
+        created_by,
+        organizer:profiles!events_created_by_fkey (
+          fid,
+          username,
+          display_name
+        ),
+        event_participants (
+          user_id,
+          status,
+          participant:profiles!event_participants_user_id_fkey (
+            fid,
+            username,
+            display_name
+          )
+        )
+      `)
+      .eq('id', eventId)
+      .single()
+
+    if (eventError || !event) {
+      console.error('Error fetching event for status change notification:', eventError)
+      return { success: false, error: 'Event not found' }
+    }
+
+    // Get participants who should receive status updates
+    const eligibleParticipants = event.event_participants
+      .filter((p: any) => ['registered', 'confirmed', 'attended'].includes(p.status))
+      .map((p: any) => p.participant.fid)
+      .filter((fid: any) => fid)
+
+    if (eligibleParticipants.length === 0) {
+      console.log(`No eligible participants for event ${eventId} status change notification`)
+      return { success: true }
+    }
+
+    // Filter participants who have event notifications enabled
+    const notificationEnabledFids = await filterUsersByNotificationPreferences(
+      eligibleParticipants,
+      'events'
+    )
+
+    if (notificationEnabledFids.length === 0) {
+      console.log(`No participants with event notifications enabled for event ${eventId}`)
+      return { success: true }
+    }
+
+    // Create notification content based on status change
+    let title: string
+    let body: string
+    
+    const eventTitle = event.title
+    const gameInfo = event.game ? ` (${event.game})` : ''
+
+    switch (newStatus) {
+      case 'live':
+        title = '🔴 Event is Live!'
+        body = `${eventTitle}${gameInfo} has started! Join now.`
+        break
+      case 'completed':
+        title = '✅ Event Completed'
+        body = `${eventTitle}${gameInfo} has ended. Thanks for participating!`
+        break
+      case 'cancelled':
+        title = '❌ Event Cancelled'
+        body = `${eventTitle}${gameInfo} has been cancelled by the organizer.`
+        break
+      default:
+        // Don't send notifications for other status changes
+        return { success: true }
+    }
+
+    const notification = createNotificationPayload(
+      title,
+      body,
+      `/events/${event.id}`
+    )
+
+    // Send notification to eligible participants
+    const result = await sendNotificationToUsers(notificationEnabledFids, notification)
+    
+    if (result.success) {
+      console.log(`✅ Sent status change notification (${oldStatus} → ${newStatus}) for event ${eventId} to ${notificationEnabledFids.length} participants`)
+    } else {
+      console.error(`❌ Failed to send status change notification for event ${eventId}:`, result.error)
+    }
+
+    return result
+  } catch (error: any) {
+    console.error(`Error sending status change notification for event ${eventId}:`, error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
  * Send notification when someone creates a public group (to mutual followers)
  */
 export async function sendGroupCreationNotification(
