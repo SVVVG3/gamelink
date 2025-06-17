@@ -285,33 +285,34 @@ async function markNoShows(eventId: string, gracePeriodMinutes: number = 15) {
  * Find events that need reminders sent
  */
 async function findEventsNeedingReminder(currentTime: Date, reminderType: '24h' | '1h' | 'starting') {
-  let timeCondition: Date
   let reminderField: string
+  let startWindow: Date
+  let endWindow: Date
   
   switch (reminderType) {
     case '24h':
-      // Events starting in 24 hours (±5 minutes window)
-      timeCondition = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000)
+      // Find events starting in ~24 hours (events starting between 23h55m and 24h05m from now)
       reminderField = 'reminder_24h_sent_at'
+      startWindow = new Date(currentTime.getTime() + (24 * 60 - 5) * 60 * 1000) // 23h55m from now
+      endWindow = new Date(currentTime.getTime() + (24 * 60 + 5) * 60 * 1000) // 24h05m from now
       break
     case '1h':
-      // Events starting in 1 hour (±5 minutes window)
-      timeCondition = new Date(currentTime.getTime() + 60 * 60 * 1000)
+      // Find events starting in ~1 hour (events starting between 55m and 65m from now)
       reminderField = 'reminder_1h_sent_at'
+      startWindow = new Date(currentTime.getTime() + (60 - 5) * 60 * 1000) // 55m from now
+      endWindow = new Date(currentTime.getTime() + (60 + 5) * 60 * 1000) // 65m from now
       break
     case 'starting':
-      // Events starting now (±2 minutes window)
-      timeCondition = currentTime
+      // Find events starting now (events starting between 2m ago and 2m from now)
       reminderField = 'reminder_starting_sent_at'
+      startWindow = new Date(currentTime.getTime() - 2 * 60 * 1000) // 2m ago
+      endWindow = new Date(currentTime.getTime() + 2 * 60 * 1000) // 2m from now
       break
     default:
       throw new Error(`Invalid reminder type: ${reminderType}`)
   }
   
-  // Create a 5-minute window around the target time (2 minutes for 'starting')
-  const windowMinutes = reminderType === 'starting' ? 2 : 5
-  const startWindow = new Date(timeCondition.getTime() - windowMinutes * 60 * 1000)
-  const endWindow = new Date(timeCondition.getTime() + windowMinutes * 60 * 1000)
+  console.log(`[Event Scheduler] Looking for ${reminderType} reminders between ${startWindow.toISOString()} and ${endWindow.toISOString()}`)
   
   const { data, error } = await supabaseAdmin
     .from('events')
@@ -325,6 +326,8 @@ async function findEventsNeedingReminder(currentTime: Date, reminderType: '24h' 
   if (error) {
     throw new Error(`Failed to fetch events for ${reminderType} reminder: ${error.message}`)
   }
+
+  console.log(`[Event Scheduler] Found ${data?.length || 0} events needing ${reminderType} reminder:`, data?.map((e: any) => ({ id: e.id, title: e.title, start_time: e.start_time })))
   
   return data || []
 }
