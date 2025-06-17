@@ -431,6 +431,15 @@ export default function EventDetailsClient({ params }: Props) {
   const endDateTime = event.endTime ? formatDateTime(event.endTime) : null
   const isUserParticipant = event.userParticipation !== null && event.userParticipation !== undefined
   const isOrganizer = event.userParticipation?.role === 'organizer'
+  
+  // Debug logging for Live Dashboard button visibility
+  console.log('🔍 Live Dashboard Debug:', {
+    eventId: event.id,
+    eventStatus: event.status,
+    userParticipation: event.userParticipation,
+    isOrganizer,
+    showLiveButton: isOrganizer && event.status === 'live'
+  })
   const canJoin = !isUserParticipant && event.participantCount < event.maxParticipants
   const requiresApproval = event.requireApproval && !isUserParticipant
 
@@ -551,6 +560,28 @@ export default function EventDetailsClient({ params }: Props) {
                     >
                       <FaPlay className="w-4 h-4 mr-2" />
                       Live Dashboard
+                    </Link>
+                  </div>
+                )}
+                
+                {/* DEBUG: Show debug info for troubleshooting */}
+                <div className="pt-2 border-t border-gray-700 bg-gray-700 p-3 rounded text-xs">
+                  <p><strong>🔍 DEBUG INFO:</strong></p>
+                  <p>Event Status: <span className="text-yellow-300">{event.status}</span></p>
+                  <p>User Participation: <span className="text-blue-300">{event.userParticipation ? JSON.stringify(event.userParticipation) : 'null'}</span></p>
+                  <p>Is Organizer: <span className="text-green-300">{isOrganizer ? 'YES' : 'NO'}</span></p>
+                  <p>Show Live Button: <span className="text-purple-300">{(isOrganizer && event.status === 'live') ? 'YES' : 'NO'}</span></p>
+                </div>
+                
+                {/* DEBUG: Temporary button to test Live Dashboard access for organizers */}
+                {isOrganizer && (
+                  <div className="pt-2 border-t border-gray-700">
+                    <Link
+                      href={`/events/${eventId}/live`}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors font-medium shadow-lg"
+                    >
+                      <FaPlay className="w-4 h-4 mr-2" />
+                      🔧 DEBUG: Live Dashboard (Status: {event.status})
                     </Link>
                   </div>
                 )}
