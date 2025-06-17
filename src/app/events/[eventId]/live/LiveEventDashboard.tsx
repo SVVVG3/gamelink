@@ -1,0 +1,235 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useUser } from '@/hooks/useUser'
+import { supabase } from '@/lib/supabaseClient'
+import { Event, EventParticipant } from '@/types'
+import EventTimer from './EventTimer'
+import ParticipantTracker from './ParticipantTracker'
+import EventControls from './EventControls'
+
+interface LiveEventDashboardProps {
+  eventId: string
+}
+
+interface ParticipantWithProfile extends EventParticipant {
+  profiles: {
+    fid: number
+    display_name?: string
+    username?: string
+    avatar_url?: string
+  }
+}
+
+interface LiveEventData {
+  event: Event
+  participants: ParticipantWithProfile[]
+}
+
+export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps) {
+  const { profile, isAuthenticated, isLoading: userLoading } = useUser()
+  const router = useRouter()
+  const [eventData, setEventData] = useState<LiveEventData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch initial event data
+  useEffect(() => {
+    async function fetchEventData() {
+      try {
+        // Fetch event details (using EventWithDetails to get organizer info)
+        const eventResponse = await fetch(`/api/events/${eventId}`)
+        if (!eventResponse.ok) {
+          throw new Error('Failed to fetch event')
+        }
+        const eventData = await eventResponse.json()
+        const event: Event = eventData
+
+        // Check if user is organizer - compare with createdBy field that stores FID
+        if (!profile?.fid || event.createdBy !== profile.fid.toString()) {
+          setError('You are not authorized to access this live dashboard')
+          return
+        }
+
+        // Check if event is live
+        if (event.status !== 'live') {
+          setError(`Event is not currently live (status: ${event.status})`)
+          return
+        }
+
+        // Fetch participants
+        const { data: participants, error: participantsError } = await supabase
+          .from('event_participants')
+          .select(`
+            *,
+            profiles (
+              fid,
+              display_name,
+              username,
+              avatar_url
+            )
+          `)
+          .eq('event_id', eventId)
+
+        if (participantsError) {
+          throw participantsError
+        }
+
+        setEventData({ event, participants: participants || [] })
+      } catch (err) {
+        console.error('Error fetching event data:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load event')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (!userLoading && isAuthenticated && profile) {
+      fetchEventData()
+    }
+  }, [eventId, profile, userLoading, isAuthenticated])
+
+  // Real-time subscription for participant updates
+  useEffect(() => {
+    if (!eventData) return
+
+    const subscription = supabase
+      .channel(`live-event-${eventId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_participants',
+          filter: `event_id=eq.${eventId}`
+        },
+        async (payload) => {
+          console.log('Participant update:', payload)
+          
+          // Refetch participants data
+          const { data: participants, error } = await supabase
+            .from('event_participants')
+            .select(`
+              *,
+              profiles (
+                fid,
+                display_name,
+                username,
+                avatar_url
+              )
+            `)
+            .eq('event_id', eventId)
+
+          if (!error && participants) {
+            setEventData(prev => prev ? { ...prev, participants } : null)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [eventId, eventData])
+
+  // Loading state
+  if (loading || userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
+          <div className="flex items-center mb-4">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Access Denied</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex">
+            <button
+              onClick={() => router.back()}
+              className="bg-red-100 hover:bg-red-200 text-red-800 font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No event data
+  if (!eventData) {
+    return (
+      <div className="p-4">
+        <div className="text-center">
+          <p className="text-gray-500">Event not found</p>
+        </div>
+      </div>
+    )
+  }
+
+  const { event, participants } = eventData
+
+  return (
+    <div className="p-4 space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
+            <p className="text-gray-600">Live Event Dashboard</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-green-600 font-medium">LIVE</span>
+            </div>
+          </div>
+        </div>
+        
+        <EventTimer event={event} />
+      </div>
+
+      {/* Main Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Participant Tracker */}
+        <div className="lg:col-span-2">
+          <ParticipantTracker 
+            participants={participants} 
+            eventId={eventId}
+            onParticipantUpdate={(updatedParticipants: ParticipantWithProfile[]) => 
+              setEventData(prev => prev ? { ...prev, participants: updatedParticipants } : null)
+            }
+          />
+        </div>
+
+        {/* Event Controls */}
+        <div className="lg:col-span-1">
+          <EventControls 
+            event={event}
+            participants={participants}
+            onEventUpdate={(updatedEvent: Event) => 
+              setEventData(prev => prev ? { ...prev, event: updatedEvent } : null)
+            }
+          />
+        </div>
+      </div>
+    </div>
+  )
+} 
