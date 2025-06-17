@@ -555,6 +555,7 @@ export async function sendEventReminderNotification(
         start_time,
         end_time,
         status,
+        timezone,
         created_by,
         organizer:profiles!events_created_by_fkey (
           fid,
