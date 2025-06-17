@@ -254,6 +254,18 @@ export async function PUT(
       )
     }
 
+    // Send status change notification to participants (async, don't block response)
+    if (['live', 'completed', 'cancelled'].includes(newStatus)) {
+      try {
+        const { sendEventStatusChangeNotification } = await import('../../../../lib/notifications')
+        await sendEventStatusChangeNotification(eventId, newStatus, currentStatus)
+        console.log(`✅ API: Sent status change notification (${currentStatus} → ${newStatus}) for event ${eventId}`)
+      } catch (error) {
+        console.error(`❌ API: Failed to send status change notification for event ${eventId}:`, error)
+        // Don't fail the API call if notification fails
+      }
+    }
+
     console.log(`✅ API: Successfully updated event status from '${currentStatus}' to '${status}'`)
 
     return NextResponse.json({
