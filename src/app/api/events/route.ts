@@ -120,6 +120,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare event data for database
+    console.log('🕐 Backend timezone debug:', {
+      receivedTimezone: eventData.timezone,
+      serverTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      finalTimezone: eventData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+    })
+    
     const eventRecord = {
       title: eventData.title.trim(),
       description: eventData.description?.trim() || null,

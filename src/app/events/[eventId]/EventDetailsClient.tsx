@@ -208,14 +208,20 @@ export default function EventDetailsClient({ params }: Props) {
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
-    // Use the event's timezone for display if available
-    const timezone = event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    
+    // Smart timezone selection:
+    // - If event has a specific timezone that's not UTC, use it
+    // - If event timezone is UTC or missing, use user's timezone for better UX
+    const shouldUseUserTimezone = !event?.timezone || event.timezone === 'UTC'
+    const timezone = shouldUseUserTimezone ? userTimezone : event.timezone
     
     console.log('🕐 formatDateTime debug:', {
       dateString,
       parsedDate: date.toISOString(),
       eventTimezone: event?.timezone,
-      fallbackTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      userTimezone,
+      shouldUseUserTimezone,
       finalTimezone: timezone
     })
     
