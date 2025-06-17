@@ -20,17 +20,29 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     })
     
-    // Temporarily disable CRON_SECRET check for debugging
-    // TODO: Re-enable this after confirming Vercel cron is working
-    /*
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      console.error('[Scheduler API] Unauthorized cron request - auth header:', authHeader)
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    // Re-enable CRON_SECRET check for security
+    // Only allow requests with proper authorization header if CRON_SECRET is configured
+    if (cronSecret) {
+      const expectedAuth = `Bearer ${cronSecret}`
+      if (authHeader !== expectedAuth) {
+        console.error('[Scheduler API] Unauthorized cron request:', {
+          expected: 'Bearer [REDACTED]',
+          received: authHeader ? 'Bearer [REDACTED]' : 'none',
+          userAgent
+        })
+        return NextResponse.json(
+          { 
+            error: 'Unauthorized',
+            message: 'Invalid or missing authorization header',
+            timestamp: new Date().toISOString()
+          },
+          { status: 401 }
+        )
+      }
+      console.log('[Scheduler API] Authorization verified successfully')
+    } else {
+      console.warn('[Scheduler API] CRON_SECRET not configured - endpoint is publicly accessible')
     }
-    */
     
     console.log('[Scheduler API] Processing scheduled status transitions...')
     
