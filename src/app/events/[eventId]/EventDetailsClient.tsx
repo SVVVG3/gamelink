@@ -493,20 +493,8 @@ export default function EventDetailsClient({ params }: Props) {
               </div>
             </div>
             
-            {/* Action Buttons - Available to all users */}
-            <div className="ml-4 flex items-center space-x-3">
-              {/* Live Dashboard Button - Prominent placement for organizers */}
-              {isOrganizer && event.status === 'live' && (
-                <Link
-                  href={`/events/${eventId}/live`}
-                  className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm shadow-lg border-2 border-green-400"
-                >
-                  <FaPlay className="w-4 h-4 mr-2" />
-                  Live Dashboard
-                </Link>
-              )}
-              
-              {/* Share Button */}
+            {/* Share Button - Available to all users */}
+            <div className="ml-4">
               <button
                 onClick={shareEventFrame}
                 className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
@@ -554,6 +542,19 @@ export default function EventDetailsClient({ params }: Props) {
                   </div>
                 )}
                 
+                {/* Live Dashboard Button - Show for organizers when event is live */}
+                {isOrganizer && event.status === 'live' && (
+                  <div className="pt-2 border-t border-gray-700">
+                    <Link
+                      href={`/events/${eventId}/live`}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium shadow-lg"
+                    >
+                      <FaPlay className="w-4 h-4 mr-2" />
+                      Live Dashboard
+                    </Link>
+                  </div>
+                )}
+
                 {/* Join Event Chat Button - Show for participants */}
                 {isUserParticipant && event.chatId && (
                   <div className="pt-2 border-t border-gray-700">

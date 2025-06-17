@@ -35,7 +35,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
           throw new Error('Failed to fetch event')
         }
         const eventData = await eventResponse.json()
-        const event: Event = eventData
+        const event: Event = eventData.event
 
         // Check if user is organizer - compare with createdBy field that stores user UUID
         console.log('Authorization Debug:', {
