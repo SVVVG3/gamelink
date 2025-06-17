@@ -255,7 +255,12 @@ export async function POST(request: NextRequest) {
 
     // Send notification for public events (async, don't wait for completion)
     if (!event.is_private) {
-      fetch('/api/notifications/event-creation', {
+      // Construct absolute URL for server-side fetch
+      const protocol = request.headers.get('x-forwarded-proto') || 'https'
+      const host = request.headers.get('host') || 'farcaster-gamelink.vercel.app'
+      const baseUrl = `${protocol}://${host}`
+      
+      fetch(`${baseUrl}/api/notifications/event-creation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
