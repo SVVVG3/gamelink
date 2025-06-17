@@ -587,10 +587,14 @@ export async function sendEventReminderNotification(
     }
 
     // Get participants who should receive reminders (registered, confirmed, or attended)
-    const eligibleParticipants = event.event_participants
+    const participantFids = event.event_participants
       .filter((p: any) => ['registered', 'confirmed', 'attended'].includes(p.status))
       .map((p: any) => p.participant.fid)
       .filter((fid: any) => fid) // Remove any null FIDs
+
+    // Always include the event organizer in reminder notifications
+    const organizerFid = event.organizer?.fid || event.created_by
+    const eligibleParticipants = [...new Set([...participantFids, organizerFid])].filter(fid => fid)
 
     if (eligibleParticipants.length === 0) {
       console.log(`No eligible participants for event ${eventId} reminder`)
@@ -712,10 +716,14 @@ export async function sendEventStatusChangeNotification(
     }
 
     // Get participants who should receive status updates
-    const eligibleParticipants = event.event_participants
+    const participantFids = event.event_participants
       .filter((p: any) => ['registered', 'confirmed', 'attended'].includes(p.status))
       .map((p: any) => p.participant.fid)
       .filter((fid: any) => fid)
+
+    // Always include the event organizer in status change notifications
+    const organizerFid = event.organizer?.fid || event.created_by
+    const eligibleParticipants = [...new Set([...participantFids, organizerFid])].filter(fid => fid)
 
     if (eligibleParticipants.length === 0) {
       console.log(`No eligible participants for event ${eventId} status change notification`)
