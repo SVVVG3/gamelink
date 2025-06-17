@@ -449,6 +449,28 @@ export default function EventDetailsClient({ params }: Props) {
             </Link>
             
             <div className="flex items-center space-x-2">
+              {/* Live Dashboard Button - Only show for organizers when event is live */}
+              {isOrganizer && event.status === 'live' && (
+                <Link
+                  href={`/events/${eventId}/live`}
+                  className="flex items-center px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-full text-xs font-medium transition-colors"
+                >
+                  <FaPlay className="w-3 h-3 mr-1" />
+                  Live
+                </Link>
+              )}
+              
+              {/* Practice Button - Show for organizers when event is upcoming */}
+              {isOrganizer && event.status === 'upcoming' && (
+                <button
+                  onClick={() => alert('Practice mode coming soon!')}
+                  className="flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-medium transition-colors"
+                >
+                  <FaGamepad className="w-3 h-3 mr-1" />
+                  Practice
+                </button>
+              )}
+              
               {/* Event Status Indicator */}
               <div className={`flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(event.status)}`}>
                 {getStatusIcon(event.status)}
