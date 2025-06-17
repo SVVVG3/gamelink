@@ -120,10 +120,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare event data for database
-    console.log('🕐 Backend timezone debug:', {
-      receivedTimezone: eventData.timezone,
-      serverTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      finalTimezone: eventData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+    const eventTimezone = eventData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+    
+    // Convert datetime-local input to proper UTC timestamp
+    // datetime-local sends "2025-06-16T18:45" which represents local time in user's timezone
+    // We need to convert this to UTC for database storage
+    
+    // Simple approach: treat the datetime-local as if it's in the user's timezone
+    // and convert to UTC by creating a date in that timezone
+    const localTimeString = eventData.startTime.includes('T') ? eventData.startTime : eventData.startTime + 'T00:00'
+    
+    // Create a temporary date to get the timezone offset
+    const tempDate = new Date()
+    const utcTime = new Date(tempDate.toLocaleString('en-US', { timeZone: 'UTC' }))
+    const userTime = new Date(tempDate.toLocaleString('en-US', { timeZone: eventTimezone }))
+    const timezoneOffsetMs = utcTime.getTime() - userTime.getTime()
+    
+    // Apply the timezone offset to convert local time to UTC
+    const localDateTime = new Date(localTimeString)
+    const utcDateTime = new Date(localDateTime.getTime() + timezoneOffsetMs)
+    
+    console.log('🕐 Backend timezone conversion debug:', {
+      receivedStartTime: eventData.startTime,
+      eventTimezone,
+      localTimeString,
+      localDateTime: localDateTime.toISOString(),
+      timezoneOffsetMs: timezoneOffsetMs / (1000 * 60 * 60) + ' hours',
+      utcDateTime: utcDateTime.toISOString()
     })
     
     const eventRecord = {
@@ -133,9 +156,9 @@ export async function POST(request: NextRequest) {
       gaming_platform: eventData.gamingPlatform || 'PC',
       event_type: eventData.eventType || 'casual',
       skill_level: eventData.skillLevel || 'any',
-      start_time: eventData.startTime,
-      end_time: eventData.endTime || null,
-      timezone: eventData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      start_time: utcDateTime.toISOString(),
+      end_time: eventData.endTime ? new Date(new Date(eventData.endTime).getTime() + timezoneOffsetMs).toISOString() : null,
+      timezone: eventTimezone,
       max_participants: maxParticipants,
       min_participants: eventData.minParticipants || 2,
       require_approval: eventData.requireApproval || false,
