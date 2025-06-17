@@ -80,6 +80,10 @@ export interface Event {
   chatId?: string
   createdAt: string
   updatedAt: string
+  // Reminder tracking fields
+  reminder24hSentAt?: string
+  reminder1hSentAt?: string
+  reminderStartingSentAt?: string
 }
 
 export interface EventParticipant {

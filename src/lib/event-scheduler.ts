@@ -102,6 +102,10 @@ export async function processScheduledStatusTransitions(): Promise<SchedulerResu
     for (const event of allReminderEvents) {
       try {
         await sendEventReminderNotification(event.id, event.reminderType)
+        
+        // Mark reminder as sent to prevent duplicates
+        await markReminderAsSent(event.id, event.reminderType)
+        
         result.details.remindersSent++
         console.log(`[Event Scheduler] Sent ${event.reminderType} reminder for event ${event.id}`)
       } catch (error) {
@@ -282,19 +286,23 @@ async function markNoShows(eventId: string, gracePeriodMinutes: number = 15) {
  */
 async function findEventsNeedingReminder(currentTime: Date, reminderType: '24h' | '1h' | 'starting') {
   let timeCondition: Date
+  let reminderField: string
   
   switch (reminderType) {
     case '24h':
       // Events starting in 24 hours (±5 minutes window)
       timeCondition = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000)
+      reminderField = 'reminder_24h_sent_at'
       break
     case '1h':
       // Events starting in 1 hour (±5 minutes window)
       timeCondition = new Date(currentTime.getTime() + 60 * 60 * 1000)
+      reminderField = 'reminder_1h_sent_at'
       break
     case 'starting':
       // Events starting now (±2 minutes window)
       timeCondition = currentTime
+      reminderField = 'reminder_starting_sent_at'
       break
     default:
       throw new Error(`Invalid reminder type: ${reminderType}`)
@@ -307,10 +315,11 @@ async function findEventsNeedingReminder(currentTime: Date, reminderType: '24h' 
   
   const { data, error } = await supabaseAdmin
     .from('events')
-    .select('id, title, start_time, status')
+    .select(`id, title, start_time, status, ${reminderField}`)
     .eq('status', 'upcoming')
     .gte('start_time', startWindow.toISOString())
     .lte('start_time', endWindow.toISOString())
+    .is(reminderField, null) // Only events that haven't had this reminder sent
     .order('start_time', { ascending: true })
   
   if (error) {
@@ -318,6 +327,39 @@ async function findEventsNeedingReminder(currentTime: Date, reminderType: '24h' 
   }
   
   return data || []
+}
+
+/**
+ * Mark a reminder as sent to prevent duplicate notifications
+ */
+async function markReminderAsSent(eventId: string, reminderType: '24h' | '1h' | 'starting') {
+  let updateField: string
+  
+  switch (reminderType) {
+    case '24h':
+      updateField = 'reminder_24h_sent_at'
+      break
+    case '1h':
+      updateField = 'reminder_1h_sent_at'
+      break
+    case 'starting':
+      updateField = 'reminder_starting_sent_at'
+      break
+    default:
+      throw new Error(`Invalid reminder type: ${reminderType}`)
+  }
+  
+  const { error } = await supabaseAdmin
+    .from('events')
+    .update({ 
+      [updateField]: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', eventId)
+  
+  if (error) {
+    throw new Error(`Failed to mark ${reminderType} reminder as sent for event ${eventId}: ${error.message}`)
+  }
 }
 
 /**
