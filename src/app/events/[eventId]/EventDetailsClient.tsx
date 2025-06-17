@@ -494,23 +494,7 @@ export default function EventDetailsClient({ params }: Props) {
             </div>
             
             {/* Share Button - Available to all users */}
-            <div className="flex items-center space-x-3 ml-4">
-              {/* Join Group Chat Button - Show prominently for participants */}
-              {isUserParticipant && event.chatId && (
-                <button
-                  onClick={handleJoinEventChat}
-                  disabled={chatLoading}
-                  className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors font-medium text-sm"
-                >
-                  {chatLoading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  ) : (
-                    <FaComments className="w-4 h-4 mr-2" />
-                  )}
-                  Join Chat
-                </button>
-              )}
-              
+            <div className="ml-4">
               <button
                 onClick={shareEventFrame}
                 className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
@@ -555,6 +539,24 @@ export default function EventDetailsClient({ params }: Props) {
                   <div>
                     <label className="text-sm text-gray-400 block mb-1">Skill Level</label>
                     <p className="text-white font-medium capitalize">{event.skillLevel}</p>
+                  </div>
+                )}
+                
+                {/* Join Event Chat Button - Show for participants */}
+                {isUserParticipant && event.chatId && (
+                  <div className="pt-2 border-t border-gray-700">
+                    <button
+                      onClick={handleJoinEventChat}
+                      disabled={chatLoading}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors font-medium"
+                    >
+                      {chatLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      ) : (
+                        <FaComments className="w-4 h-4 mr-2" />
+                      )}
+                      Join Event Chat
+                    </button>
                   </div>
                 )}
               </div>
