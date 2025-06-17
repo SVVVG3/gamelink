@@ -73,8 +73,13 @@ export async function POST(request: NextRequest) {
     const adjustedNow = new Date(userNow.getTime() - bufferTime)
     
     if (startTime <= adjustedNow) {
+      const minutesFromNow = Math.ceil((startTime.getTime() - userNow.getTime()) / (1000 * 60))
+      const errorMessage = minutesFromNow <= 0 
+        ? 'Start time must be in the future'
+        : `Start time must be at least ${bufferMinutes} minutes in the future (currently ${minutesFromNow} minutes from now)`
+      
       return NextResponse.json(
-        { error: 'Start time must be in the future' },
+        { error: errorMessage },
         { status: 400 }
       )
     }

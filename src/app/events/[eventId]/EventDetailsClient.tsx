@@ -207,17 +207,23 @@ export default function EventDetailsClient({ params }: Props) {
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
+    // Use the event's timezone for display if available
+    const timezone = event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+    
     return {
       date: date.toLocaleDateString('en-US', { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
-        day: 'numeric' 
+        day: 'numeric',
+        timeZone: timezone
       }),
       time: date.toLocaleTimeString('en-US', { 
         hour: 'numeric', 
         minute: '2-digit',
-        hour12: true 
+        hour12: true,
+        timeZone: timezone,
+        timeZoneName: 'short'
       })
     }
   }
