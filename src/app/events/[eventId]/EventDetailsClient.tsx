@@ -96,6 +96,7 @@ export default function EventDetailsClient({ params }: Props) {
       }
 
       console.log('✅ Frontend: Setting event data:', data.event)
+      console.log('🕐 Event timezone from API:', data.event.timezone)
       setEvent(data.event)
     } catch (err) {
       console.error('Error fetching event details:', err)
@@ -209,6 +210,14 @@ export default function EventDetailsClient({ params }: Props) {
     const date = new Date(dateString)
     // Use the event's timezone for display if available
     const timezone = event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+    
+    console.log('🕐 formatDateTime debug:', {
+      dateString,
+      parsedDate: date.toISOString(),
+      eventTimezone: event?.timezone,
+      fallbackTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      finalTimezone: timezone
+    })
     
     return {
       date: date.toLocaleDateString('en-US', { 
