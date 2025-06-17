@@ -38,8 +38,15 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
         const event: Event = eventData
 
         // Check if user is organizer - compare with createdBy field that stores user UUID
+        console.log('Authorization Debug:', {
+          profileId: profile?.id,
+          eventCreatedBy: event.createdBy,
+          profileFid: profile?.fid,
+          match: event.createdBy === profile?.id
+        })
+        
         if (!profile?.id || event.createdBy !== profile.id) {
-          setError('You are not authorized to access this live dashboard')
+          setError(`You are not authorized to access this live dashboard. Profile ID: ${profile?.id}, Event Created By: ${event.createdBy}`)
           return
         }
 
@@ -136,8 +143,8 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   // Error state
   if (error) {
     return (
-      <div className="p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
+      <div className="min-h-screen bg-gray-900 p-4">
+        <div className="bg-red-900/20 border border-red-700 rounded-lg p-6 max-w-2xl mx-auto">
           <div className="flex items-center mb-4">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -145,8 +152,8 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Access Denied</h3>
-              <div className="mt-2 text-sm text-red-700">
+              <h3 className="text-sm font-medium text-red-300">Access Denied</h3>
+              <div className="mt-2 text-sm text-red-200">
                 <p>{error}</p>
               </div>
             </div>
@@ -154,7 +161,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
           <div className="flex">
             <button
               onClick={() => router.back()}
-              className="bg-red-100 hover:bg-red-200 text-red-800 font-medium py-2 px-4 rounded-lg transition-colors"
+              className="bg-red-800 hover:bg-red-700 text-red-100 font-medium py-2 px-4 rounded-lg transition-colors"
             >
               Go Back
             </button>
