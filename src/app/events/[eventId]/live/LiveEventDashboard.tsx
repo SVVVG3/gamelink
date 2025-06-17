@@ -37,8 +37,8 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
         const eventData = await eventResponse.json()
         const event: Event = eventData
 
-        // Check if user is organizer - compare with createdBy field that stores FID
-        if (!profile?.fid || event.createdBy !== profile.fid.toString()) {
+        // Check if user is organizer - compare with createdBy field that stores user UUID
+        if (!profile?.id || event.createdBy !== profile.id) {
           setError('You are not authorized to access this live dashboard')
           return
         }

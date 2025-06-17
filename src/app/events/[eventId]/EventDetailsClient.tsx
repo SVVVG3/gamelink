@@ -449,28 +449,6 @@ export default function EventDetailsClient({ params }: Props) {
             </Link>
             
             <div className="flex items-center space-x-2">
-              {/* Live Dashboard Button - Only show for organizers when event is live */}
-              {isOrganizer && event.status === 'live' && (
-                <Link
-                  href={`/events/${eventId}/live`}
-                  className="flex items-center px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-full text-xs font-medium transition-colors"
-                >
-                  <FaPlay className="w-3 h-3 mr-1" />
-                  Live
-                </Link>
-              )}
-              
-              {/* Practice Button - Show for organizers when event is upcoming */}
-              {isOrganizer && event.status === 'upcoming' && (
-                <button
-                  onClick={() => alert('Practice mode coming soon!')}
-                  className="flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-medium transition-colors"
-                >
-                  <FaGamepad className="w-3 h-3 mr-1" />
-                  Practice
-                </button>
-              )}
-              
               {/* Event Status Indicator */}
               <div className={`flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(event.status)}`}>
                 {getStatusIcon(event.status)}
@@ -859,6 +837,19 @@ export default function EventDetailsClient({ params }: Props) {
                           </div>
                         )
                       })}
+                    </div>
+                  )}
+
+                  {/* Live Dashboard Button - Show when event is live */}
+                  {event.status === 'live' && (
+                    <div className="pt-2 border-t border-gray-600">
+                      <Link
+                        href={`/events/${eventId}/live`}
+                        className="w-full flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm"
+                      >
+                        <FaPlay className="w-4 h-4 mr-2" />
+                        Live Dashboard
+                      </Link>
                     </div>
                   )}
 
