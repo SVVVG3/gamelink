@@ -31,7 +31,15 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
       try {
         // Fetch event details (using EventWithDetails to get organizer info)
         console.log(`Fetching event data for eventId: ${eventId}`)
-        const eventResponse = await fetch(`/api/events/${eventId}`)
+        
+        // Include user FID in query params for user-specific data
+        const url = new URL(`/api/events/${eventId}`, window.location.origin)
+        if (profile?.fid) {
+          url.searchParams.set('userFid', profile.fid.toString())
+          console.log('🔍 Live Dashboard: Current user FID:', profile.fid, 'Username:', profile.username)
+        }
+        
+        const eventResponse = await fetch(url.toString())
         console.log(`API Response status: ${eventResponse.status}`)
         
         if (!eventResponse.ok) {
