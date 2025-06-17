@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { processScheduledStatusTransitions, schedulerHealthCheck } from '@/lib/event-scheduler'
 
 /**
  * GET /api/scheduler/status-transitions
@@ -46,6 +45,9 @@ export async function GET(request: NextRequest) {
     
     console.log('[Scheduler API] Processing scheduled status transitions...')
     
+    // Dynamic import to avoid build-time initialization
+    const { processScheduledStatusTransitions } = await import('@/lib/event-scheduler')
+    
     // Process the status transitions
     const result = await processScheduledStatusTransitions()
     
@@ -89,6 +91,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST() {
   try {
+    // Dynamic import to avoid build-time initialization
+    const { schedulerHealthCheck } = await import('@/lib/event-scheduler')
     const healthCheck = await schedulerHealthCheck()
     
     return NextResponse.json({

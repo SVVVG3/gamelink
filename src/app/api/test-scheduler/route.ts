@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { processScheduledStatusTransitions } from '@/lib/event-scheduler'
 
 /**
  * GET /api/test-scheduler
@@ -8,8 +7,19 @@ import { processScheduledStatusTransitions } from '@/lib/event-scheduler'
  */
 export async function GET() {
   try {
+    // Check if we have the required environment variables
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({
+        error: 'Service role key not configured',
+        message: 'SUPABASE_SERVICE_ROLE_KEY environment variable is required',
+        timestamp: new Date().toISOString()
+      }, { status: 500 })
+    }
+
     console.log('[Test Scheduler] Manually triggering scheduler...')
     
+    // Dynamic import to avoid build-time initialization
+    const { processScheduledStatusTransitions } = await import('@/lib/event-scheduler')
     const result = await processScheduledStatusTransitions()
     
     return NextResponse.json({

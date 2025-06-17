@@ -6,20 +6,11 @@ import { useUser } from '@/hooks/useUser'
 import { supabase } from '@/lib/supabaseClient'
 import { Event, EventParticipant } from '@/types'
 import EventTimer from './EventTimer'
-import ParticipantTracker from './ParticipantTracker'
+import ParticipantTracker, { ParticipantWithProfile } from './ParticipantTracker'
 import EventControls from './EventControls'
 
 interface LiveEventDashboardProps {
   eventId: string
-}
-
-interface ParticipantWithProfile extends EventParticipant {
-  profiles: {
-    fid: number
-    display_name?: string
-    username?: string
-    avatar_url?: string
-  }
 }
 
 interface LiveEventData {

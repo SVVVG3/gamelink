@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { EventParticipant } from '@/types'
 import { Profile } from '@/lib/supabase/profiles'
 
-interface ParticipantWithProfile extends EventParticipant {
+export interface ParticipantWithProfile extends EventParticipant {
   profiles: Profile
 }
 
