@@ -56,8 +56,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate start time is in the future
+    // Handle timezone properly - datetime-local sends local time without timezone
     const startTime = new Date(eventData.startTime)
-    if (startTime <= new Date()) {
+    const now = new Date()
+    
+    // Get user's timezone from the event data or default to server timezone
+    const userTimezone = eventData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+    
+    // Create a proper date object considering the user's timezone
+    // For datetime-local, we assume the time is in the user's local timezone
+    const userNow = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }))
+    
+    // Compare with a small buffer (5 minutes) to account for processing time
+    const bufferMinutes = 5
+    const bufferTime = bufferMinutes * 60 * 1000
+    const adjustedNow = new Date(userNow.getTime() - bufferTime)
+    
+    if (startTime <= adjustedNow) {
       return NextResponse.json(
         { error: 'Start time must be in the future' },
         { status: 400 }
@@ -109,7 +124,7 @@ export async function POST(request: NextRequest) {
       skill_level: eventData.skillLevel || 'any',
       start_time: eventData.startTime,
       end_time: eventData.endTime || null,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: eventData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       max_participants: maxParticipants,
       min_participants: eventData.minParticipants || 2,
       require_approval: eventData.requireApproval || false,

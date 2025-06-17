@@ -150,7 +150,8 @@ export default function CreateEventPage() {
         },
         body: JSON.stringify({
           ...formData,
-          createdBy: farcasterProfile?.fid  // Add user's FID
+          createdBy: farcasterProfile?.fid,  // Add user's FID
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone  // Add user's timezone
         }),
       })
 
