@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { processScheduledStatusTransitions, schedulerHealthCheck } from '@/lib/event-scheduler'
 
 /**
- * POST /api/scheduler/status-transitions
+ * GET /api/scheduler/status-transitions
  * Processes scheduled event status transitions
- * This endpoint is designed to be called by a cron job
+ * This endpoint is designed to be called by Vercel cron job (which uses GET)
  */
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // Log all incoming requests to help debug cron execution
     const userAgent = request.headers.get('user-agent')
     const authHeader = request.headers.get('authorization')
     const cronSecret = process.env.CRON_SECRET
     
-    console.log('[Scheduler API] Received POST request:', {
+    console.log('[Scheduler API] Received GET request:', {
       userAgent,
       hasAuthHeader: !!authHeader,
       hasCronSecret: !!cronSecret,
@@ -72,10 +72,10 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/scheduler/status-transitions
- * Health check endpoint for the scheduler
+ * POST /api/scheduler/status-transitions
+ * Health check endpoint for manual testing
  */
-export async function GET() {
+export async function POST() {
   try {
     const healthCheck = await schedulerHealthCheck()
     
@@ -83,7 +83,8 @@ export async function GET() {
       healthy: healthCheck.healthy,
       message: healthCheck.message,
       timestamp: new Date().toISOString(),
-      service: 'event-scheduler'
+      service: 'event-scheduler',
+      note: 'This is a health check endpoint. The actual scheduler runs on GET requests.'
     }, { 
       status: healthCheck.healthy ? 200 : 503 
     })
