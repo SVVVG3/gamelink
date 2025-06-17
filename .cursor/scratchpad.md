@@ -1696,3 +1696,31 @@ if (!profile?.id || event.createdBy !== profile.id) {
 **✅ Status**: **DEPLOYED** - All critical UX issues resolved and live in production
 
 **🔍 Next Steps**: Test the Live Dashboard access with the debug logging to identify any remaining authorization issues
+
+## 🌐 **Production Environment**
+
+**Production URL**: https://farcaster-gamelink.vercel.app/
+**Status**: ✅ **Live and Operational**
+**Features Available**: 
+- ✅ Farcaster authentication and sign-in
+- ✅ Gaming profile management with gamertags
+- ✅ Group creation and management
+- ✅ Event creation and RSVP system
+- ✅ Real-time messaging and chat
+- ✅ Event lifecycle management with automated transitions
+- ✅ Live Event Dashboard for organizers
+- ✅ Notification system via Neynar integration
+- ✅ Automated reminder system (24h/1h/starting notifications)
+
+**Automated Systems Running**:
+- ✅ **Vercel Cron Job**: Every 5 minutes at `/api/scheduler/status-transitions`
+- ✅ **Status Transitions**: upcoming → live → completed automation
+- ✅ **Reminder Notifications**: 24-hour, 1-hour, and starting reminders
+- ✅ **Participant Management**: Auto-confirm and no-show marking
+
+**Recent Deployments**:
+- ✅ Live Event Dashboard accessibility fixes
+- ✅ Authorization logic corrections  
+- ✅ Dark mode error page styling
+- ✅ Duplicate Live button removal
+- ✅ Organizer participation issue resolution

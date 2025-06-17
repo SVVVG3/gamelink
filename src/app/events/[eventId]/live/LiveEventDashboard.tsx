@@ -30,9 +30,14 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
     async function fetchEventData() {
       try {
         // Fetch event details (using EventWithDetails to get organizer info)
+        console.log(`Fetching event data for eventId: ${eventId}`)
         const eventResponse = await fetch(`/api/events/${eventId}`)
+        console.log(`API Response status: ${eventResponse.status}`)
+        
         if (!eventResponse.ok) {
-          throw new Error('Failed to fetch event')
+          const errorText = await eventResponse.text()
+          console.error(`API Error: ${eventResponse.status} - ${errorText}`)
+          throw new Error(`Failed to fetch event: ${eventResponse.status} - ${errorText}`)
         }
         const eventData = await eventResponse.json()
         const event: Event = eventData.event
