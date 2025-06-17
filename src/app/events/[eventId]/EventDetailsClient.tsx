@@ -494,13 +494,31 @@ export default function EventDetailsClient({ params }: Props) {
             </div>
             
             {/* Share Button - Available to all users */}
-            <button
-              onClick={shareEventFrame}
-              className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm ml-4"
-            >
-              <FarcasterIcon className="w-4 h-4 mr-2" />
-              Share
-            </button>
+            <div className="flex items-center space-x-3 ml-4">
+              {/* Join Group Chat Button - Show prominently for participants */}
+              {isUserParticipant && event.chatId && (
+                <button
+                  onClick={handleJoinEventChat}
+                  disabled={chatLoading}
+                  className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors font-medium text-sm"
+                >
+                  {chatLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <FaComments className="w-4 h-4 mr-2" />
+                  )}
+                  Join Chat
+                </button>
+              )}
+              
+              <button
+                onClick={shareEventFrame}
+                className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
+              >
+                <FarcasterIcon className="w-4 h-4 mr-2" />
+                Share
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -653,22 +671,6 @@ export default function EventDetailsClient({ params }: Props) {
                       Status: {event.userParticipation?.status?.replace('_', ' ') || 'registered'}
                     </p>
                   </div>
-                  
-                  {/* Join Group Chat Button */}
-                  {event.chatId && (
-                    <button
-                      onClick={handleJoinEventChat}
-                      disabled={chatLoading}
-                      className="w-full flex items-center justify-center px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors font-medium"
-                    >
-                      {chatLoading ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      ) : (
-                        <FaComments className="w-4 h-4 mr-2" />
-                      )}
-                      Join Group Chat
-                    </button>
-                  )}
                   
                   {!isOrganizer && (
                     <button
