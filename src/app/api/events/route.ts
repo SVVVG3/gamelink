@@ -197,6 +197,32 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Event created successfully:', event.id)
 
+    // Add the organizer as a participant with 'organizer' role
+    try {
+      console.log('👑 Adding organizer as participant for event:', event.id)
+      
+      const { error: organizerError } = await supabase
+        .from('event_participants')
+        .insert([{
+          event_id: event.id,
+          user_id: profile.id,
+          fid: profile.fid,
+          role: 'organizer',
+          status: 'confirmed',
+          registered_at: new Date().toISOString()
+        }])
+
+      if (organizerError) {
+        console.error('❌ Error adding organizer as participant:', organizerError)
+        // Don't fail the entire event creation if this fails
+      } else {
+        console.log('✅ Organizer added as participant successfully')
+      }
+    } catch (organizerAddError) {
+      console.error('❌ Unexpected error adding organizer as participant:', organizerAddError)
+      // Continue with event creation even if this fails
+    }
+
     // Create group chat for the event
     try {
       console.log('💬 Creating group chat for event:', event.id)
