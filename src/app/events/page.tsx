@@ -6,6 +6,7 @@ import BottomNavigation from '@/components/BottomNavigation'
 import { FaCalendarAlt, FaPlus, FaTrophy, FaClock, FaUsers, FaGamepad, FaMapMarkerAlt, FaGlobe, FaPlay, FaCheckCircle, FaTimes, FaEye } from 'react-icons/fa'
 import Link from 'next/link'
 import { Event } from '@/types'
+import { createClient } from '@supabase/supabase-js'
 
 interface EventWithParticipantCount extends Event {
   participantCount: number
@@ -20,9 +21,46 @@ export default function EventsPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchEvents()
-      // Set up auto-refresh for live events every 30 seconds
-      const interval = setInterval(fetchEvents, 30000)
-      return () => clearInterval(interval)
+      
+      // Set up real-time subscription for events
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      
+      const subscription = supabase
+        .channel('events-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: 'events'
+          },
+          (payload: any) => {
+            console.log('Real-time event change:', payload)
+            // Refresh events when any event changes
+            fetchEvents()
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public', 
+            table: 'event_participants'
+          },
+          (payload: any) => {
+            console.log('Real-time participant change:', payload)
+            // Refresh events when participants change (affects participant count)
+            fetchEvents()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        subscription.unsubscribe()
+      }
     }
   }, [isAuthenticated])
 
