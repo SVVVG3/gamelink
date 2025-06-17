@@ -289,7 +289,7 @@ export async function GET(request: NextRequest) {
     
     // Get query parameters
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
     const game = searchParams.get('game')
     const eventType = searchParams.get('eventType')
