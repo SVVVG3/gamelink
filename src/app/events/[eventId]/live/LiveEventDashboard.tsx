@@ -47,8 +47,14 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
           console.error(`API Error: ${eventResponse.status} - ${errorText}`)
           throw new Error(`Failed to fetch event: ${eventResponse.status} - ${errorText}`)
         }
+        
         const eventData = await eventResponse.json()
+        console.log('🔍 Live Dashboard: Raw API response:', eventData)
+        
         const event: Event = eventData.event
+        console.log('🔍 Live Dashboard: Parsed event:', event)
+        console.log('🔍 Live Dashboard: Event createdBy:', event?.createdBy)
+        console.log('🔍 Live Dashboard: Event status:', event?.status)
 
         // Check if user is organizer - compare with createdBy field that stores user UUID
         console.log('Authorization Debug:', {
