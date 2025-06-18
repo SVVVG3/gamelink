@@ -14,17 +14,21 @@ export async function PATCH(
 ) {
   try {
     const { eventId, participantId } = await params
-    const { status, userFid } = await request.json()
+    const { status, score, placement, userFid, updateType } = await request.json()
 
-    console.log(`🎮 API: Updating participant status for ID: ${participantId}`, { status, userFid })
+    console.log(`🎮 API: Updating participant for ID: ${participantId}`, { 
+      status, score, placement, userFid, updateType 
+    })
 
-    // Validate status
-    const validStatuses = ['registered', 'confirmed', 'attended', 'no_show', 'cancelled']
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status. Must be one of: ' + validStatuses.join(', ') },
-        { status: 400 }
-      )
+    // Validate status if provided
+    if (status) {
+      const validStatuses = ['registered', 'confirmed', 'attended', 'no_show', 'cancelled']
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json(
+          { error: 'Invalid status. Must be one of: ' + validStatuses.join(', ') },
+          { status: 400 }
+        )
+      }
     }
 
     if (!userFid) {
@@ -69,13 +73,20 @@ export async function PATCH(
       )
     }
 
-    // Update participant status
+    // Prepare update data
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    }
+    
+    // Add fields that are being updated
+    if (status !== undefined) updateData.status = status
+    if (score !== undefined) updateData.score = score
+    if (placement !== undefined) updateData.placement = placement
+
+    // Update participant
     const { data: updatedParticipant, error } = await supabase
       .from('event_participants')
-      .update({ 
-        status,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', participantId)
       .eq('event_id', eventId)
       .select(`
@@ -87,9 +98,9 @@ export async function PATCH(
       .single()
 
     if (error) {
-      console.error('Error updating participant status:', error)
+      console.error('Error updating participant:', error)
       return NextResponse.json(
-        { error: 'Failed to update participant status' },
+        { error: 'Failed to update participant' },
         { status: 500 }
       )
     }
@@ -100,7 +111,7 @@ export async function PATCH(
     })
 
   } catch (error) {
-    console.error('Error in participant status update:', error)
+    console.error('Error in participant update:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -8,6 +8,8 @@ import { Event, EventParticipant } from '@/types'
 import EventTimer from './EventTimer'
 import ParticipantTracker, { ParticipantWithProfile } from './ParticipantTracker'
 import EventControls from './EventControls'
+import ScoringPanel from './ScoringPanel'
+import Leaderboard from './Leaderboard'
 import Link from 'next/link'
 import { FaArrowLeft } from 'react-icons/fa'
 
@@ -242,6 +244,28 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
             onEventUpdate={(updatedEvent: Event) => 
               setEventData(prev => prev ? { ...prev, event: updatedEvent } : null)
             }
+          />
+        </div>
+      </div>
+
+      {/* Scoring and Results Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Scoring Panel */}
+        <div>
+          <ScoringPanel 
+            participants={participants} 
+            eventId={eventId}
+            onScoreUpdate={(updatedParticipants: ParticipantWithProfile[]) => 
+              setEventData(prev => prev ? { ...prev, participants: updatedParticipants } : null)
+            }
+          />
+        </div>
+
+        {/* Live Leaderboard */}
+        <div>
+          <Leaderboard 
+            participants={participants}
+            eventId={eventId}
           />
         </div>
       </div>
