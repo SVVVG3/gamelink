@@ -87,60 +87,60 @@ export default function EventControls({
   return (
     <div className="space-y-6">
       {/* Quick Stats */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Statistics</h3>
+      <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Event Statistics</h3>
         
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Total Participants</span>
-            <span className="text-lg font-medium text-gray-900">{stats.total}</span>
+            <span className="text-sm text-gray-300">Total Participants</span>
+            <span className="text-lg font-medium text-white">{stats.total}</span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Attendance Rate</span>
-            <span className="text-lg font-medium text-green-600">{attendanceRate}%</span>
+            <span className="text-sm text-gray-300">Attendance Rate</span>
+            <span className="text-lg font-medium text-green-400">{attendanceRate}%</span>
           </div>
           
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="bg-green-50 rounded-lg p-2">
-              <div className="text-green-600 font-medium">{stats.attended}</div>
-              <div className="text-green-500">Present</div>
+            <div className="bg-green-900/20 border border-green-700 rounded-lg p-2">
+              <div className="text-green-300 font-medium">{stats.attended}</div>
+              <div className="text-green-400">Present</div>
             </div>
-            <div className="bg-blue-50 rounded-lg p-2">
-              <div className="text-blue-600 font-medium">{stats.confirmed}</div>
-              <div className="text-blue-500">Confirmed</div>
+            <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-2">
+              <div className="text-blue-300 font-medium">{stats.confirmed}</div>
+              <div className="text-blue-400">Confirmed</div>
             </div>
-            <div className="bg-red-50 rounded-lg p-2">
-              <div className="text-red-600 font-medium">{stats.no_show}</div>
-              <div className="text-red-500">No Show</div>
+            <div className="bg-red-900/20 border border-red-700 rounded-lg p-2">
+              <div className="text-red-300 font-medium">{stats.no_show}</div>
+              <div className="text-red-400">No Show</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Event Controls */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Controls</h3>
+      <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Event Controls</h3>
         
         <div className="space-y-3">
           {/* Complete Event */}
           <button
             onClick={() => setShowConfirmDialog('completed')}
             disabled={loading !== null}
-            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
           >
             {loading === 'completed' ? 'Completing...' : 'Complete Event'}
           </button>
 
           {/* Emergency Controls */}
-          <div className="border-t pt-3">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Emergency Controls</h4>
+          <div className="border-t border-gray-600 pt-3">
+            <h4 className="text-sm font-medium text-gray-300 mb-2">Emergency Controls</h4>
             
             <div className="space-y-2">
               <button
                 onClick={() => setShowConfirmDialog('cancelled')}
                 disabled={loading !== null}
-                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 {loading === 'cancelled' ? 'Cancelling...' : 'Cancel Event'}
               </button>
@@ -153,7 +153,7 @@ export default function EventControls({
                   }
                 }}
                 disabled={loading !== null}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 {loading === 'broadcast' ? 'Sending...' : 'Broadcast Message'}
               </button>
@@ -163,8 +163,8 @@ export default function EventControls({
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+      <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
         
         <div className="space-y-3">
           <button
@@ -192,12 +192,12 @@ export default function EventControls({
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
               Confirm Action
             </h3>
             
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-300 mb-6">
               {showConfirmDialog === 'completed' && 
                 'Are you sure you want to complete this event? This action cannot be undone.'
               }
@@ -209,7 +209,7 @@ export default function EventControls({
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowConfirmDialog(null)}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 Cancel
               </button>

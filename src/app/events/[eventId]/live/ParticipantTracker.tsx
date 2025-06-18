@@ -75,15 +75,15 @@ export default function ParticipantTracker({
     
     switch (status) {
       case 'attended':
-        return `${baseClasses} bg-green-100 text-green-800`
+        return `${baseClasses} bg-green-900/20 text-green-300 border border-green-700`
       case 'confirmed':
-        return `${baseClasses} bg-blue-100 text-blue-800`
+        return `${baseClasses} bg-blue-900/20 text-blue-300 border border-blue-700`
       case 'no_show':
-        return `${baseClasses} bg-red-100 text-red-800`
+        return `${baseClasses} bg-red-900/20 text-red-300 border border-red-700`
       case 'registered':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`
+        return `${baseClasses} bg-yellow-900/20 text-yellow-300 border border-yellow-700`
       default:
-        return `${baseClasses} bg-gray-100 text-gray-800`
+        return `${baseClasses} bg-gray-800 text-gray-300 border border-gray-600`
     }
   }
 
@@ -97,21 +97,21 @@ export default function ParticipantTracker({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b border-gray-200">
+    <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+      <div className="p-6 border-b border-gray-700">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-white">
             Participants ({stats.total})
           </h2>
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-600">
-              <span className="text-green-600 font-medium">{stats.attended}</span> attended
+            <div className="text-sm text-gray-300">
+              <span className="text-green-400 font-medium">{stats.attended}</span> attended
             </div>
-            <div className="text-sm text-gray-600">
-              <span className="text-blue-600 font-medium">{stats.confirmed}</span> confirmed
+            <div className="text-sm text-gray-300">
+              <span className="text-blue-400 font-medium">{stats.confirmed}</span> confirmed
             </div>
-            <div className="text-sm text-gray-600">
-              <span className="text-red-600 font-medium">{stats.no_show}</span> no-show
+            <div className="text-sm text-gray-300">
+              <span className="text-red-400 font-medium">{stats.no_show}</span> no-show
             </div>
           </div>
         </div>
@@ -125,7 +125,7 @@ export default function ParticipantTracker({
           </div>
           <input
             type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-600 rounded-md leading-5 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:placeholder-gray-300 focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
             placeholder="Search participants..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -135,13 +135,13 @@ export default function ParticipantTracker({
 
       <div className="max-h-96 overflow-y-auto">
         {filteredParticipants.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-gray-400">
             {searchTerm ? 'No participants found matching your search.' : 'No participants yet.'}
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-700">
             {filteredParticipants.map((participant) => (
-              <div key={participant.id} className="p-4 hover:bg-gray-50">
+              <div key={participant.id} className="p-4 hover:bg-gray-700/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <img
@@ -150,10 +150,10 @@ export default function ParticipantTracker({
                       alt={participant.profiles.display_name || 'User'}
                     />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-white">
                         {participant.profiles.display_name || participant.profiles.username}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-400">
                         @{participant.profiles.username}
                       </div>
                     </div>
@@ -170,7 +170,7 @@ export default function ParticipantTracker({
                         <button
                           onClick={() => updateParticipantStatus(participant.id, 'attended')}
                           disabled={loadingParticipant === participant.id}
-                          className="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+                          className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
                         >
                           {loadingParticipant === participant.id ? '...' : 'Mark Present'}
                         </button>
@@ -180,7 +180,7 @@ export default function ParticipantTracker({
                         <button
                           onClick={() => updateParticipantStatus(participant.id, 'confirmed')}
                           disabled={loadingParticipant === participant.id}
-                          className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+                          className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
                         >
                           {loadingParticipant === participant.id ? '...' : 'Undo'}
                         </button>
@@ -190,7 +190,7 @@ export default function ParticipantTracker({
                         <button
                           onClick={() => updateParticipantStatus(participant.id, 'no_show')}
                           disabled={loadingParticipant === participant.id}
-                          className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
                         >
                           {loadingParticipant === participant.id ? '...' : 'No Show'}
                         </button>
@@ -200,7 +200,7 @@ export default function ParticipantTracker({
                         <button
                           onClick={() => updateParticipantStatus(participant.id, 'confirmed')}
                           disabled={loadingParticipant === participant.id}
-                          className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
                         >
                           {loadingParticipant === participant.id ? '...' : 'Restore'}
                         </button>
@@ -211,7 +211,7 @@ export default function ParticipantTracker({
 
                 {/* Additional Info */}
                 {(participant.score !== null || participant.placement !== null) && (
-                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-400">
                     {participant.score !== null && (
                       <span>Score: {participant.score}</span>
                     )}

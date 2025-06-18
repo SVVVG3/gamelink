@@ -54,15 +54,15 @@ export default function EventTimer({ event }: EventTimerProps) {
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-green-600 font-medium">LIVE</span>
+            <span className="text-green-400 font-medium">LIVE</span>
           </div>
-          <div className="text-gray-600">
+          <div className="text-gray-300">
             Started {formatDuration(timeElapsed)} ago
           </div>
         </div>
         
         {timeRemaining && timeRemaining > 0 && (
-          <div className="text-gray-600">
+          <div className="text-gray-300">
             {formatDuration(timeRemaining)} remaining
           </div>
         )}
@@ -71,11 +71,11 @@ export default function EventTimer({ event }: EventTimerProps) {
       {/* Progress Bar */}
       {totalDuration && (
         <div className="space-y-2">
-          <div className="flex justify-between text-sm text-gray-600">
+          <div className="flex justify-between text-sm text-gray-300">
             <span>Event Progress</span>
             <span>{Math.round(progressPercentage)}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-700 rounded-full h-2">
             <div 
               className="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${progressPercentage}%` }}
@@ -86,9 +86,9 @@ export default function EventTimer({ event }: EventTimerProps) {
 
       {/* Time Details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="text-gray-500 font-medium">Started At</div>
-          <div className="text-gray-900">
+        <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
+          <div className="text-gray-400 font-medium">Started At</div>
+          <div className="text-white">
             {startTime.toLocaleTimeString([], { 
               hour: '2-digit', 
               minute: '2-digit',
@@ -97,19 +97,19 @@ export default function EventTimer({ event }: EventTimerProps) {
           </div>
         </div>
         
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="text-gray-500 font-medium">Duration</div>
-          <div className="text-gray-900">
+        <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
+          <div className="text-gray-400 font-medium">Duration</div>
+          <div className="text-white">
             {formatDuration(timeElapsed)}
           </div>
         </div>
         
         {endTime && (
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-gray-500 font-medium">
+          <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
+            <div className="text-gray-400 font-medium">
               {timeRemaining && timeRemaining > 0 ? 'Ends In' : 'Ended At'}
             </div>
-            <div className="text-gray-900">
+            <div className="text-white">
               {timeRemaining && timeRemaining > 0 
                 ? formatDuration(timeRemaining)
                 : endTime.toLocaleTimeString([], { 
