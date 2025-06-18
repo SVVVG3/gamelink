@@ -494,25 +494,26 @@ export default function EventDetailsClient({ params }: Props) {
             
             {/* Action Buttons */}
             <div className="ml-4 flex items-center space-x-3">
-              {/* Share Results Button - For completed/archived events */}
-              {(event.status === 'completed' || event.status === 'archived') && (
+              {/* Conditional Share Button */}
+              {(event.status === 'completed' || event.status === 'archived') ? (
+                /* Share Results Button - For completed/archived events */
                 <button
                   onClick={() => setShowResultsShareModal(true)}
-                  className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm shadow-lg border-2 border-green-400"
+                  className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
                 >
-                  <FaShare className="w-4 h-4 mr-2" />
+                  <FarcasterIcon className="w-4 h-4 mr-2" />
                   Share Results
                 </button>
+              ) : (
+                /* Share Event Button - For upcoming/live events */
+                <button
+                  onClick={shareEventFrame}
+                  className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
+                >
+                  <FarcasterIcon className="w-4 h-4 mr-2" />
+                  Share Event
+                </button>
               )}
-              
-              {/* Share Event Button - Available to all users */}
-              <button
-                onClick={shareEventFrame}
-                className="flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
-              >
-                <FarcasterIcon className="w-4 h-4 mr-2" />
-                Share Event
-              </button>
             </div>
           </div>
         </div>
