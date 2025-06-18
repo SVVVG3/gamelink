@@ -14,7 +14,9 @@ export async function PATCH(
 ) {
   try {
     const { eventId, participantId } = await params
-    const { status } = await request.json()
+    const { status, userFid } = await request.json()
+
+    console.log(`🎮 API: Updating participant status for ID: ${participantId}`, { status, userFid })
 
     // Validate status
     const validStatuses = ['registered', 'confirmed', 'attended', 'no_show', 'cancelled']
@@ -25,23 +27,28 @@ export async function PATCH(
       )
     }
 
-    const supabase = await createClient()
-
-    // Get user profile
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!userFid) {
+      return NextResponse.json(
+        { error: 'User authentication is required' },
+        { status: 401 }
+      )
     }
 
-    // Get user profile to get FID
-    const { data: profile } = await supabase
+    const supabase = await createClient()
+
+    // Get user profile to verify authentication
+    const { data: profile, error: userError } = await supabase
       .from('profiles')
-      .select('id, fid')
-      .eq('fid', user.user_metadata?.fid)
+      .select('id, fid, username')
+      .eq('fid', parseInt(userFid))
       .single()
 
-    if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    if (userError || !profile) {
+      console.error('❌ Error fetching user profile:', userError)
+      return NextResponse.json(
+        { error: 'User not found or not authenticated' },
+        { status: 401 }
+      )
     }
 
     // Verify user is the event organizer

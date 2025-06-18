@@ -41,12 +41,21 @@ export default function ParticipantTracker({
     setLoadingParticipant(participantId)
     
     try {
+      // Get current user FID from the user context
+      const userFid = (window as any).farcasterUser?.fid
+      if (!userFid) {
+        throw new Error('User not authenticated')
+      }
+
       const response = await fetch(`/api/events/${eventId}/participants/${participantId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ 
+          status: newStatus,
+          userFid: userFid 
+        }),
       })
 
       if (!response.ok) {

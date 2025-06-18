@@ -50,6 +50,12 @@ export default function EventControls({
     setLoading('broadcast')
     
     try {
+      // Get current user FID from the user context
+      const userFid = (window as any).farcasterUser?.fid
+      if (!userFid) {
+        throw new Error('User not authenticated')
+      }
+
       const response = await fetch(`/api/events/${event.id}/broadcast`, {
         method: 'POST',
         headers: {
@@ -57,7 +63,8 @@ export default function EventControls({
         },
         body: JSON.stringify({ 
           message,
-          title: `Event Update: ${event.title}`
+          title: `Event Update: ${event.title}`,
+          userFid: userFid
         }),
       })
 

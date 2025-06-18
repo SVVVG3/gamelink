@@ -14,7 +14,9 @@ export async function POST(
 ) {
   try {
     const { eventId } = await params
-    const { message, title } = await request.json()
+    const { message, title, userFid } = await request.json()
+
+    console.log(`📢 API: Broadcasting message for event ID: ${eventId}`, { userFid, messageLength: message?.length })
 
     // Validate input
     if (!message || message.trim().length === 0) {
@@ -31,23 +33,28 @@ export async function POST(
       )
     }
 
-    const supabase = await createClient()
-
-    // Get user profile
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!userFid) {
+      return NextResponse.json(
+        { error: 'User authentication is required' },
+        { status: 401 }
+      )
     }
 
-    // Get user profile to get FID
-    const { data: profile } = await supabase
+    const supabase = await createClient()
+
+    // Get user profile to verify authentication
+    const { data: profile, error: userError } = await supabase
       .from('profiles')
       .select('id, fid, display_name, username')
-      .eq('fid', user.user_metadata?.fid)
+      .eq('fid', parseInt(userFid))
       .single()
 
-    if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    if (userError || !profile) {
+      console.error('❌ Error fetching user profile:', userError)
+      return NextResponse.json(
+        { error: 'User not found or not authenticated' },
+        { status: 401 }
+      )
     }
 
     // Get event and verify organizer
