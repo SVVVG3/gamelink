@@ -13,7 +13,8 @@ import {
   FaGamepad, 
   FaSpinner,
   FaEnvelope,
-  FaXbox
+  FaXbox,
+  FaTimes
 } from 'react-icons/fa'
 import { 
   SiPlaystation, 
@@ -216,6 +217,26 @@ export default function SimpleMutualFollowersDisplay({
         <span className="text-lg font-semibold text-white">Gaming Friends</span>
       </div>
 
+      {/* Stats Section - Moved above search and filters */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-gray-800 rounded-lg p-3 text-center">
+          <div className="text-xl font-bold text-blue-400">{mutualFollowers.length}</div>
+          <div className="text-xs text-gray-400">Total Mutuals</div>
+        </div>
+        <div className="bg-gray-800 rounded-lg p-3 text-center">
+          <div className="text-xl font-bold text-purple-400">{gamingFollowers.length}</div>
+          <div className="text-xs text-gray-400">With Gamertags</div>
+        </div>
+        <div className="bg-gray-800 rounded-lg p-3 text-center">
+          <div className="text-xl font-bold text-green-400">{filteredFollowers.length}</div>
+          <div className="text-xs text-gray-400">Shown</div>
+        </div>
+        <div className="bg-gray-800 rounded-lg p-3 text-center">
+          <div className="text-xl font-bold text-yellow-400">{displayFollowers.length}</div>
+          <div className="text-xs text-gray-400">Displayed</div>
+        </div>
+      </div>
+
       {/* Search */}
       {showSearch && (
         <div className="relative">
@@ -249,7 +270,7 @@ export default function SimpleMutualFollowersDisplay({
         ))}
       </div>
 
-      {/* Centered Gaming Only and Refresh buttons */}
+      {/* Gaming Only, Clear Filters, and Refresh buttons */}
       <div className="flex items-center justify-center gap-2">
         {/* Gamer filter toggle */}
         <button
@@ -264,6 +285,20 @@ export default function SimpleMutualFollowersDisplay({
           {showOnlyGamersState ? 'Gaming Only' : 'Show All'}
         </button>
 
+        {/* Clear Filters button - only show if filters are active */}
+        {(selectedPlatforms.length > 0 || searchTerm.trim() !== '') && (
+          <button
+            onClick={() => {
+              setSelectedPlatforms([])
+              setSearchTerm('')
+            }}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+          >
+            <FaTimes className="w-4 h-4" />
+            Clear Filters
+          </button>
+        )}
+
         {/* Refresh button */}
         {showRefresh && (
           <button
@@ -275,26 +310,6 @@ export default function SimpleMutualFollowersDisplay({
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         )}
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-gray-800 rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-blue-400">{mutualFollowers.length}</div>
-          <div className="text-xs text-gray-400">Total Mutuals</div>
-        </div>
-        <div className="bg-gray-800 rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-purple-400">{gamingFollowers.length}</div>
-          <div className="text-xs text-gray-400">With Gamertags</div>
-        </div>
-        <div className="bg-gray-800 rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-green-400">{filteredFollowers.length}</div>
-          <div className="text-xs text-gray-400">Shown</div>
-        </div>
-        <div className="bg-gray-800 rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-yellow-400">{displayFollowers.length}</div>
-          <div className="text-xs text-gray-400">Displayed</div>
-        </div>
       </div>
 
       {/* Followers list */}
