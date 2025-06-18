@@ -84,7 +84,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
               fid,
               display_name,
               username,
-              avatar_url
+              pfp_url
             )
           `)
           .eq('event_id', eventId)
@@ -133,7 +133,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
                 fid,
                 display_name,
                 username,
-                avatar_url
+                pfp_url
               )
             `)
             .eq('event_id', eventId)
