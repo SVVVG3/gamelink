@@ -313,17 +313,17 @@ export default function EventsPage() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
               🏆 Gaming Events
             </h1>
-            <p className="text-sm sm:text-base text-gray-300 max-w-md">
+            <p className="text-sm sm:text-base text-gray-300">
               Organize tournaments and gaming sessions with friends
             </p>
           </div>
 
-          <div className="flex items-center flex-shrink-0">
+          <div className="flex items-center">
             {(farcasterProfile?.pfpUrl || profile?.pfp_url) && (
               <img
                 src={farcasterProfile?.pfpUrl || profile?.pfp_url || ''}
                 alt="Your profile"
-                className="w-12 h-12 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
+                className="w-10 h-10 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
               />
             )}
           </div>

@@ -158,15 +158,7 @@ export default function GroupsPage() {
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center space-x-4 mb-4">
-            {/* User Profile Image */}
-            {(profile?.pfp_url) && (
-              <img
-                src={profile.pfp_url}
-                alt="Your profile"
-                className="w-16 h-16 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
-              />
-            )}
+          <div className="flex items-center justify-between">
             {/* Title and Description */}
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold text-white">Gaming Groups</h1>
@@ -174,17 +166,24 @@ export default function GroupsPage() {
                 Connect with gaming communities
               </p>
             </div>
-          </div>
-          
-          {/* Create Group Button */}
-          <div>
-            <Link
-              href="/groups/new"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-            >
-              <FaPlus className="w-4 h-4 mr-2" />
-              Create Group
-            </Link>
+            
+            {/* User Profile and Create Group Button */}
+            <div className="flex items-center space-x-3">
+              {(profile?.pfp_url) && (
+                <img
+                  src={profile.pfp_url}
+                  alt="Your profile"
+                  className="w-10 h-10 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
+                />
+              )}
+              <Link
+                href="/groups/new"
+                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
+                <FaPlus className="w-4 h-4 mr-2" />
+                Create Group
+              </Link>
+            </div>
           </div>
         </div>
       </div>
