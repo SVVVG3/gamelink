@@ -85,9 +85,8 @@ export default function ResultsShareModal({
           
           if (result?.cast) {
             console.log('Results shared successfully:', result.cast.hash)
-            onClose()
-            return
           }
+          return
         }
       } catch (error) {
         console.error('Farcaster SDK not available, using web fallback:', error)
@@ -96,7 +95,6 @@ export default function ResultsShareModal({
       // Fallback for standalone web app - open Warpcast with event embed
       const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(embedUrl)}`
       window.open(farcasterUrl, '_blank')
-      onClose()
       
     } catch (error) {
       console.error('Error sharing results:', error)
