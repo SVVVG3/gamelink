@@ -158,29 +158,27 @@ export default function GroupsPage() {
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold text-white">Gaming Groups</h1>
               <p className="text-gray-400 mt-1">
                 Connect with gaming communities
               </p>
             </div>
             {/* User Profile and Create Group Button */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4 flex-shrink-0">
               {(profile?.pfp_url) && (
                 <img
                   src={profile.pfp_url}
                   alt="Your profile"
-                  className="w-10 h-10 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
+                  className="w-12 h-12 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
                 />
               )}
               <Link
                 href="/groups/new"
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors whitespace-nowrap shadow-lg"
               >
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <FaPlus className="w-4 h-4 flex-shrink-0" />
                 <span>Create Group</span>
               </Link>
             </div>

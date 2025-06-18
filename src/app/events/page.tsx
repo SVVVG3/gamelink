@@ -12,14 +12,14 @@ interface EventWithParticipantCount extends Event {
   participantCount: number
 }
 
-type EventFilter = 'all' | 'live' | 'upcoming' | 'completed'
+type EventFilter = 'live' | 'upcoming' | 'completed'
 
 export default function EventsPage() {
   const { isAuthenticated, isLoading, farcasterProfile, profile } = useUser()
   const [events, setEvents] = useState<EventWithParticipantCount[]>([])
   const [eventsLoading, setEventsLoading] = useState(true)
   const [eventsError, setEventsError] = useState<string | null>(null)
-  const [activeFilter, setActiveFilter] = useState<EventFilter>('all')
+  const [activeFilter, setActiveFilter] = useState<EventFilter>('upcoming')
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -104,7 +104,7 @@ export default function EventsPage() {
       case 'completed':
         return completedEvents
       default:
-        return events
+        return upcomingEvents // Default to upcoming instead of all
     }
   }
 
@@ -308,22 +308,22 @@ export default function EventsPage() {
     <main className="min-h-screen bg-gray-900 p-4 sm:p-6 md:p-8 pb-20">
       <div className="w-full max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
               🏆 Gaming Events
             </h1>
-            <p className="text-sm sm:text-base text-gray-300">
+            <p className="text-sm sm:text-base text-gray-300 max-w-md">
               Organize tournaments and gaming sessions with friends
             </p>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0">
             {(farcasterProfile?.pfpUrl || profile?.pfp_url) && (
               <img
                 src={farcasterProfile?.pfpUrl || profile?.pfp_url || ''}
                 alt="Your profile"
-                className="w-10 h-10 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
+                className="w-12 h-12 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
               />
             )}
           </div>
@@ -358,16 +358,6 @@ export default function EventsPage() {
 
           {/* Event Filter Buttons */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            <button
-              onClick={() => setActiveFilter('all')}
-              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium text-sm border whitespace-nowrap ${
-                activeFilter === 'all'
-                  ? 'bg-blue-600 text-white border-blue-500'
-                  : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-gray-600'
-              }`}
-            >
-              All Events
-            </button>
             <button
               onClick={() => setActiveFilter('live')}
               className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium text-sm border whitespace-nowrap relative ${
@@ -476,118 +466,38 @@ export default function EventsPage() {
             </div>
           ) : (
             <>
-              {activeFilter === 'all' ? (
-                <>
-                  {/* Live Events - Show first and prominently */}
-                  {liveEvents.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <FaPlay className="w-5 h-5 text-green-400" />
-                        <h2 className="text-2xl font-bold text-white">🔴 Live Events</h2>
-                        <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium animate-pulse">
-                          {liveEvents.length} LIVE
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {liveEvents.map(renderEventCard)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Upcoming Events */}
-                  {upcomingEvents.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <FaClock className="w-5 h-5 text-blue-400" />
-                        <h2 className="text-xl font-bold text-white">Upcoming Events</h2>
-                        <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm">
-                          {upcomingEvents.length}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {upcomingEvents.map(renderEventCard)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Draft Events - Only show to organizers */}
-                  {draftEvents.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <FaEye className="w-5 h-5 text-yellow-400" />
-                        <h2 className="text-xl font-bold text-white">Draft Events</h2>
-                        <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm">
-                          {draftEvents.length}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {draftEvents.map(renderEventCard)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Recently Completed Events - For archiving */}
-                  {completedEvents.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <FaCheckCircle className="w-5 h-5 text-gray-400" />
-                        <h2 className="text-xl font-bold text-white">Recently Completed Events</h2>
-                        <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm">
-                          {completedEvents.length}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {completedEvents.slice(0, 6).map(renderEventCard)}
-                      </div>
-                      {completedEvents.length > 6 && (
-                        <div className="text-center">
-                          <Link 
-                            href="/events/archived"
-                            className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
-                          >
-                            View All Completed Events ({completedEvents.length})
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
+              {/* Filtered Events */}
+              {getFilteredEvents().length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    {activeFilter === 'live' && <FaPlay className="w-5 h-5 text-green-400" />}
+                    {activeFilter === 'upcoming' && <FaClock className="w-5 h-5 text-blue-400" />}
+                    {activeFilter === 'completed' && <FaCheckCircle className="w-5 h-5 text-purple-400" />}
+                    <h2 className="text-2xl font-bold text-white capitalize">{activeFilter} Events</h2>
+                    <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm font-medium">
+                      {getFilteredEvents().length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getFilteredEvents().map(renderEventCard)}
+                  </div>
+                </div>
               ) : (
-                <>
-                  {/* Filtered Events */}
-                  {getFilteredEvents().length > 0 ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        {activeFilter === 'live' && <FaPlay className="w-5 h-5 text-green-400" />}
-                        {activeFilter === 'upcoming' && <FaClock className="w-5 h-5 text-blue-400" />}
-                        {activeFilter === 'completed' && <FaCheckCircle className="w-5 h-5 text-purple-400" />}
-                        <h2 className="text-2xl font-bold text-white capitalize">{activeFilter} Events</h2>
-                        <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm font-medium">
-                          {getFilteredEvents().length}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {getFilteredEvents().map(renderEventCard)}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 text-center">
-                      <div className="max-w-md mx-auto space-y-4">
-                        {activeFilter === 'live' && <FaPlay className="w-12 h-12 text-gray-500 mx-auto" />}
-                        {activeFilter === 'upcoming' && <FaClock className="w-12 h-12 text-gray-500 mx-auto" />}
-                        {activeFilter === 'completed' && <FaCheckCircle className="w-12 h-12 text-gray-500 mx-auto" />}
-                        <h3 className="text-lg font-bold text-white">
-                          No {activeFilter} Events
-                        </h3>
-                        <p className="text-gray-300 text-sm">
-                          {activeFilter === 'live' && "No events are currently live."}
-                          {activeFilter === 'upcoming' && "No upcoming events scheduled."}
-                          {activeFilter === 'completed' && "No completed events to show."}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </>
+                <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 text-center">
+                  <div className="max-w-md mx-auto space-y-4">
+                    {activeFilter === 'live' && <FaPlay className="w-12 h-12 text-gray-500 mx-auto" />}
+                    {activeFilter === 'upcoming' && <FaClock className="w-12 h-12 text-gray-500 mx-auto" />}
+                    {activeFilter === 'completed' && <FaCheckCircle className="w-12 h-12 text-gray-500 mx-auto" />}
+                    <h3 className="text-lg font-bold text-white">
+                      No {activeFilter} Events
+                    </h3>
+                    <p className="text-gray-300 text-sm">
+                      {activeFilter === 'live' && "No events are currently live."}
+                      {activeFilter === 'upcoming' && "No upcoming events scheduled."}
+                      {activeFilter === 'completed' && "No completed events to show."}
+                    </p>
+                  </div>
+                </div>
               )}
             </>
           )}
