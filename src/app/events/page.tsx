@@ -357,10 +357,10 @@ export default function EventsPage() {
           </div>
 
           {/* Event Filter Buttons */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center justify-center gap-2">
             <button
               onClick={() => setActiveFilter('live')}
-              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium text-sm border whitespace-nowrap relative ${
+              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium text-sm border whitespace-nowrap relative flex-1 ${
                 activeFilter === 'live'
                   ? 'bg-green-600 text-white border-green-500'
                   : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-gray-600'
@@ -379,7 +379,7 @@ export default function EventsPage() {
             </button>
             <button
               onClick={() => setActiveFilter('upcoming')}
-              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium text-sm border whitespace-nowrap ${
+              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium text-sm border whitespace-nowrap flex-1 ${
                 activeFilter === 'upcoming'
                   ? 'bg-blue-600 text-white border-blue-500'
                   : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-gray-600'
@@ -390,7 +390,7 @@ export default function EventsPage() {
             </button>
             <button
               onClick={() => setActiveFilter('completed')}
-              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium text-sm border whitespace-nowrap ${
+              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium text-sm border whitespace-nowrap flex-1 ${
                 activeFilter === 'completed'
                   ? 'bg-purple-600 text-white border-purple-500'
                   : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-gray-600'
