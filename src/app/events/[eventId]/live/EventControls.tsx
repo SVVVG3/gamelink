@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Event, EventParticipant } from '@/types'
+import { useUser } from '@/hooks/useUser'
 
 interface EventControlsProps {
   event: Event
@@ -16,6 +17,7 @@ export default function EventControls({
 }: EventControlsProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState<string | null>(null)
+  const { farcasterProfile } = useUser()
 
   // Update event status
   const updateEventStatus = async (newStatus: string) => {
@@ -51,7 +53,7 @@ export default function EventControls({
     
     try {
       // Get current user FID from the user context
-      const userFid = (window as any).farcasterUser?.fid
+      const userFid = farcasterProfile?.fid
       if (!userFid) {
         throw new Error('User not authenticated')
       }

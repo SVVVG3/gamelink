@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { EventParticipant } from '@/types'
 import { Profile } from '@/lib/supabase/profiles'
+import { useUser } from '@/hooks/useUser'
 
 export interface ParticipantWithProfile extends EventParticipant {
   profiles: Profile
@@ -21,6 +22,7 @@ export default function ParticipantTracker({
 }: ParticipantTrackerProps) {
   const [loadingParticipant, setLoadingParticipant] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const { farcasterProfile } = useUser()
 
   // Filter participants based on search
   const filteredParticipants = participants.filter(participant => 
@@ -42,7 +44,7 @@ export default function ParticipantTracker({
     
     try {
       // Get current user FID from the user context
-      const userFid = (window as any).farcasterUser?.fid
+      const userFid = farcasterProfile?.fid
       if (!userFid) {
         throw new Error('User not authenticated')
       }
