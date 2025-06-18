@@ -21,7 +21,7 @@ export default async function LiveEventPage({ params }: LiveEventPageProps) {
 
 function LiveEventDashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-900 p-4 space-y-6">
+    <div className="bg-gray-900 p-4 space-y-6 pb-24">
       <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-700 rounded w-1/3 mb-4"></div>

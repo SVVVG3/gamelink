@@ -191,7 +191,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   const { event, participants } = eventData
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4 space-y-6">
+    <div className="bg-gray-900 p-4 space-y-6 pb-24">
       {/* Back Button */}
       <div className="flex items-center mb-4">
         <Link

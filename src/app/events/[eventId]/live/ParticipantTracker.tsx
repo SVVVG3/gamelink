@@ -108,15 +108,15 @@ export default function ParticipantTracker({
             
             {/* Stats Cards - More Prominent */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-green-900/20 border border-green-700 rounded-lg px-4 py-3 text-center">
+              <div className="bg-green-900/20 border border-green-700 rounded-lg px-4 py-3 text-center flex flex-col items-center justify-center">
                 <div className="text-green-300 font-bold text-xl">{stats.attended}</div>
                 <div className="text-green-400 text-xs uppercase tracking-wide font-medium">Present</div>
               </div>
-              <div className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-3 text-center">
+              <div className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-3 text-center flex flex-col items-center justify-center">
                 <div className="text-blue-300 font-bold text-xl">{stats.confirmed}</div>
                 <div className="text-blue-400 text-xs uppercase tracking-wide font-medium">Confirmed</div>
               </div>
-              <div className="bg-red-900/20 border border-red-700 rounded-lg px-4 py-3 text-center">
+              <div className="bg-red-900/20 border border-red-700 rounded-lg px-4 py-3 text-center flex flex-col items-center justify-center">
                 <div className="text-red-300 font-bold text-xl">{stats.no_show}</div>
                 <div className="text-red-400 text-xs uppercase tracking-wide font-medium">No Show</div>
               </div>
