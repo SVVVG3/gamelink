@@ -8,6 +8,8 @@ import { Event, EventParticipant } from '@/types'
 import EventTimer from './EventTimer'
 import ParticipantTracker, { ParticipantWithProfile } from './ParticipantTracker'
 import EventControls from './EventControls'
+import Link from 'next/link'
+import { FaArrowLeft } from 'react-icons/fa'
 
 interface LiveEventDashboardProps {
   eventId: string
@@ -190,6 +192,17 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
 
   return (
     <div className="min-h-screen bg-gray-900 p-4 space-y-6">
+      {/* Back Button */}
+      <div className="flex items-center mb-4">
+        <Link
+          href={`/events/${eventId}`}
+          className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors font-medium text-sm shadow-lg border border-gray-600"
+        >
+          <FaArrowLeft className="w-4 h-4 mr-2" />
+          Back to Event
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
