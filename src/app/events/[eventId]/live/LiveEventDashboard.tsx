@@ -140,7 +140,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   // Loading state
   if (loading || userLoading) {
     return (
-      <div className="flex items-center justify-center bg-gray-900 p-4 pb-24" style={{ minHeight: 'calc(100vh - 5rem)' }}>
+      <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 5rem)' }}>
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400"></div>
       </div>
     )
@@ -149,7 +149,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   // Error state
   if (error) {
     return (
-      <div className="bg-gray-900 p-4 pb-24">
+      <div className="p-4">
         <div className="bg-red-900/20 border border-red-700 rounded-lg p-6 max-w-2xl mx-auto">
           <div className="flex items-center mb-4">
             <div className="flex-shrink-0">
@@ -180,7 +180,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   // No event data
   if (!eventData) {
     return (
-      <div className="bg-gray-900 p-4 pb-24">
+      <div className="p-4">
         <div className="text-center">
           <p className="text-gray-400">Event not found</p>
         </div>
@@ -191,7 +191,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   const { event, participants } = eventData
 
   return (
-    <div className="bg-gray-900 p-4 space-y-6 pb-24">
+    <div className="p-4 space-y-6">
       {/* Back Button */}
       <div className="flex items-center mb-4">
         <Link
