@@ -237,6 +237,34 @@ export default function SimpleMutualFollowersDisplay({
         </div>
       </div>
 
+      {/* Gaming Only and Refresh buttons - Moved above search */}
+      <div className="flex items-center justify-center gap-2">
+        {/* Gamer filter toggle */}
+        <button
+          onClick={toggleGamerFilter}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            showOnlyGamersState
+              ? 'bg-purple-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          <FaGamepad className="w-4 h-4" />
+          {showOnlyGamersState ? 'Gaming Only' : 'Show All'}
+        </button>
+
+        {/* Refresh button */}
+        {showRefresh && (
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing || isLoadingMutuals || isLoadingGamertags}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+          >
+            <FaSyncAlt className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        )}
+      </div>
+
       {/* Search */}
       {showSearch && (
         <div className="relative">
@@ -251,7 +279,7 @@ export default function SimpleMutualFollowersDisplay({
         </div>
       )}
 
-      {/* Gaming Platform Filters */}
+      {/* Gaming Platform Filters with Clear Filters button inline */}
       <div className="flex flex-wrap gap-3">
         {Object.entries(PLATFORMS).map(([platform, { icon, color }]) => (
           <button
@@ -268,46 +296,17 @@ export default function SimpleMutualFollowersDisplay({
             </div>
           </button>
         ))}
-      </div>
 
-      {/* Gaming Only, Clear Filters, and Refresh buttons */}
-      <div className="flex items-center justify-center gap-2">
-        {/* Gamer filter toggle */}
-        <button
-          onClick={toggleGamerFilter}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            showOnlyGamersState
-              ? 'bg-purple-600 text-white'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          <FaGamepad className="w-4 h-4" />
-          {showOnlyGamersState ? 'Gaming Only' : 'Show All'}
-        </button>
-
-        {/* Clear Filters button - only show if filters are active */}
+        {/* Clear Filters button - inline with platform filters */}
         {(selectedPlatforms.length > 0 || searchTerm.trim() !== '') && (
           <button
             onClick={() => {
               setSelectedPlatforms([])
               setSearchTerm('')
             }}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            className="flex items-center justify-center p-3 bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-gray-500 text-white rounded-lg transition-all"
           >
             <FaTimes className="w-4 h-4" />
-            Clear Filters
-          </button>
-        )}
-
-        {/* Refresh button */}
-        {showRefresh && (
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing || isLoadingMutuals || isLoadingGamertags}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
-          >
-            <FaSyncAlt className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         )}
       </div>
