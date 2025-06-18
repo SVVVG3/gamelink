@@ -40,32 +40,19 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
         }
         
         const eventResponse = await fetch(url.toString())
-        console.log(`API Response status: ${eventResponse.status}`)
         
         if (!eventResponse.ok) {
           const errorText = await eventResponse.text()
-          console.error(`API Error: ${eventResponse.status} - ${errorText}`)
           throw new Error(`Failed to fetch event: ${eventResponse.status} - ${errorText}`)
         }
         
         const eventData = await eventResponse.json()
-        console.log('🔍 Live Dashboard: Raw API response:', eventData)
-        
         const event: Event = eventData.event
-        console.log('🔍 Live Dashboard: Parsed event:', event)
-        console.log('🔍 Live Dashboard: Event createdBy:', event?.createdBy)
-        console.log('🔍 Live Dashboard: Event status:', event?.status)
 
         // Check if user is organizer - compare with createdBy field that stores user UUID
-        console.log('Authorization Debug:', {
-          profileId: profile?.id,
-          eventCreatedBy: event.createdBy,
-          profileFid: profile?.fid,
-          match: event.createdBy === profile?.id
-        })
         
         if (!profile?.id || event.createdBy !== profile.id) {
-          setError(`You are not authorized to access this live dashboard. Profile ID: ${profile?.id}, Event Created By: ${event.createdBy}`)
+          setError('You are not authorized to access this live dashboard. Only the event organizer can view this page.')
           return
         }
 
@@ -122,8 +109,6 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
           filter: `event_id=eq.${eventId}`
         },
         async (payload) => {
-          console.log('Participant update:', payload)
-          
           // Refetch participants data with explicit relationship
           const { data: participants, error } = await supabase
             .from('event_participants')
@@ -153,8 +138,8 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   // Loading state
   if (loading || userLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400"></div>
       </div>
     )
   }
@@ -193,9 +178,9 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   // No event data
   if (!eventData) {
     return (
-      <div className="p-4">
+      <div className="min-h-screen bg-gray-900 p-4">
         <div className="text-center">
-          <p className="text-gray-500">Event not found</p>
+          <p className="text-gray-400">Event not found</p>
         </div>
       </div>
     )
@@ -204,18 +189,18 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
   const { event, participants } = eventData
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="min-h-screen bg-gray-900 p-4 space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
-            <p className="text-gray-600">Live Event Dashboard</p>
+            <h1 className="text-2xl font-bold text-white">{event.title}</h1>
+            <p className="text-gray-300">Live Event Dashboard</p>
           </div>
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-green-600 font-medium">LIVE</span>
+              <span className="text-green-400 font-medium">LIVE</span>
             </div>
           </div>
         </div>
