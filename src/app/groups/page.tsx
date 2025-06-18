@@ -158,17 +158,18 @@ export default function GroupsPage() {
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             {/* Title and Description */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pr-4">
               <h1 className="text-2xl font-bold text-white">Gaming Groups</h1>
               <p className="text-gray-400 mt-1">
                 Connect with gaming communities
               </p>
             </div>
             
-            {/* User Profile and Create Group Button */}
-            <div className="flex items-center space-x-3">
+            {/* User Profile and Create Group Button - Stacked Vertically */}
+            <div className="flex flex-col items-end space-y-3">
+              {/* User Profile Image */}
               {(profile?.pfp_url) && (
                 <img
                   src={profile.pfp_url}
@@ -176,9 +177,11 @@ export default function GroupsPage() {
                   className="w-10 h-10 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
                 />
               )}
+              
+              {/* Create Group Button */}
               <Link
                 href="/groups/new"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm shadow-lg"
               >
                 <FaPlus className="w-4 h-4 mr-2" />
                 Create Group

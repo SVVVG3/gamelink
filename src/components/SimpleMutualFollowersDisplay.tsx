@@ -104,20 +104,37 @@ export default function SimpleMutualFollowersDisplay({
   const [refreshing, setRefreshing] = useState(false)
   const [displayCount, setDisplayCount] = useState(initialDisplay)
   const [showOnlyGamersState, setShowOnlyGamersState] = useState(showOnlyGamers)
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
 
   // Use the appropriate data source based on filter preference
   const sourceFollowers = showOnlyGamersState ? gamingFollowers : mutualFollowers
   
-  // Filter followers based on search term
+  // Filter followers based on search term and selected platforms
   const filteredFollowers = useMemo(() => {
-    if (!searchTerm.trim()) return sourceFollowers
+    let filtered = sourceFollowers
 
-    const term = searchTerm.toLowerCase()
-    return sourceFollowers.filter((follower: any) => 
-      follower.username.toLowerCase().includes(term) ||
-      (follower.displayName && follower.displayName.toLowerCase().includes(term))
-    )
-  }, [sourceFollowers, searchTerm])
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter((follower: any) => 
+        follower.username.toLowerCase().includes(term) ||
+        (follower.displayName && follower.displayName.toLowerCase().includes(term))
+      )
+    }
+
+    // Apply platform filter
+    if (selectedPlatforms.length > 0) {
+      filtered = filtered.filter((follower: any) => {
+        if (!follower.gamertags || follower.gamertags.length === 0) return false
+        
+        return selectedPlatforms.some(platform => 
+          follower.gamertags.some((tag: any) => tag.platform === platform)
+        )
+      })
+    }
+
+    return filtered
+  }, [sourceFollowers, searchTerm, selectedPlatforms])
 
   // Display followers (limited by displayCount)
   const displayFollowers = useMemo(() => {
@@ -140,6 +157,16 @@ export default function SimpleMutualFollowersDisplay({
   const toggleGamerFilter = () => {
     setShowOnlyGamersState(!showOnlyGamersState)
     setDisplayCount(initialDisplay) // Reset display count when toggling
+    setSelectedPlatforms([]) // Clear platform filters when toggling
+  }
+
+  // Toggle platform filter
+  const togglePlatformFilter = (platform: string) => {
+    setSelectedPlatforms(prev => 
+      prev.includes(platform) 
+        ? prev.filter(p => p !== platform)
+        : [...prev, platform]
+    )
   }
 
   // Loading state
@@ -183,48 +210,10 @@ export default function SimpleMutualFollowersDisplay({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Header with stats and controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <FaUsers className="w-5 h-5 text-blue-400" />
-            <span className="text-lg font-semibold text-white">
-              {showOnlyGamersState ? 'Gaming Friends' : 'All Mutual Followers'}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <span>{filteredFollowers.length} shown</span>
-            {searchTerm && <span>• filtered</span>}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Gamer filter toggle */}
-          <button
-            onClick={toggleGamerFilter}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              showOnlyGamersState
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            <FaGamepad className="w-4 h-4" />
-            {showOnlyGamersState ? 'Gaming Only' : 'Show All'}
-          </button>
-
-          {/* Refresh button */}
-          {showRefresh && (
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing || isLoadingMutuals || isLoadingGamertags}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
-            >
-              <FaSyncAlt className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
-          )}
-        </div>
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <FaUsers className="w-5 h-5 text-blue-400" />
+        <span className="text-lg font-semibold text-white">Gaming Friends</span>
       </div>
 
       {/* Search */}
@@ -240,6 +229,53 @@ export default function SimpleMutualFollowersDisplay({
           />
         </div>
       )}
+
+      {/* Gaming Platform Filters */}
+      <div className="flex flex-wrap gap-3">
+        {Object.entries(PLATFORMS).map(([platform, { icon, color }]) => (
+          <button
+            key={platform}
+            onClick={() => togglePlatformFilter(platform)}
+            className={`flex items-center justify-center p-3 border rounded-lg transition-all group ${
+              selectedPlatforms.includes(platform)
+                ? 'bg-blue-600 border-blue-500 text-white'
+                : 'bg-gray-700 hover:bg-blue-600 border-gray-600 hover:border-blue-500'
+            }`}
+          >
+            <div className={`${selectedPlatforms.includes(platform) ? 'text-white' : color} group-hover:text-white`}>
+              {icon}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Centered Gaming Only and Refresh buttons */}
+      <div className="flex items-center justify-center gap-2">
+        {/* Gamer filter toggle */}
+        <button
+          onClick={toggleGamerFilter}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            showOnlyGamersState
+              ? 'bg-purple-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          <FaGamepad className="w-4 h-4" />
+          {showOnlyGamersState ? 'Gaming Only' : 'Show All'}
+        </button>
+
+        {/* Refresh button */}
+        {showRefresh && (
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing || isLoadingMutuals || isLoadingGamertags}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+          >
+            <FaSyncAlt className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        )}
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
