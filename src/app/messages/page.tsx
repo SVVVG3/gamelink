@@ -227,7 +227,7 @@ export default function MessagesPage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 md:p-24 bg-gray-900 pb-20">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 md:p-24 bg-gray-900 safe-area-bottom">
         <div className="text-center space-y-6 sm:space-y-8 max-w-md mx-auto">
           <div>
             <FaComments className="w-16 h-16 text-gray-500 mx-auto mb-4" />
@@ -246,7 +246,7 @@ export default function MessagesPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 md:p-24 bg-gray-900 pb-20">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 md:p-24 bg-gray-900 safe-area-bottom">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
           <p className="text-sm sm:text-base text-gray-300">Loading messages...</p>
@@ -257,8 +257,8 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-900 p-4 sm:p-6 md:p-8 pb-20">
-      <div className="w-full max-w-4xl mx-auto space-y-6 sm:space-y-8">
+    <main className="min-h-screen bg-gray-900 p-4 sm:p-6 md:p-8 safe-area-bottom">
+      <div className="w-full max-w-4xl mx-auto space-y-6 sm:space-y-8 pb-20">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

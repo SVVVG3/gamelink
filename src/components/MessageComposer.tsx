@@ -52,6 +52,40 @@ export default function MessageComposer({
     }
   }, [disabled])
 
+  // Handle keyboard show/hide for Android
+  useEffect(() => {
+    const handleFocusIn = () => {
+      // Add class to body to handle keyboard state
+      document.body.classList.add('keyboard-open')
+      
+      // Scroll input into view on Android
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          })
+        }
+      }, 300) // Delay to allow keyboard animation
+    }
+
+    const handleFocusOut = () => {
+      // Remove keyboard state class
+      document.body.classList.remove('keyboard-open')
+    }
+
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.addEventListener('focusin', handleFocusIn)
+      textarea.addEventListener('focusout', handleFocusOut)
+      
+      return () => {
+        textarea.removeEventListener('focusin', handleFocusIn)
+        textarea.removeEventListener('focusout', handleFocusOut)
+      }
+    }
+  }, [])
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

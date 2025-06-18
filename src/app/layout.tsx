@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   title: "GameLink - Connect with Fellow Gamers on Farcaster",
   description: "Share your gamertags, organize events, and chat with fellow gamers on Farcaster",
   manifest: "/.well-known/farcaster.json",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover'
+  },
   openGraph: {
     title: "GameLink - Connect with Fellow Gamers on Farcaster",
     description: "Share your gamertags, organize events, and chat with fellow gamers on Farcaster",

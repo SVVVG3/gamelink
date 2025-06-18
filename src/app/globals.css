@@ -25,6 +25,33 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Android keyboard and viewport fixes */
+html {
+  /* Prevent zoom on input focus on iOS */
+  -webkit-text-size-adjust: 100%;
+  /* Support for safe areas on mobile devices */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Fix for Android keyboard covering input */
+.keyboard-adjust {
+  /* Use visual viewport height instead of viewport height on mobile */
+  height: 100dvh;
+  min-height: 100dvh;
+}
+
+/* Safe area support for bottom navigation */
+.safe-area-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+}
+
+/* Prevent body scroll when keyboard is open */
+body.keyboard-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
 /* Line clamp utilities */
 .line-clamp-1 {
   overflow: hidden;

@@ -9,7 +9,7 @@ import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
 import FarcasterIcon from '@/components/FarcasterIcon'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV, FaTimes } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV, FaTimes, FaShare } from 'react-icons/fa'
 
 // Extended interface to include user profile data and group info
 interface ChatWithUserProfiles extends ChatWithParticipants {
@@ -389,7 +389,7 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-900 flex flex-col pb-20">
+    <main className="keyboard-adjust bg-gray-900 flex flex-col">
       {/* Fixed Chat Header */}
       <div className="fixed top-0 left-0 right-0 z-10 bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -481,8 +481,8 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Messages Area - with top padding for fixed header */}
-      <div className="flex-1 flex flex-col pt-16 pb-32">
+      {/* Messages Area - with proper spacing for header and composer */}
+      <div className="flex-1 flex flex-col pt-16 pb-[180px] min-h-0">
         <MessageList
           chatId={chatId}
           onNewMessage={(message) => console.log('New message received:', message)}
@@ -490,8 +490,8 @@ export default function ChatPage() {
         />
       </div>
 
-      {/* Fixed Message Composer */}
-      <div className="fixed bottom-20 left-0 right-0 z-10 p-4 bg-gray-900 border-t border-gray-700">
+      {/* Fixed Message Composer - with safe area padding */}
+      <div className="fixed bottom-0 left-0 right-0 z-10 p-4 bg-gray-900 border-t border-gray-700 safe-area-bottom" style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 5rem)` }}>
         <MessageComposer
           chatId={chatId}
           onMessageSent={handleMessageSent}
