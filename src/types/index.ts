@@ -74,7 +74,7 @@ export interface Event {
   isPrivate: boolean
   allowSpectators: boolean
   registrationDeadline?: string
-  status: 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled'
+  status: 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled' | 'archived'
   createdBy: string
   groupId?: string
   chatId?: string
@@ -163,7 +163,7 @@ export interface CreateEventData {
 
 export interface UpdateEventData extends Partial<CreateEventData> {
   id: string
-  status?: 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled'
+  status?: 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled' | 'archived'
 }
 
 export interface RegisterForEventData {

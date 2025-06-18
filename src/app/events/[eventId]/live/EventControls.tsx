@@ -54,20 +54,23 @@ export default function EventControls({
     setLoading('completed')
     
     try {
-      // Update event status to completed
+      // Determine final status based on archive option
+      const finalStatus = completionData.archiveEvent ? 'archived' : 'completed'
+      
+      // Update event status
       const response = await fetch(`/api/events/${event.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: 'completed',
+          status: finalStatus,
           completionData 
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to complete event')
+        throw new Error(`Failed to ${completionData.archiveEvent ? 'archive' : 'complete'} event`)
       }
 
       const updatedEvent = await response.json()
@@ -75,10 +78,16 @@ export default function EventControls({
 
       // Send completion notification if requested
       if (completionData.notifyParticipants) {
-        await broadcastNotification(`Event "${event.title}" has been completed! Thank you for participating.`)
+        const message = completionData.archiveEvent 
+          ? `Event "${event.title}" has been completed and archived! Thank you for participating.`
+          : `Event "${event.title}" has been completed! Thank you for participating.`
+        await broadcastNotification(message)
       }
 
-      alert('Event completed successfully!')
+      const successMessage = completionData.archiveEvent 
+        ? 'Event completed and archived successfully!'
+        : 'Event completed successfully!'
+      alert(successMessage)
     } catch (error) {
       console.error('Error completing event:', error)
       throw error // Re-throw to let modal handle the error

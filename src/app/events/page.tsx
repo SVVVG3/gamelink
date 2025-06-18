@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@/hooks/useUser'
 import BottomNavigation from '@/components/BottomNavigation'
-import { FaCalendarAlt, FaPlus, FaTrophy, FaClock, FaUsers, FaGamepad, FaMapMarkerAlt, FaGlobe, FaPlay, FaCheckCircle, FaTimes, FaEye } from 'react-icons/fa'
+import { FaCalendarAlt, FaPlus, FaTrophy, FaClock, FaUsers, FaGamepad, FaMapMarkerAlt, FaGlobe, FaPlay, FaCheckCircle, FaTimes, FaEye, FaChartBar } from 'react-icons/fa'
 import Link from 'next/link'
 import { Event } from '@/types'
 import { createClient } from '@supabase/supabase-js'
@@ -304,6 +304,20 @@ export default function EventsPage() {
           </div>
 
           <div className="flex items-center space-x-3">
+            <Link
+              href="/events/history"
+              className="flex items-center px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors font-medium text-sm border border-gray-600"
+            >
+              <FaChartBar className="w-4 h-4 mr-2" />
+              History
+            </Link>
+            <Link
+              href="/events/archived"
+              className="flex items-center px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors font-medium text-sm border border-gray-600"
+            >
+              <FaTrophy className="w-4 h-4 mr-2" />
+              Archived
+            </Link>
             {(farcasterProfile?.pfpUrl || profile?.pfp_url) && (
               <img
                 src={farcasterProfile?.pfpUrl || profile?.pfp_url || ''}
@@ -452,9 +466,12 @@ export default function EventsPage() {
                   </div>
                   {completedEvents.length > 6 && (
                     <div className="text-center">
-                      <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                      <Link 
+                        href="/events/archived"
+                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                      >
                         View All Completed Events ({completedEvents.length - 6} more)
-                      </button>
+                      </Link>
                     </div>
                   )}
                 </div>

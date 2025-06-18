@@ -24,7 +24,8 @@ import {
   FaTimes,
   FaCheckCircle,
   FaExclamationTriangle,
-  FaSpinner
+  FaSpinner,
+  FaArchive
 } from 'react-icons/fa'
 import FarcasterIcon from '@/components/FarcasterIcon'
 import { FaShield } from 'react-icons/fa6'
@@ -806,6 +807,7 @@ export default function EventDetailsClient({ params }: Props) {
                       {event.status === 'live' && 'Event is currently active and in progress.'}
                       {event.status === 'completed' && 'Event has been completed.'}
                       {event.status === 'cancelled' && 'Event has been cancelled.'}
+                      {event.status === 'archived' && 'Event has been completed and archived.'}
                     </p>
                   </div>
 
@@ -862,7 +864,31 @@ export default function EventDetailsClient({ params }: Props) {
                     </div>
                   )}
 
-
+                  {/* Archive Button - Show for completed events */}
+                  {event.status === 'completed' && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-gray-300">Archive Event</h4>
+                      <button
+                        onClick={() => {
+                          const confirmed = window.confirm(
+                            'Are you sure you want to archive this event? Archived events are moved to a separate archive section.'
+                          )
+                          if (confirmed) {
+                            handleStatusUpdate('archived')
+                          }
+                        }}
+                        disabled={statusLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white rounded-lg transition-colors font-medium text-sm"
+                      >
+                        {statusLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        ) : (
+                          <FaArchive className="w-4 h-4 mr-2" />
+                        )}
+                        Archive Event
+                      </button>
+                    </div>
+                  )}
 
                   {/* Manage Event Button */}
                   <div className="pt-2 border-t border-gray-600">
