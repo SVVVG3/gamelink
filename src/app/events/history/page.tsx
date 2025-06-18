@@ -252,9 +252,8 @@ export default function EventHistoryPage() {
                     : 'text-gray-300 hover:text-white hover:bg-gray-600'
                 }`}
               >
-                <tab.icon className="w-4 h-4 mr-1 sm:mr-2" />
+                <tab.icon className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.label.slice(0, 3)}</span>
               </button>
             ))}
           </div>

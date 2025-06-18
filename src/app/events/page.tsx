@@ -89,6 +89,7 @@ export default function EventsPage() {
   const liveEvents = events.filter(event => event.status === 'live')
   const upcomingEvents = events.filter(event => event.status === 'upcoming')
   const draftEvents = events.filter(event => event.status === 'draft')
+  const completedEvents = events.filter(event => event.status === 'completed')
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -302,21 +303,7 @@ export default function EventsPage() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-            <Link
-              href="/events/history"
-              className="flex items-center px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors font-medium text-sm border border-gray-600 w-full sm:w-auto justify-center sm:justify-start"
-            >
-              <FaChartBar className="w-4 h-4 mr-2" />
-              History
-            </Link>
-            <Link
-              href="/events/archived"
-              className="flex items-center px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors font-medium text-sm border border-gray-600 w-full sm:w-auto justify-center sm:justify-start"
-            >
-              <FaTrophy className="w-4 h-4 mr-2" />
-              Archived
-            </Link>
+          <div className="flex items-center">
             {(farcasterProfile?.pfpUrl || profile?.pfp_url) && (
               <img
                 src={farcasterProfile?.pfpUrl || profile?.pfp_url || ''}
@@ -328,7 +315,7 @@ export default function EventsPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="w-full">
+        <div className="w-full space-y-3">
           <Link 
             href="/events/new"
             className="flex items-center justify-center px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium w-full"
@@ -336,6 +323,23 @@ export default function EventsPage() {
             <FaPlus className="w-5 h-5 mr-3" />
             Create Event
           </Link>
+          
+          <div className="flex items-center gap-3">
+            <Link
+              href="/events/history"
+              className="flex items-center justify-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors font-medium text-sm border border-gray-600 flex-1"
+            >
+              <FaChartBar className="w-4 h-4 mr-2" />
+              History
+            </Link>
+            <Link
+              href="/events/archived"
+              className="flex items-center justify-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors font-medium text-sm border border-gray-600 flex-1"
+            >
+              <FaTrophy className="w-4 h-4 mr-2" />
+              Archived
+            </Link>
+          </div>
         </div>
 
         {/* Event Categories */}
@@ -450,6 +454,31 @@ export default function EventsPage() {
                 </div>
               )}
 
+              {/* Recently Completed Events - For archiving */}
+              {completedEvents.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <FaCheckCircle className="w-5 h-5 text-gray-400" />
+                    <h2 className="text-xl font-bold text-white">Recently Completed Events</h2>
+                    <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm">
+                      {completedEvents.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {completedEvents.slice(0, 6).map(renderEventCard)}
+                  </div>
+                  {completedEvents.length > 6 && (
+                    <div className="text-center">
+                      <Link 
+                        href="/events/archived"
+                        className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
+                      >
+                        View All Completed Events ({completedEvents.length})
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
 
             </>
           )}
