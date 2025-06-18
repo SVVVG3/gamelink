@@ -75,12 +75,12 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
           return
         }
 
-        // Fetch participants
+        // Fetch participants with explicit relationship specification
         const { data: participants, error: participantsError } = await supabase
           .from('event_participants')
           .select(`
             *,
-            profiles (
+            profiles!event_participants_user_id_fkey (
               fid,
               display_name,
               username,
@@ -124,12 +124,12 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
         async (payload) => {
           console.log('Participant update:', payload)
           
-          // Refetch participants data
+          // Refetch participants data with explicit relationship
           const { data: participants, error } = await supabase
             .from('event_participants')
             .select(`
               *,
-              profiles (
+              profiles!event_participants_user_id_fkey (
                 fid,
                 display_name,
                 username,
