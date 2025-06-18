@@ -165,8 +165,15 @@ export default function GroupsPage() {
                 Connect with gaming communities
               </p>
             </div>
-            {/* Create Group Button */}
-            <div className="flex-shrink-0">
+            {/* User Profile and Create Group Button */}
+            <div className="flex items-center space-x-3">
+              {(profile?.pfp_url) && (
+                <img
+                  src={profile.pfp_url}
+                  alt="Your profile"
+                  className="w-10 h-10 rounded-full ring-2 ring-blue-500 object-cover flex-shrink-0"
+                />
+              )}
               <Link
                 href="/groups/new"
                 className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
