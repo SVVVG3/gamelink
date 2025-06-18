@@ -4,7 +4,7 @@ import type { Event, UpdateEventData } from '@/types'
 const supabase = createClient()
 
 // Status transition validation types and functions
-export type EventStatus = 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled'
+export type EventStatus = 'draft' | 'upcoming' | 'live' | 'completed' | 'cancelled' | 'archived'
 
 export interface StatusTransitionResult {
   isValid: boolean
@@ -16,8 +16,9 @@ const VALID_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
   'draft': ['upcoming', 'cancelled'],
   'upcoming': ['live', 'cancelled'],
   'live': ['completed', 'cancelled'],
-  'completed': [], // Cannot transition from completed
-  'cancelled': [] // Cannot transition from cancelled
+  'completed': ['archived'], // Can transition from completed to archived
+  'cancelled': [], // Cannot transition from cancelled
+  'archived': [] // Cannot transition from archived
 }
 
 /**
