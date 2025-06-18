@@ -18,6 +18,9 @@ import {
 import FarcasterIcon from '@/components/FarcasterIcon'
 import Link from 'next/link'
 import { Event, EventParticipant, Profile } from '@/types'
+import { Achievement as AchievementType, calculateUserAchievements } from '@/lib/achievements'
+import AchievementBadge from '@/components/AchievementBadge'
+import ResultsShareModal from '@/components/ResultsShareModal'
 
 interface EventHistoryData {
   events: EventWithParticipation[]
