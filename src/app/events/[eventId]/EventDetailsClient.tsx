@@ -550,6 +550,19 @@ export default function EventDetailsClient({ params }: Props) {
                   </div>
                 )}
 
+                {/* Watch Live Button - Show for everyone when event is live */}
+                {event.status === 'live' && (
+                  <div className={`pt-2 ${isOrganizer ? '' : 'border-t border-gray-700'}`}>
+                    <Link
+                      href={`/events/${eventId}/watch`}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium shadow-lg"
+                    >
+                      <FaEye className="w-4 h-4 mr-2" />
+                      Watch Live
+                    </Link>
+                  </div>
+                )}
+
 
                 {/* Join Event Chat Button - Show for participants */}
                 {isUserParticipant && event.chatId && (
