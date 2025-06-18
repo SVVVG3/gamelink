@@ -791,6 +791,87 @@ export async function sendEventStatusChangeNotification(
 /**
  * Send notification when someone creates a public group (to mutual followers)
  */
+export async function sendEventBroadcastNotification(
+  eventId: string,
+  eventTitle: string,
+  messageTitle: string,
+  messageBody: string,
+  organizerName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log(`📢 Sending broadcast notification for event ${eventId}`)
+    
+    const supabase = getSupabaseClient()
+    
+    // Get all participants for this event (excluding cancelled)
+    const { data: participants, error: participantsError } = await supabase
+      .from('event_participants')
+      .select(`
+        profiles!event_participants_user_id_fkey (
+          fid
+        )
+      `)
+      .eq('event_id', eventId)
+      .neq('status', 'cancelled')
+
+    if (participantsError) {
+      console.error('Error fetching participants for broadcast:', participantsError)
+      return { success: false, error: 'Failed to fetch participants' }
+    }
+
+    if (!participants || participants.length === 0) {
+      console.log('No participants found for broadcast')
+      return { success: false, error: 'No participants found' }
+    }
+
+    // Extract FIDs from participants
+    const participantFids = participants
+      .map((p: any) => p.profiles?.fid)
+      .filter((fid: any) => fid !== null && fid !== undefined)
+
+    if (participantFids.length === 0) {
+      console.log('No valid FIDs found for broadcast')
+      return { success: false, error: 'No valid participant FIDs found' }
+    }
+
+    // Filter participants who have events notifications enabled
+    const notificationEnabledFids = await filterUsersByNotificationPreferences(
+      participantFids,
+      'events'
+    )
+
+    if (notificationEnabledFids.length === 0) {
+      console.log('No participants have event notifications enabled')
+      return { success: false, error: 'No participants have notifications enabled' }
+    }
+
+    // Create notification payload
+    const notification = createNotificationPayload(
+      `📢 ${messageTitle}`,
+      `${organizerName}: ${messageBody}`,
+      `/events/${eventId}`
+    )
+
+    // Send notification
+    const result = await sendNotificationToUsers(notificationEnabledFids, notification)
+    
+    if (result.success) {
+      console.log(`✅ Broadcast notification sent to ${notificationEnabledFids.length} participants`)
+    } else {
+      console.error('❌ Failed to send broadcast notification:', result.error)
+    }
+
+    return result
+
+  } catch (error: any) {
+    console.error('❌ Error in sendEventBroadcastNotification:', error)
+    return { 
+      success: false, 
+      error: error?.message || 'Failed to send broadcast notification' 
+    }
+  }
+}
+
 export async function sendGroupCreationNotification(
   groupId: string
 ): Promise<{ success: boolean; error?: string }> {
