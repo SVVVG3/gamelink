@@ -15,6 +15,7 @@ import {
   FaCrown,
   FaChartBar
 } from 'react-icons/fa'
+import FarcasterIcon from '@/components/FarcasterIcon'
 import Link from 'next/link'
 import { Event, EventParticipant, Profile } from '@/types'
 
@@ -104,6 +105,10 @@ export default function EventHistoryPage() {
     const stats = historyData.statistics
     const shareText = `🎮 My Gaming Stats on GameLink!\n\n🏆 Events Participated: ${stats.totalEvents}\n✅ Events Attended: ${stats.eventsAttended}\n👑 Events Organized: ${stats.eventsOrganized}\n🥇 Events Won: ${stats.eventsWon}\n📊 Attendance Rate: ${Math.round(stats.attendanceRate)}%\n🎯 Average Score: ${stats.averageScore}\n${stats.favoriteGame ? `🎮 Favorite Game: ${stats.favoriteGame}` : ''}\n\nJoin me on GameLink! 🚀`
     
+    // Create the frame URL for mini app embed (use main app URL since we don't have a specific profile frame)
+    const baseUrl = window.location.origin
+    const appFrameUrl = `${baseUrl}/`
+    
     // Try to use Farcaster SDK if available (Mini App context)
     try {
       const { sdk } = await import('@farcaster/frame-sdk')
@@ -112,7 +117,8 @@ export default function EventHistoryPage() {
       const context = await sdk.context
       if (context && context.client) {
         const result = await sdk.actions.composeCast({
-          text: shareText
+          text: shareText,
+          embeds: [appFrameUrl]
         })
         
         if (result?.cast) {
@@ -125,7 +131,7 @@ export default function EventHistoryPage() {
     }
     
     // Fallback for standalone web app - open Warpcast
-    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(appFrameUrl)}`
     window.open(farcasterUrl, '_blank')
   }
 
@@ -229,7 +235,7 @@ export default function EventHistoryPage() {
                 onClick={shareStats}
                 className="flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-colors w-full sm:w-auto justify-center"
               >
-                <FaGamepad className="w-4 h-4 mr-2" />
+                <FarcasterIcon className="w-4 h-4 mr-2" />
                 Share Stats
               </button>
             </div>
