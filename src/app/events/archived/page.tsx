@@ -6,11 +6,7 @@ import { FaArrowLeft, FaCalendarAlt, FaUsers, FaTrophy, FaSearch, FaFilter, FaAr
 import { Event, EventWithParticipantCount } from '@/types'
 import { useUser } from '@/hooks/useUser'
 
-interface ArchivedEventsPageProps {
-  // No props needed for this page
-}
-
-export default function ArchivedEventsPage({}: ArchivedEventsPageProps) {
+export default function ArchivedEventsPage() {
   const { profile, isAuthenticated, isLoading: userLoading } = useUser()
   const [events, setEvents] = useState<EventWithParticipantCount[]>([])
   const [loading, setLoading] = useState(true)
