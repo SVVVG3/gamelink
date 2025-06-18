@@ -262,7 +262,7 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
         <div className="lg:col-span-1">
           <EventControls 
             event={event}
-            participants={participants}
+            participants={participants.map(p => ({ ...p, profile: p.profiles }))}
             onEventUpdate={(updatedEvent: Event) => 
               setEventData(prev => prev ? { ...prev, event: updatedEvent } : null)
             }

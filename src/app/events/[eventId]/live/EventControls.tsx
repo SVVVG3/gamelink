@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Event, EventParticipant } from '@/types'
+import { Event, EventParticipant, Profile } from '@/types'
 import { useUser } from '@/hooks/useUser'
+import EventCompletionModal from '@/components/EventCompletionModal'
 
 interface EventControlsProps {
   event: Event
-  participants: EventParticipant[]
+  participants: (EventParticipant & { profile: Profile })[]
   onEventUpdate: (event: Event) => void
 }
 
@@ -17,6 +18,7 @@ export default function EventControls({
 }: EventControlsProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState<string | null>(null)
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
   const { farcasterProfile } = useUser()
 
   // Update event status
@@ -44,6 +46,44 @@ export default function EventControls({
     } finally {
       setLoading(null)
       setShowConfirmDialog(null)
+    }
+  }
+
+  // Handle event completion with modal workflow
+  const handleEventCompletion = async (completionData: any) => {
+    setLoading('completed')
+    
+    try {
+      // Update event status to completed
+      const response = await fetch(`/api/events/${event.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: 'completed',
+          completionData 
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to complete event')
+      }
+
+      const updatedEvent = await response.json()
+      onEventUpdate(updatedEvent)
+
+      // Send completion notification if requested
+      if (completionData.notifyParticipants) {
+        await broadcastNotification(`Event "${event.title}" has been completed! Thank you for participating.`)
+      }
+
+      alert('Event completed successfully!')
+    } catch (error) {
+      console.error('Error completing event:', error)
+      throw error // Re-throw to let modal handle the error
+    } finally {
+      setLoading(null)
     }
   }
 
@@ -134,7 +174,7 @@ export default function EventControls({
         <div className="space-y-3">
           {/* Complete Event */}
           <button
-            onClick={() => setShowConfirmDialog('completed')}
+            onClick={() => setShowCompletionModal(true)}
             disabled={loading !== null}
             className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
           >
@@ -198,21 +238,16 @@ export default function EventControls({
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
-      {showConfirmDialog && (
+      {/* Cancellation Confirmation Dialog */}
+      {showConfirmDialog === 'cancelled' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-white mb-4">
-              Confirm Action
+              Confirm Cancellation
             </h3>
             
             <p className="text-gray-300 mb-6">
-              {showConfirmDialog === 'completed' && 
-                'Are you sure you want to complete this event? This action cannot be undone.'
-              }
-              {showConfirmDialog === 'cancelled' && 
-                'Are you sure you want to cancel this event? All participants will be notified.'
-              }
+              Are you sure you want to cancel this event? All participants will be notified.
             </p>
             
             <div className="flex space-x-3">
@@ -223,19 +258,24 @@ export default function EventControls({
                 Cancel
               </button>
               <button
-                onClick={() => updateEventStatus(showConfirmDialog)}
-                className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${
-                  showConfirmDialog === 'completed'
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-red-600 hover:bg-red-700 text-white'
-                }`}
+                onClick={() => updateEventStatus('cancelled')}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
-                Confirm
+                Confirm Cancellation
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Event Completion Modal */}
+      <EventCompletionModal
+        event={event}
+        participants={participants}
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        onComplete={handleEventCompletion}
+      />
     </div>
   )
 } 
