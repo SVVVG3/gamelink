@@ -103,7 +103,7 @@ export default function EventHistoryPage() {
     if (!historyData || !profile) return
     
     const stats = historyData.statistics
-    const shareText = `🎮 My Gaming Stats on GameLink!\n\n🏆 Events Participated: ${stats.totalEvents}\n✅ Events Attended: ${stats.eventsAttended}\n👑 Events Organized: ${stats.eventsOrganized}\n🥇 Events Won: ${stats.eventsWon}\n📊 Attendance Rate: ${Math.round(stats.attendanceRate)}%\n🎯 Average Score: ${stats.averageScore}\n${stats.favoriteGame ? `🎮 Favorite Game: ${stats.favoriteGame}` : ''}\n\nJoin me on GameLink! 🚀`
+    const shareText = `🎮 My Gaming Stats on GameLink!\n\n🏆 Events Participated: ${stats.totalEvents}\n✅ Events Attended: ${stats.eventsAttended}\n👑 Events Organized: ${stats.eventsOrganized}\n🥇 Events Won: ${stats.eventsWon}\n📊 Attendance Rate: ${Math.round(stats.attendanceRate)}%\n🎯 Average Score: ${stats.averageScore}\n${stats.favoriteGame ? `🎮 Favorite Game: ${stats.favoriteGame}` : ''}\n\nJoin me on /gamelink! 🕹️`
     
     // Create the frame URL for mini app embed (use main app URL since we don't have a specific profile frame)
     const baseUrl = window.location.origin
