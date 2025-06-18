@@ -9,7 +9,6 @@ import {
   FaUsers, 
   FaGamepad, 
   FaChartLine, 
-  FaDownload,
   FaFilter,
   FaArrowLeft,
   FaFire,
@@ -99,27 +98,35 @@ export default function EventHistoryPage() {
     }
   }
 
-  const exportData = async (format: 'csv' | 'json') => {
+  const shareStats = async () => {
+    if (!historyData || !profile) return
+    
+    const stats = historyData.statistics
+    const shareText = `🎮 My Gaming Stats on GameLink!\n\n🏆 Events Participated: ${stats.totalEvents}\n✅ Events Attended: ${stats.eventsAttended}\n👑 Events Organized: ${stats.eventsOrganized}\n🥇 Events Won: ${stats.eventsWon}\n📊 Attendance Rate: ${Math.round(stats.attendanceRate)}%\n🎯 Average Score: ${stats.averageScore}\n${stats.favoriteGame ? `🎮 Favorite Game: ${stats.favoriteGame}` : ''}\n\nJoin me on GameLink! 🚀`
+    
+    // Try to use Farcaster SDK if available (Mini App context)
     try {
-      const response = await fetch(`/api/events/history/export?userId=${profile?.id}&format=${format}`)
+      const { sdk } = await import('@farcaster/frame-sdk')
       
-      if (!response.ok) {
-        throw new Error('Failed to export data')
+      // Check if we're in a Mini App context by trying to get context
+      const context = await sdk.context
+      if (context && context.client) {
+        const result = await sdk.actions.composeCast({
+          text: shareText
+        })
+        
+        if (result?.cast) {
+          console.log('Stats shared successfully:', result.cast.hash)
+        }
+        return
       }
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      a.download = `event-history.${format}`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Error exporting data:', error)
-      alert('Failed to export data')
+      console.error('Farcaster SDK not available, using web fallback:', error)
     }
+    
+    // Fallback for standalone web app - open Warpcast
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`
+    window.open(farcasterUrl, '_blank')
   }
 
   // Filter and sort events
@@ -150,7 +157,7 @@ export default function EventHistoryPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 5rem)' }}>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400"></div>
       </div>
     )
@@ -158,7 +165,7 @@ export default function EventHistoryPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 5rem)' }}>
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-4">Sign In Required</h1>
           <p className="text-gray-400 mb-6">You need to be signed in to view your event history.</p>
@@ -175,7 +182,7 @@ export default function EventHistoryPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 5rem)' }}>
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-4">Error</h1>
           <p className="text-red-400 mb-6">{error}</p>
@@ -192,7 +199,7 @@ export default function EventHistoryPage() {
 
   if (!historyData) {
     return (
-      <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 5rem)' }}>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400"></div>
       </div>
     )
@@ -219,18 +226,11 @@ export default function EventHistoryPage() {
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
-                onClick={() => exportData('csv')}
-                className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors flex-1 sm:flex-none justify-center"
+                onClick={shareStats}
+                className="flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-colors w-full sm:w-auto justify-center"
               >
-                <FaDownload className="w-4 h-4 mr-1" />
-                CSV
-              </button>
-              <button
-                onClick={() => exportData('json')}
-                className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex-1 sm:flex-none justify-center"
-              >
-                <FaDownload className="w-4 h-4 mr-1" />
-                JSON
+                <FaGamepad className="w-4 h-4 mr-2" />
+                Share Stats
               </button>
             </div>
           </div>
