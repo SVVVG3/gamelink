@@ -305,7 +305,7 @@ export function generateEventResultsShareText(
 }
 
 /**
- * Generate leaderboard share text
+ * Generate leaderboard share text with participant tagging
  */
 export function generateLeaderboardShareText(
   event: Event,
@@ -316,8 +316,9 @@ export function generateLeaderboardShareText(
     .slice(0, 3)
     .map((participant, index) => {
       const medals = ['🥇', '🥈', '🥉']
-      const scoreText = participant.score ? ` (${participant.score} pts)` : ''
-      return `${medals[index]} ${participant.profile.display_name || participant.profile.username}${scoreText}`
+      const username = participant.profile.username
+      const scoreText = participant.score ? ` - ${participant.score} pts` : ''
+      return `${medals[index]} @${username}${scoreText}`
     })
     .join('\n')
 

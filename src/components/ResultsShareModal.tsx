@@ -54,6 +54,7 @@ export default function ResultsShareModal({
       let shareText = ''
       const baseUrl = window.location.origin
       const eventUrl = `${baseUrl}/events/${event.id}`
+      const appFrameUrl = `${baseUrl}/frames/events/${event.id}`
 
       if (selectedShareType === 'results' && userParticipation) {
         shareText = generateEventResultsShareText(
@@ -78,7 +79,7 @@ export default function ResultsShareModal({
         if (context && context.client) {
           const result = await sdk.actions.composeCast({
             text: shareText,
-            embeds: [eventUrl]
+            embeds: [appFrameUrl]
           })
           
           if (result?.cast) {
@@ -91,8 +92,8 @@ export default function ResultsShareModal({
         console.error('Farcaster SDK not available, using web fallback:', error)
       }
       
-      // Fallback for standalone web app - open Warpcast
-      const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventUrl)}`
+      // Fallback for standalone web app - open Warpcast with frame embed
+      const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(appFrameUrl)}`
       window.open(farcasterUrl, '_blank')
       onClose()
       
