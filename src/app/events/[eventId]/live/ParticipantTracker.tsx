@@ -64,9 +64,16 @@ export default function ParticipantTracker({
         throw new Error('Failed to update participant status')
       }
 
-      const updatedParticipant = await response.json()
+      const responseData = await response.json()
+      const updatedParticipant = responseData.participant
       
-      // Update local state
+      console.log('✅ Participant status updated:', {
+        participantId,
+        newStatus,
+        updatedParticipant
+      })
+      
+      // Update local state with the updated participant data
       const updatedParticipants = participants.map(p => 
         p.id === participantId ? { ...p, ...updatedParticipant } : p
       )
