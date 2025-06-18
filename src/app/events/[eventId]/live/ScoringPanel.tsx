@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ParticipantWithProfile } from './ParticipantTracker'
 import { useUser } from '@/hooks/useUser'
 
@@ -15,6 +15,29 @@ export default function ScoringPanel({ participants, eventId, onScoreUpdate }: S
   const [loadingParticipant, setLoadingParticipant] = useState<string | null>(null)
   const [scoringMode, setScoringMode] = useState<'individual' | 'batch'>('individual')
   const [searchTerm, setSearchTerm] = useState('')
+  const [localScores, setLocalScores] = useState<{[key: string]: {score: string, placement: string}}>({})
+  const [updateTimeouts, setUpdateTimeouts] = useState<{[key: string]: NodeJS.Timeout}>({})
+  
+  // Initialize local scores when participants change
+  useEffect(() => {
+    const newLocalScores: {[key: string]: {score: string, placement: string}} = {}
+    participants.forEach(p => {
+      newLocalScores[p.id] = {
+        score: p.score?.toString() || '',
+        placement: p.placement?.toString() || ''
+      }
+    })
+    setLocalScores(newLocalScores)
+  }, [participants])
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(updateTimeouts).forEach(timeout => {
+        if (timeout) clearTimeout(timeout)
+      })
+    }
+  }, [updateTimeouts])
 
   // Filter participants to only those who attended
   const attendedParticipants = participants.filter(p => p.status === 'attended')
@@ -46,6 +69,39 @@ export default function ScoringPanel({ participants, eventId, onScoreUpdate }: S
       b.profiles.display_name || b.profiles.username || ''
     )
   })
+
+  // Debounced update function to prevent keyboard loss
+  const debouncedUpdate = (participantId: string, field: 'score' | 'placement', value: string) => {
+    // Clear existing timeout for this participant
+    if (updateTimeouts[participantId]) {
+      clearTimeout(updateTimeouts[participantId])
+    }
+
+    // Update local state immediately for responsive UI
+    setLocalScores(prev => ({
+      ...prev,
+      [participantId]: {
+        ...prev[participantId],
+        [field]: value
+      }
+    }))
+
+    // Set new timeout for API update
+    const timeout = setTimeout(() => {
+      const currentLocal = localScores[participantId] || { score: '', placement: '' }
+      const updatedLocal = { ...currentLocal, [field]: value }
+      
+      const score = updatedLocal.score ? parseInt(updatedLocal.score) : null
+      const placement = updatedLocal.placement ? parseInt(updatedLocal.placement) : null
+      
+      updateParticipantScore(participantId, score, placement)
+    }, 1000) // 1 second delay
+
+    setUpdateTimeouts(prev => ({
+      ...prev,
+      [participantId]: timeout
+    }))
+  }
 
   const updateParticipantScore = async (participantId: string, score: number | null, placement: number | null) => {
     if (!farcasterProfile?.fid) return
@@ -243,11 +299,8 @@ export default function ScoringPanel({ participants, eventId, onScoreUpdate }: S
                         type="number"
                         placeholder="0"
                         className="w-20 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={participant.score || ''}
-                                                 onChange={(e) => {
-                           const score = e.target.value ? parseInt(e.target.value) : null
-                           updateParticipantScore(participant.id, score, participant.placement ?? null)
-                         }}
+                        value={localScores[participant.id]?.score || ''}
+                        onChange={(e) => debouncedUpdate(participant.id, 'score', e.target.value)}
                         disabled={loadingParticipant === participant.id}
                       />
                     </div>
@@ -260,11 +313,8 @@ export default function ScoringPanel({ participants, eventId, onScoreUpdate }: S
                         placeholder="1"
                         min="1"
                         className="w-20 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={participant.placement || ''}
-                                                 onChange={(e) => {
-                           const placement = e.target.value ? parseInt(e.target.value) : null
-                           updateParticipantScore(participant.id, participant.score ?? null, placement)
-                         }}
+                        value={localScores[participant.id]?.placement || ''}
+                        onChange={(e) => debouncedUpdate(participant.id, 'placement', e.target.value)}
                         disabled={loadingParticipant === participant.id}
                       />
                     </div>

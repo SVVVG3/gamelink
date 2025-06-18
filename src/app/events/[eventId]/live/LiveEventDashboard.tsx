@@ -223,6 +223,28 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
         <EventTimer event={event} />
       </div>
 
+      {/* Scoring and Results Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Scoring Panel */}
+        <div>
+          <ScoringPanel 
+            participants={participants} 
+            eventId={eventId}
+            onScoreUpdate={(updatedParticipants: ParticipantWithProfile[]) => 
+              setEventData(prev => prev ? { ...prev, participants: updatedParticipants } : null)
+            }
+          />
+        </div>
+
+        {/* Live Leaderboard */}
+        <div>
+          <Leaderboard 
+            participants={participants}
+            eventId={eventId}
+          />
+        </div>
+      </div>
+
       {/* Main Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Participant Tracker */}
@@ -244,28 +266,6 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
             onEventUpdate={(updatedEvent: Event) => 
               setEventData(prev => prev ? { ...prev, event: updatedEvent } : null)
             }
-          />
-        </div>
-      </div>
-
-      {/* Scoring and Results Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Scoring Panel */}
-        <div>
-          <ScoringPanel 
-            participants={participants} 
-            eventId={eventId}
-            onScoreUpdate={(updatedParticipants: ParticipantWithProfile[]) => 
-              setEventData(prev => prev ? { ...prev, participants: updatedParticipants } : null)
-            }
-          />
-        </div>
-
-        {/* Live Leaderboard */}
-        <div>
-          <Leaderboard 
-            participants={participants}
-            eventId={eventId}
           />
         </div>
       </div>
