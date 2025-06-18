@@ -7,15 +7,21 @@ import { FaArrowLeft, FaUsers, FaClock, FaTrophy, FaEye } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import EventTimer from '../live/EventTimer'
 import Leaderboard from '../live/Leaderboard'
-import { ParticipantWithProfile } from '../live/ParticipantTracker'
+import { EventParticipant, Profile } from '@/types'
 
 interface SpectatorViewProps {
   eventId: string
 }
 
+// API response structure for participants (uses 'profile' singular)
+interface ApiParticipantWithProfile extends EventParticipant {
+  profile: Profile
+}
+
 interface EventData {
-  event: Event
-  participants: ParticipantWithProfile[]
+  event: Event & {
+    participants: ApiParticipantWithProfile[]
+  }
 }
 
 export default function SpectatorView({ eventId }: SpectatorViewProps) {
@@ -109,12 +115,13 @@ export default function SpectatorView({ eventId }: SpectatorViewProps) {
     )
   }
 
-  const { event, participants } = eventData
+  const { event } = eventData
+  const participants = event.participants || []
 
   // Calculate spectator statistics
   const totalParticipants = participants.length
-  const attendedParticipants = participants.filter(p => p.status === 'attended').length
-  const rankedParticipants = participants.filter(p => p.score !== null || p.placement !== null).length
+  const attendedParticipants = participants.filter((p: ApiParticipantWithProfile) => p.status === 'attended').length
+  const rankedParticipants = participants.filter((p: ApiParticipantWithProfile) => p.score !== null || p.placement !== null).length
   const spectatorCount = Math.floor(Math.random() * 50) + 10 // Simulated spectator count
 
   return (
@@ -230,7 +237,7 @@ export default function SpectatorView({ eventId }: SpectatorViewProps) {
         {/* Live Leaderboard */}
         {(event.status === 'live' || event.status === 'completed') && rankedParticipants > 0 && (
           <Leaderboard 
-            participants={participants}
+            participants={participants.map(p => ({ ...p, profiles: p.profile }))}
             eventId={eventId}
           />
         )}
@@ -246,8 +253,8 @@ export default function SpectatorView({ eventId }: SpectatorViewProps) {
             <div className="max-h-[400px] overflow-y-auto">
               <div className="divide-y divide-gray-700">
                 {participants
-                  .filter(p => p.status === 'attended')
-                  .map((participant, index) => (
+                  .filter((p: ApiParticipantWithProfile) => p.status === 'attended')
+                  .map((participant: ApiParticipantWithProfile, index: number) => (
                     <div key={participant.id} className="p-4 hover:bg-gray-700/30 transition-colors">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-700 text-white font-bold text-sm">
@@ -255,18 +262,18 @@ export default function SpectatorView({ eventId }: SpectatorViewProps) {
                         </div>
                         <img
                           className="h-10 w-10 rounded-full ring-2 ring-gray-600"
-                          src={participant.profiles.pfp_url || '/default-avatar.png'}
-                          alt={participant.profiles.display_name || 'User'}
+                          src={participant.profile?.pfp_url || '/default-avatar.png'}
+                          alt={participant.profile?.display_name || 'User'}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="text-base font-medium text-white truncate">
-                            {participant.profiles.display_name || participant.profiles.username}
+                            {participant.profile?.display_name || participant.profile?.username}
                             {participant.role === 'organizer' && (
                               <span className="ml-2 text-yellow-400 text-sm">👑</span>
                             )}
                           </div>
                           <div className="text-sm text-gray-400 truncate">
-                            @{participant.profiles.username}
+                            @{participant.profile?.username}
                           </div>
                         </div>
                         <div className="text-sm text-green-400 font-medium">
