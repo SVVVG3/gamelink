@@ -204,9 +204,9 @@ export default function EventHistoryPage() {
     <div className="min-h-screen bg-gray-900 pb-20">
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
+        <div className="p-4 max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               <Link
                 href="/events"
                 className="flex items-center text-gray-300 hover:text-white transition-colors"
@@ -214,20 +214,20 @@ export default function EventHistoryPage() {
                 <FaArrowLeft className="w-4 h-4 mr-2" />
                 Back to Events
               </Link>
-              <h1 className="text-2xl font-bold text-white">Event History & Analytics</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-white">Event History & Analytics</h1>
             </div>
             
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => exportData('csv')}
-                className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors"
+                className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors flex-1 sm:flex-none justify-center"
               >
                 <FaDownload className="w-4 h-4 mr-1" />
                 CSV
               </button>
               <button
                 onClick={() => exportData('json')}
-                className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex-1 sm:flex-none justify-center"
               >
                 <FaDownload className="w-4 h-4 mr-1" />
                 JSON
@@ -236,7 +236,7 @@ export default function EventHistoryPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex space-x-1 bg-gray-700 rounded-lg p-1">
+          <div className="flex flex-wrap gap-1 bg-gray-700 rounded-lg p-1">
             {[
               { id: 'overview', label: 'Overview', icon: FaChartLine },
               { id: 'events', label: 'Events', icon: FaCalendarAlt },
@@ -246,21 +246,22 @@ export default function EventHistoryPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-none justify-center ${
                   activeTab === tab.id
                     ? 'bg-blue-600 text-white'
                     : 'text-gray-300 hover:text-white hover:bg-gray-600'
                 }`}
               >
-                <tab.icon className="w-4 h-4 mr-2" />
-                {tab.label}
+                <tab.icon className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.slice(0, 3)}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 max-w-7xl mx-auto space-y-6">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <>

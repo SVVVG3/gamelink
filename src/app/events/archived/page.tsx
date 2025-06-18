@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { FaArrowLeft, FaCalendarAlt, FaUsers, FaTrophy, FaSearch, FaFilter, FaArchive } from 'react-icons/fa'
 import { Event, EventWithParticipantCount } from '@/types'
 import { useUser } from '@/hooks/useUser'
+import BottomNavigation from '@/components/BottomNavigation'
 
 export default function ArchivedEventsPage() {
   const { profile, isAuthenticated, isLoading: userLoading } = useUser()
@@ -81,8 +82,9 @@ export default function ArchivedEventsPage() {
   // Loading state
   if (userLoading || loading) {
     return (
-      <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 5rem)' }}>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 pb-20">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400"></div>
+        <BottomNavigation />
       </div>
     )
   }
@@ -90,7 +92,7 @@ export default function ArchivedEventsPage() {
   // Error state
   if (error) {
     return (
-      <div className="p-4">
+      <div className="min-h-screen bg-gray-900 p-4 pb-20">
         <div className="bg-red-900/20 border border-red-700 rounded-lg p-6 max-w-2xl mx-auto">
           <div className="flex items-center mb-4">
             <div className="flex-shrink-0">
@@ -106,15 +108,17 @@ export default function ArchivedEventsPage() {
             </div>
           </div>
         </div>
+        <BottomNavigation />
       </div>
     )
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="min-h-screen bg-gray-900 p-4 pb-20">
+      <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <Link
             href="/events"
             className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors font-medium text-sm shadow-lg border border-gray-600"
@@ -125,7 +129,7 @@ export default function ArchivedEventsPage() {
           
           <div className="flex items-center space-x-2">
             <FaArchive className="w-6 h-6 text-gray-400" />
-            <h1 className="text-2xl font-bold text-white">Archived Events</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Archived Events</h1>
           </div>
         </div>
         
@@ -135,8 +139,8 @@ export default function ArchivedEventsPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -215,7 +219,7 @@ export default function ArchivedEventsPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredEvents.map((event) => (
             <div key={event.id} className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 overflow-hidden hover:border-gray-600 transition-colors">
               {/* Event Header */}
@@ -268,6 +272,8 @@ export default function ArchivedEventsPage() {
           ))}
         </div>
       )}
+      </div>
+      <BottomNavigation />
     </div>
   )
 } 
