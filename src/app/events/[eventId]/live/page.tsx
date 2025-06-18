@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import LiveEventDashboard from './LiveEventDashboard'
+import BottomNavigation from '@/components/BottomNavigation'
 
 interface LiveEventPageProps {
   params: Promise<{
@@ -15,6 +16,7 @@ export default async function LiveEventPage({ params }: LiveEventPageProps) {
       <Suspense fallback={<LiveEventDashboardSkeleton />}>
         <LiveEventDashboard eventId={resolvedParams.eventId} />
       </Suspense>
+      <BottomNavigation />
     </div>
   )
 }

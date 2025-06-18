@@ -118,7 +118,7 @@ export default function ParticipantTracker({
               </div>
               <div className="bg-red-900/20 border border-red-700 rounded-lg px-4 py-3 text-center flex flex-col items-center justify-center">
                 <div className="text-red-300 font-bold text-xl">{stats.no_show}</div>
-                <div className="text-red-400 text-xs uppercase tracking-wide font-medium">No Show</div>
+                <div className="text-red-400 text-xs uppercase tracking-wide font-medium whitespace-nowrap">No Show</div>
               </div>
             </div>
           </div>
