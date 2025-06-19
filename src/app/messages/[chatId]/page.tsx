@@ -442,12 +442,15 @@ export default function ChatPage() {
                   {getChatDisplayName()}
                 </h1>
                 {chat?.type === 'group' && (
-                  <button
-                    onClick={() => setShowMemberModal(true)}
-                    className="text-sm text-gray-400 hover:text-gray-300 transition-colors cursor-pointer"
-                  >
-                    {getParticipantInfo()}
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setShowMemberModal(true)}
+                      className="text-sm text-gray-400 hover:text-gray-300 transition-colors cursor-pointer"
+                    >
+                      {getParticipantInfo()}
+                    </button>
+                    {getChatLabel()}
+                  </div>
                 )}
               </div>
             )}
@@ -520,15 +523,6 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Chat Type Label - moved below header for cleaner look */}
-      {chat?.type === 'group' && (
-        <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
-          <div className="flex justify-center">
-            {getChatLabel()}
-          </div>
-        </div>
-      )}
-
       {/* Messages Container */}
       <div className="message-list-container">
         <MessageList
@@ -597,7 +591,7 @@ export default function ChatPage() {
                             @{participant.username}
                           </p>
                         </div>
-                        {/* Only show crown for actual admins */}
+                        {/* Show crown for actual admins */}
                         {isParticipantAdmin && (
                           <FaCrown className="w-4 h-4 text-yellow-500" title="Admin" />
                         )}
