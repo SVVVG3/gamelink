@@ -198,44 +198,47 @@ export default function ChatPage() {
       const isEventChatCheck = chatData.name?.endsWith(' - Event Chat') || false
       setIsEventChat(isEventChatCheck)
       
-      // If it's an event chat, fetch event data
-      if (isEventChatCheck) {
+      // Fetch group data if this is a group chat
+      if (chatData.group_id) {
         try {
-          const response = await fetch(`/api/events?chatId=${chatId}`)
-          if (response.ok) {
-            const eventsData = await response.json()
-            if (eventsData.events && eventsData.events.length > 0) {
-              setEventData(eventsData.events[0])
-            }
-          }
-        } catch (eventError) {
-          console.error('Error fetching event data:', eventError)
-        }
-      }
-      
-      // Check if user is admin of the group (if this is a group chat)
-      if (chatData.type === 'group' && (chatData as any).group_id && profile?.id) {
-        try {
-          const membershipInfo = await isGroupMember((chatData as any).group_id, profile.id)
-          if (membershipInfo?.role === 'admin') {
-            setIsGroupAdmin(true)
-          }
-          
-          // Fetch group data for sharing
-          const groupInfo = await getGroupById((chatData as any).group_id)
-          if (groupInfo) {
+          const groupResponse = await fetch(`/api/groups/${chatData.group_id}`)
+          if (groupResponse.ok) {
+            const groupInfo = await groupResponse.json()
             setGroupData(groupInfo)
+            
+            // Check if current user is admin
+            const isAdmin = groupInfo.createdBy === profile.id || 
+              groupInfo.members?.some((member: any) => 
+                member.userId === profile.id && member.role === 'admin'
+              )
+            setIsGroupAdmin(isAdmin)
           }
         } catch (error) {
-          console.error('Error checking group admin status:', error)
+          console.error('Error fetching group data:', error)
+        }
+        
+        // If this is an event chat, fetch event data
+        if (isEventChatCheck) {
+          try {
+            const eventResponse = await fetch(`/api/events?chatId=${chatId}`)
+            if (eventResponse.ok) {
+              const eventData = await eventResponse.json()
+              if (eventData.events && eventData.events.length > 0) {
+                setEventData(eventData.events[0])
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching event data:', error)
+          }
         }
       }
       
       // Mark messages as read
-      await markChatMessagesAsRead(chatId, profile.id!)
-    } catch (error) {
-      console.error('Error loading chat:', error)
-      setError('Failed to load chat')
+      await markChatMessagesAsRead(chatId, profile.id)
+      
+    } catch (err) {
+      console.error('Error loading chat:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load chat')
     } finally {
       setIsLoading(false)
     }
@@ -402,7 +405,7 @@ export default function ChatPage() {
       <div className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/messages')}
             className="p-2 text-gray-400 hover:text-white transition-colors"
           >
             <FaArrowLeft className="w-4 h-4" />
@@ -435,12 +438,9 @@ export default function ChatPage() {
               </>
             ) : (
               <div>
-                <div className="flex items-center space-x-2">
-                  <h1 className="text-lg font-semibold text-white">
-                    {getChatDisplayName()}
-                  </h1>
-                  {getChatLabel()}
-                </div>
+                <h1 className="text-lg font-semibold text-white">
+                  {getChatDisplayName()}
+                </h1>
                 {chat?.type === 'group' && (
                   <button
                     onClick={() => setShowMemberModal(true)}
@@ -520,6 +520,15 @@ export default function ChatPage() {
         </div>
       </div>
 
+      {/* Chat Type Label - moved below header for cleaner look */}
+      {chat?.type === 'group' && (
+        <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
+          <div className="flex justify-center">
+            {getChatLabel()}
+          </div>
+        </div>
+      )}
+
       {/* Messages Container */}
       <div className="message-list-container">
         <MessageList
@@ -539,10 +548,10 @@ export default function ChatPage() {
         />
       </div>
 
-      {/* Member List Modal */}
+      {/* Member List Modal - made bigger vertically */}
       {showMemberModal && chat?.type === 'group' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-lg max-w-md w-full max-h-96 overflow-hidden">
+          <div className="bg-gray-800 rounded-lg max-w-md w-full max-h-[70vh] overflow-hidden">
             <div className="p-4 border-b border-gray-700 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-white">
                 {isEventChat ? 'Event Participants' : 'Group Members'}
@@ -555,37 +564,46 @@ export default function ChatPage() {
               </button>
             </div>
             
-            <div className="p-4 max-h-80 overflow-y-auto">
+            <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(70vh - 80px)' }}>
               {chat.participantProfiles && chat.participantProfiles.length > 0 ? (
                 <div className="space-y-3">
-                  {chat.participantProfiles.map((participant) => (
-                    <div key={participant.fid} className="flex items-center space-x-3">
-                      {participant.pfp_url ? (
-                        <img 
-                          src={participant.pfp_url} 
-                          alt={participant.display_name || participant.username}
-                          className="w-10 h-10 rounded-full"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-white">
-                            {(participant.display_name || participant.username)?.[0]?.toUpperCase()}
-                          </span>
+                  {chat.participantProfiles.map((participant) => {
+                    // Check if this participant is an admin
+                    const isParticipantAdmin = groupData?.createdBy === participant.fid.toString() ||
+                      groupData?.members?.some((member: any) => 
+                        member.profile?.fid === participant.fid && member.role === 'admin'
+                      )
+                    
+                    return (
+                      <div key={participant.fid} className="flex items-center space-x-3">
+                        {participant.pfp_url ? (
+                          <img 
+                            src={participant.pfp_url} 
+                            alt={participant.display_name || participant.username}
+                            className="w-10 h-10 rounded-full"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-white">
+                              {(participant.display_name || participant.username)?.[0]?.toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-white font-medium">
+                            {participant.display_name || `@${participant.username}`}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            @{participant.username}
+                          </p>
                         </div>
-                      )}
-                      <div className="flex-1">
-                        <p className="text-white font-medium">
-                          {participant.display_name || `@${participant.username}`}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          @{participant.username}
-                        </p>
+                        {/* Only show crown for actual admins */}
+                        {isParticipantAdmin && (
+                          <FaCrown className="w-4 h-4 text-yellow-500" title="Admin" />
+                        )}
                       </div>
-                      {isGroupAdmin && (
-                        <FaCrown className="w-4 h-4 text-yellow-500" title="Admin" />
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">

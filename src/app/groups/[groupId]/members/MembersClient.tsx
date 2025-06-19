@@ -363,12 +363,15 @@ export default function MembersClient({ params }: Props) {
                     </button>
                     
                     <div className="flex items-center space-x-3">
-                      <div className="flex items-center space-x-1">
-                        {getRoleIcon(member.role)}
-                        <span className={`text-sm capitalize ${getRoleColor(member.role)}`}>
-                          {member.role}
-                        </span>
-                      </div>
+                      {/* Only show role for admins since everyone here is a member */}
+                      {member.role === 'admin' && (
+                        <div className="flex items-center space-x-1">
+                          {getRoleIcon(member.role)}
+                          <span className={`text-sm capitalize ${getRoleColor(member.role)}`}>
+                            {member.role}
+                          </span>
+                        </div>
+                      )}
                       
                       <div className="text-xs text-gray-500">
                         Joined {new Date(member.joinedAt).toLocaleDateString()}
