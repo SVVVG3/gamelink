@@ -31,6 +31,9 @@ html {
   -webkit-text-size-adjust: 100%;
   /* Support for safe areas on mobile devices */
   padding-bottom: env(safe-area-inset-bottom);
+  /* Fix for Android viewport issues */
+  height: 100%;
+  overflow-x: hidden;
 }
 
 /* Fix for Android keyboard covering input */
@@ -40,16 +43,88 @@ html {
   min-height: 100dvh;
 }
 
+/* Enhanced Android keyboard handling */
+body.keyboard-open {
+  /* Prevent body scroll and layout shifts */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+  /* Adjust height for visual viewport */
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Message page specific keyboard handling */
+.message-page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.message-page-container.keyboard-open {
+  /* When keyboard is open, use visual viewport */
+  height: 100vh;
+  height: 100svh; /* Small viewport height for mobile keyboards */
+}
+
+.message-composer-container {
+  /* Ensure composer stays at bottom */
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  background: #1f2937; /* bg-gray-800 */
+}
+
+.message-list-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Ensure messages scroll properly above keyboard */
+  position: relative;
+  z-index: 1;
+}
+
 /* Safe area support for bottom navigation */
 .safe-area-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
 }
 
-/* Prevent body scroll when keyboard is open */
-body.keyboard-open {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
+/* Android-specific viewport fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific fixes */
+  .message-page-container {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Android Chrome viewport fix */
+@media screen and (max-width: 768px) {
+  .message-page-container {
+    /* Use dynamic viewport units for better mobile support */
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+  
+  .message-page-container.keyboard-open {
+    /* When keyboard opens, adjust for smaller viewport */
+    height: 100svh;
+    min-height: 100svh;
+  }
+  
+  /* Ensure message composer is always visible */
+  .message-composer-container {
+    position: sticky;
+    bottom: 0;
+    background: #1f2937;
+    border-top: 1px solid #374151;
+  }
 }
 
 /* Line clamp utilities */

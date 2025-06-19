@@ -55,23 +55,44 @@ export default function MessageComposer({
   // Handle keyboard show/hide for Android
   useEffect(() => {
     const handleFocusIn = () => {
-      // Add class to body to handle keyboard state
+      // Add classes to body and container for keyboard state
       document.body.classList.add('keyboard-open')
+      const container = document.querySelector('.message-page-container')
+      if (container) {
+        container.classList.add('keyboard-open')
+      }
       
-      // Scroll input into view on Android
+      // Scroll input into view on Android with proper timing
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.scrollIntoView({ 
             behavior: 'smooth', 
-            block: 'center' 
+            block: 'end',
+            inline: 'nearest'
           })
         }
-      }, 300) // Delay to allow keyboard animation
+      }, 100) // Reduced delay for better responsiveness
     }
 
     const handleFocusOut = () => {
-      // Remove keyboard state class
+      // Remove keyboard state classes
       document.body.classList.remove('keyboard-open')
+      const container = document.querySelector('.message-page-container')
+      if (container) {
+        container.classList.remove('keyboard-open')
+      }
+    }
+
+    // Handle visual viewport changes (better Android support)
+    const handleViewportChange = () => {
+      if (isFocused && textareaRef.current) {
+        setTimeout(() => {
+          textareaRef.current?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'end'
+          })
+        }, 50)
+      }
     }
 
     const textarea = textareaRef.current
@@ -79,12 +100,28 @@ export default function MessageComposer({
       textarea.addEventListener('focusin', handleFocusIn)
       textarea.addEventListener('focusout', handleFocusOut)
       
+      // Listen for visual viewport changes (Android keyboard)
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleViewportChange)
+      }
+      
       return () => {
         textarea.removeEventListener('focusin', handleFocusIn)
         textarea.removeEventListener('focusout', handleFocusOut)
+        
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', handleViewportChange)
+        }
+        
+        // Cleanup classes on unmount
+        document.body.classList.remove('keyboard-open')
+        const container = document.querySelector('.message-page-container')
+        if (container) {
+          container.classList.remove('keyboard-open')
+        }
       }
     }
-  }, [])
+  }, [isFocused])
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {

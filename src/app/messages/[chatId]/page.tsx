@@ -9,7 +9,7 @@ import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
 import FarcasterIcon from '@/components/FarcasterIcon'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV, FaTimes, FaShare } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV, FaTimes, FaShare, FaInfoCircle, FaSignOutAlt, FaCrown } from 'react-icons/fa'
 
 // Extended interface to include user profile data and group info
 interface ChatWithUserProfiles extends ChatWithParticipants {
@@ -39,6 +39,17 @@ export default function ChatPage() {
   const [eventData, setEventData] = useState<any>(null)
   const [isEventChat, setIsEventChat] = useState(false)
   const [showMemberList, setShowMemberList] = useState(false)
+  const [showParticipants, setShowParticipants] = useState(false)
+  const [showInfo, setShowInfo] = useState(false)
+  const [leaveLoading, setLeaveLoading] = useState(false)
+
+  // Derived state for direct chats
+  const otherParticipant = chat?.type === 'direct' && chat?.participantProfiles 
+    ? chat.participantProfiles.find(p => p.fid !== profile?.fid)
+    : null
+
+  // Participant count for display
+  const participantCount = chat?.participant_count || 0
 
   // Fetch user profiles for chat participants
   const fetchUserProfiles = async (fids: number[]) => {
@@ -298,6 +309,7 @@ export default function ChatPage() {
     if (!profile?.fid || !chatId) return
     
     try {
+      setLeaveLoading(true)
       const response = await fetch(`/api/chats/${chatId}/leave`, {
         method: 'POST',
         headers: {
@@ -318,8 +330,10 @@ export default function ChatPage() {
     } catch (error) {
       console.error('Error leaving chat:', error)
       setError(error instanceof Error ? error.message : 'Failed to leave chat')
+    } finally {
+      setLeaveLoading(false)
+      setShowAdminMenu(false)
     }
-    setShowAdminMenu(false)
   }
 
   // Close admin menu when clicking outside
@@ -389,34 +403,53 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="keyboard-adjust bg-gray-900 flex flex-col">
-      {/* Fixed Chat Header */}
-      <div className="fixed top-0 left-0 right-0 z-10 bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+    <div className="message-page-container">
+      {/* Header */}
+      <div className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => router.push('/messages')}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            onClick={() => router.back()}
+            className="p-2 text-gray-400 hover:text-white transition-colors"
           >
             <FaArrowLeft className="w-4 h-4" />
           </button>
           
-          <div>
-            <h1 className="text-lg font-semibold text-white">
-              {getChatDisplayName()}
-            </h1>
-            {chat?.type === 'group' ? (
-              <button
-                onClick={handleShowMemberList}
-                className="text-sm text-gray-400 flex items-center hover:text-gray-300 transition-colors"
-              >
-                <FaUsers className="w-3 h-3 mr-1" />
-                {getParticipantInfo()}
-              </button>
+          <div className="flex items-center space-x-3">
+            {chat?.type === 'direct' && otherParticipant ? (
+              <>
+                {otherParticipant.pfp_url ? (
+                  <img 
+                    src={otherParticipant.pfp_url} 
+                    alt={otherParticipant.display_name || otherParticipant.username}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-white">
+                      {(otherParticipant.display_name || otherParticipant.username)?.[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-lg font-semibold text-white">
+                    {otherParticipant.display_name || `@${otherParticipant.username}`}
+                  </h1>
+                  <p className="text-sm text-gray-400">
+                    @{otherParticipant.username}
+                  </p>
+                </div>
+              </>
             ) : (
-              <p className="text-sm text-gray-400 flex items-center">
-                <FaUsers className="w-3 h-3 mr-1" />
-                {getParticipantInfo()}
-              </p>
+              <div>
+                <h1 className="text-lg font-semibold text-white">
+                  {chat?.name || 'Chat'}
+                </h1>
+                {chat?.type === 'group' && (
+                  <p className="text-sm text-gray-400">
+                    {getParticipantInfo()}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -425,128 +458,87 @@ export default function ChatPage() {
         <div className="flex items-center space-x-2">
           {chat?.type === 'group' && (
             <button
-              onClick={isEventChat ? shareEventFrame : shareGroupFrame}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-              title={isEventChat ? "Share Event" : "Share Group"}
+              onClick={() => setShowParticipants(!showParticipants)}
+              className="p-2 text-gray-400 hover:text-white transition-colors"
+              title="View participants"
             >
-              <FarcasterIcon className="w-4 h-4" />
+              <FaUsers className="w-4 h-4" />
             </button>
           )}
           
-          {chat?.type === 'group' && (
-            <div className="relative">
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowAdminMenu(!showAdminMenu)
-                }}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <FaEllipsisV className="w-4 h-4" />
-              </button>
-              
-              {showAdminMenu && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-20">
-                  {isGroupAdmin && (
-                    <>
-                      <button
-                        onClick={handleManageMembers}
-                        className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 flex items-center space-x-2 rounded-t-lg transition-colors"
-                      >
-                        <FaUsers className="w-4 h-4" />
-                        <span>{isEventChat ? 'View Event' : 'Manage Members'}</span>
-                      </button>
-                      <button
-                        onClick={handleEditGroup}
-                        className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 flex items-center space-x-2 transition-colors"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                        <span>{isEventChat ? 'Event Settings' : 'Edit Group Settings'}</span>
-                      </button>
-                    </>
-                  )}
-                  <button
-                    onClick={handleLeaveChat}
-                    className={`w-full px-4 py-3 text-left text-red-400 hover:bg-gray-700 flex items-center space-x-2 transition-colors ${
-                      isGroupAdmin ? '' : 'rounded-t-lg'
-                    } rounded-b-lg`}
-                  >
-                    <FaArrowLeft className="w-4 h-4" />
-                    <span>Leave Chat</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          <button
+            onClick={() => setShowInfo(!showInfo)}
+            className="p-2 text-gray-400 hover:text-white transition-colors"
+            title="Chat info"
+          >
+            <FaInfoCircle className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* Messages Area - with proper spacing for header and composer */}
-      <div className="flex-1 flex flex-col pt-16 min-h-0" style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 13rem)` }}>
+      {/* Messages Container */}
+      <div className="message-list-container">
         <MessageList
           chatId={chatId}
-          onNewMessage={(message) => console.log('New message received:', message)}
-          className="flex-1"
         />
       </div>
 
-      {/* Fixed Message Composer - positioned above bottom nav */}
-      <div className="fixed left-0 right-0 z-10 bg-gray-900 border-t border-gray-700 p-4" style={{ bottom: `calc(env(safe-area-inset-bottom) + 5rem)` }}>
+      {/* Message Composer */}
+      <div className="message-composer-container">
         <MessageComposer
           chatId={chatId}
           onMessageSent={handleMessageSent}
-          onError={handleMessageError}
-          placeholder={`Message ${getChatDisplayName()}...`}
+          onError={(error) => {
+            console.error('Message composer error:', error)
+          }}
+          className="border-0 rounded-none"
         />
       </div>
 
-      {/* Member List Modal */}
-      {showMemberList && chat && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg border border-gray-700 w-full max-w-md max-h-[80vh] overflow-hidden">
-            <div className="p-4 border-b border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">
-                  {isEventChat ? 'Event Participants' : 'Group Members'}
-                </h3>
-                <button
-                  onClick={() => setShowMemberList(false)}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <FaTimes className="w-5 h-5" />
-                </button>
-              </div>
-              <p className="text-gray-400 text-sm mt-1">
-                {chat.participant_count} {chat.participant_count === 1 ? 'member' : 'members'}
-              </p>
+      {/* Participants Sidebar */}
+      {showParticipants && chat?.type === 'group' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
+          <div className="w-80 bg-gray-800 h-full overflow-y-auto">
+            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Participants</h2>
+              <button
+                onClick={() => setShowParticipants(false)}
+                className="p-2 text-gray-400 hover:text-white transition-colors"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
             </div>
             
-            <div className="p-4 overflow-y-auto max-h-96">
+            <div className="p-4 space-y-3">
               {chat.participantProfiles && chat.participantProfiles.length > 0 ? (
-                <div className="space-y-3">
-                  {chat.participantProfiles.map((participant) => (
-                    <button
-                      key={participant.fid}
-                      onClick={() => {
-                        setShowMemberList(false)
-                        router.push(`/profile/${participant.fid}`)
-                      }}
-                      className="w-full flex items-center space-x-3 p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                      <img
-                        src={participant.pfp_url || '/default-avatar.png'}
+                chat.participantProfiles.map((participant) => (
+                  <div key={participant.fid} className="flex items-center space-x-3">
+                    {participant.pfp_url ? (
+                      <img 
+                        src={participant.pfp_url} 
                         alt={participant.display_name || participant.username}
                         className="w-10 h-10 rounded-full"
                       />
-                      <div className="flex-1 text-left">
-                        <p className="text-white font-medium">
-                          {participant.display_name || participant.username}
-                        </p>
-                        <p className="text-gray-400 text-sm">@{participant.username}</p>
+                    ) : (
+                      <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-white">
+                          {(participant.display_name || participant.username)?.[0]?.toUpperCase()}
+                        </span>
                       </div>
-                    </button>
-                  ))}
-                </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-white font-medium">
+                        {participant.display_name || `@${participant.username}`}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        @{participant.username}
+                      </p>
+                    </div>
+                    {isGroupAdmin && (
+                      <FaCrown className="w-4 h-4 text-yellow-500" title="Admin" />
+                    )}
+                  </div>
+                ))
               ) : (
                 <div className="text-center py-8">
                   <FaUsers className="w-12 h-12 text-gray-600 mx-auto mb-4" />
@@ -558,7 +550,59 @@ export default function ChatPage() {
         </div>
       )}
 
-      <BottomNavigation />
-    </main>
+      {/* Chat Info Sidebar */}
+      {showInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
+          <div className="w-80 bg-gray-800 h-full overflow-y-auto">
+            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Chat Info</h2>
+              <button
+                onClick={() => setShowInfo(false)}
+                className="p-2 text-gray-400 hover:text-white transition-colors"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="text-sm text-gray-400 block mb-1">Chat Name</label>
+                <p className="text-white">{chat?.name || 'Unnamed Chat'}</p>
+              </div>
+              
+              <div>
+                <label className="text-sm text-gray-400 block mb-1">Type</label>
+                <p className="text-white capitalize">{chat?.type || 'Unknown'}</p>
+              </div>
+              
+              <div>
+                <label className="text-sm text-gray-400 block mb-1">Created</label>
+                <p className="text-white">
+                  {chat?.created_at ? new Date(chat.created_at).toLocaleDateString() : 'Unknown'}
+                </p>
+              </div>
+              
+              {chat?.type === 'group' && (
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">Members</label>
+                  <p className="text-white">{getParticipantInfo()}</p>
+                </div>
+              )}
+
+              {/* Leave Chat Button */}
+              <div className="pt-4 border-t border-gray-700">
+                <button
+                  onClick={handleLeaveChat}
+                  className="w-full flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  disabled={leaveLoading}
+                >
+                  {leaveLoading ? 'Leaving...' : 'Leave Chat'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 } 
