@@ -119,23 +119,29 @@ export default function EventCompletionModal({
           const eventUrl = `${baseUrl}/events/${event.id}`
           
           // Try to use Farcaster SDK first
-          if (typeof window !== 'undefined' && (window as any).farcasterSDK) {
+          if (typeof window !== 'undefined') {
             try {
-              const sdk = (window as any).farcasterSDK
-              await sdk.actions.composeCast({
-                text: shareText,
-                embeds: [eventUrl]
-              })
+              // Check for Farcaster SDK in different possible locations
+              const sdk = (window as any).farcasterSDK || (window as any).parent?.farcasterSDK
+              
+              if (sdk && sdk.actions && sdk.actions.composeCast) {
+                await sdk.actions.composeCast({
+                  text: shareText,
+                  embeds: [eventUrl]
+                })
+                console.log('✅ Results shared via Farcaster SDK')
+              } else {
+                throw new Error('Farcaster SDK not available')
+              }
             } catch (sdkError) {
-              console.log('SDK not available, falling back to web composer')
-              // Fallback to Warpcast web composer
-              const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventUrl)}`
-              window.open(castUrl, '_blank')
+              console.log('SDK not available, falling back to web composer:', sdkError)
+              // Fallback to Farcaster web composer
+              const castUrl = `https://farcaster.xyz/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventUrl)}`
+              if (typeof window !== 'undefined' && window.open) {
+                window.open(castUrl, '_blank')
+                console.log('✅ Results shared via Farcaster web composer')
+              }
             }
-          } else {
-            // Fallback to Warpcast web composer
-            const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventUrl)}`
-            window.open(castUrl, '_blank')
           }
         } catch (shareError) {
           console.error('Error sharing results:', shareError)

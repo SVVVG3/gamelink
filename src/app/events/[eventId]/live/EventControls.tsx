@@ -86,7 +86,8 @@ export default function EventControls({
         throw new Error('Failed to complete event')
       }
 
-      const completedEvent = await response.json()
+      const responseData = await response.json()
+      const completedEvent = responseData.event || responseData // Handle both response formats
       onEventUpdate(completedEvent)
 
       // Step 2: If archive option is selected, transition from 'completed' to 'archived'
@@ -105,7 +106,8 @@ export default function EventControls({
         if (!archiveResponse.ok) {
           console.warn('Event completed but failed to archive. You can archive it later from the event details page.')
         } else {
-          const archivedEvent = await archiveResponse.json()
+          const archiveResponseData = await archiveResponse.json()
+          const archivedEvent = archiveResponseData.event || archiveResponseData // Handle both response formats
           onEventUpdate(archivedEvent)
         }
       }
