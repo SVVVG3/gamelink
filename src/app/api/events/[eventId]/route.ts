@@ -149,9 +149,9 @@ export async function PUT(
 ) {
   try {
     const { eventId } = await params
-    const { status, userFid } = await request.json()
+    const { status, userFid, completionData } = await request.json()
 
-    console.log(`🎮 API: Updating event status for ID: ${eventId}`, { status, userFid })
+    console.log(`🎮 API: Updating event status for ID: ${eventId}`, { status, userFid, completionData })
 
     // Validate required fields
     if (!status) {
