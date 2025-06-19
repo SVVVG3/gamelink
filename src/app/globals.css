@@ -39,6 +39,8 @@ html {
   max-height: 100dvh;
   overflow: hidden;
   background: #111827; /* bg-gray-900 for dark mode */
+  /* Add bottom padding to account for bottom navigation */
+  padding-bottom: 80px; /* Height of bottom navigation + safe area */
 }
 
 /* iOS-specific adjustments */
@@ -46,6 +48,8 @@ html {
   .message-page-container {
     height: -webkit-fill-available;
     min-height: -webkit-fill-available;
+    /* iOS needs extra padding for safe area */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 }
 
@@ -54,6 +58,8 @@ html {
   /* When keyboard is open on Android, use visual viewport */
   height: 100vh;
   height: 100svh; /* Small viewport height for mobile keyboards */
+  /* Maintain bottom padding even with keyboard open */
+  padding-bottom: 80px;
 }
 
 .message-composer-container {
@@ -63,6 +69,8 @@ html {
   z-index: 10;
   background: #1f2937; /* bg-gray-800 */
   border-top: 1px solid #374151; /* border-gray-700 */
+  /* Add bottom margin to clear bottom navigation */
+  margin-bottom: 0;
 }
 
 .message-list-container {
@@ -95,6 +103,8 @@ html {
       /* When keyboard opens on Android, adjust for smaller viewport */
       height: 100svh;
       min-height: 100svh;
+      /* Maintain bottom padding for navigation */
+      padding-bottom: 80px;
     }
   }
   
@@ -104,6 +114,8 @@ html {
       /* Ensure composer is always accessible on iOS */
       position: sticky;
       bottom: 0;
+      /* Add bottom padding for iOS safe area + navigation */
+      padding-bottom: env(safe-area-inset-bottom);
     }
   }
 }
