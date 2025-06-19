@@ -96,69 +96,105 @@ export default function ChatPage() {
 
   // Share group frame function
   const shareGroupFrame = async () => {
-    if (!chat?.group_id || !groupData) return
+    if (!chat?.group_id || !groupData) {
+      console.error('🚨 Share Group Error: Missing data', { groupId: chat?.group_id, groupData })
+      return
+    }
+    
+    console.log('🔍 Share Group Debug: Starting share process', { groupId: chat.group_id, groupData })
     
     // Share the group page URL, not the frame endpoint
     const groupPageUrl = `${window.location.origin}/groups/${chat.group_id}`
     const shareText = `🎮 Join my gaming group: ${groupData.name}!\n\n${groupData.description ? groupData.description + '\n\n' : ''}${groupData.primaryGame ? `Game: ${groupData.primaryGame}\n` : ''}Members: ${groupData.memberCount}/${groupData.maxMembers}\n\n`
     
+    console.log('🔍 Share Group Debug: Generated content', { shareText, groupPageUrl })
+    
     // Try to use Farcaster SDK if available (Mini App context)
     try {
+      console.log('🔍 Share Group Debug: Attempting SDK import')
       const { sdk } = await import('@farcaster/frame-sdk')
       
+      console.log('🔍 Share Group Debug: SDK imported, checking context')
       // Check if we're in a Mini App context by trying to get context
       const context = await sdk.context
+      console.log('🔍 Share Group Debug: SDK context', context)
+      
       if (context && context.client) {
+        console.log('🔍 Share Group Debug: In mini app context, composing cast')
         const result = await sdk.actions.composeCast({
           text: shareText,
           embeds: [groupPageUrl]
         })
         
+        console.log('🔍 Share Group Debug: Cast composition result', result)
+        
         if (result?.cast) {
-          console.log('Cast shared successfully:', result.cast.hash)
+          console.log('✅ Cast shared successfully:', result.cast.hash)
         }
         return
+      } else {
+        console.log('🔍 Share Group Debug: Not in mini app context, using web fallback')
       }
     } catch (error) {
-      console.error('Farcaster SDK not available, using web fallback:', error)
+      console.error('🚨 Farcaster SDK not available, using web fallback:', error)
     }
     
     // Fallback for standalone web app - open Warpcast
+    console.log('🔍 Share Group Debug: Opening web composer')
     const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(groupPageUrl)}`
+    console.log('🔍 Share Group Debug: Web composer URL', farcasterUrl)
     window.open(farcasterUrl, '_blank')
   }
 
   // Share event frame function
   const shareEventFrame = async () => {
-    if (!eventData) return
+    if (!eventData) {
+      console.error('🚨 Share Event Error: Missing event data', { eventData })
+      return
+    }
+    
+    console.log('🔍 Share Event Debug: Starting share process', { eventData })
     
     // Share the event page URL
     const eventPageUrl = `${window.location.origin}/events/${eventData.id}`
     const shareText = `🎮 Join my gaming event: ${eventData.title}!\n\n${eventData.description ? eventData.description + '\n\n' : ''}${eventData.game ? `Game: ${eventData.game}\n` : ''}${eventData.gamingPlatform ? `Platform: ${eventData.gamingPlatform}\n` : ''}📅 ${new Date(eventData.startTime).toLocaleDateString()}\n\n`
     
+    console.log('🔍 Share Event Debug: Generated content', { shareText, eventPageUrl })
+    
     // Try to use Farcaster SDK if available (Mini App context)
     try {
+      console.log('🔍 Share Event Debug: Attempting SDK import')
       const { sdk } = await import('@farcaster/frame-sdk')
       
+      console.log('🔍 Share Event Debug: SDK imported, checking context')
       // Check if we're in a Mini App context by trying to get context
       const context = await sdk.context
+      console.log('🔍 Share Event Debug: SDK context', context)
+      
       if (context && context.client) {
+        console.log('🔍 Share Event Debug: In mini app context, composing cast')
         const result = await sdk.actions.composeCast({
           text: shareText,
           embeds: [eventPageUrl]
         })
         
+        console.log('🔍 Share Event Debug: Cast composition result', result)
+        
         if (result?.cast) {
-          console.log('Event cast shared successfully:', result.cast.hash)
+          console.log('✅ Event cast shared successfully:', result.cast.hash)
         }
         return
+      } else {
+        console.log('🔍 Share Event Debug: Not in mini app context, using web fallback')
       }
     } catch (error) {
-      console.error('Farcaster SDK not available, using web fallback:', error)
+      console.error('🚨 Farcaster SDK not available, using web fallback:', error)
     }
     
     // Fallback for standalone web app - open Warpcast
+    console.log('🔍 Share Event Debug: Opening web composer')
     const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventPageUrl)}`
+    console.log('🔍 Share Event Debug: Web composer URL', farcasterUrl)
     window.open(farcasterUrl, '_blank')
   }
 
@@ -206,12 +242,20 @@ export default function ChatPage() {
             const groupInfo = await groupResponse.json()
             setGroupData(groupInfo)
             
-            // Check if current user is admin
+            // Check if current user is admin - fix admin check logic
             const isAdmin = groupInfo.createdBy === profile.id || 
               groupInfo.members?.some((member: any) => 
-                member.userId === profile.id && member.role === 'admin'
+                member.profile?.fid === profile.fid && member.role === 'admin'
               )
             setIsGroupAdmin(isAdmin)
+            
+            console.log('🔍 Admin Check Debug:', {
+              profileId: profile.id,
+              profileFid: profile.fid,
+              groupCreatedBy: groupInfo.createdBy,
+              groupMembers: groupInfo.members?.map((m: any) => ({ fid: m.profile?.fid, role: m.role })),
+              isAdmin
+            })
           }
         } catch (error) {
           console.error('Error fetching group data:', error)
@@ -562,11 +606,19 @@ export default function ChatPage() {
               {chat.participantProfiles && chat.participantProfiles.length > 0 ? (
                 <div className="space-y-3">
                   {chat.participantProfiles.map((participant) => {
-                    // Check if this participant is an admin
+                    // Check if this participant is an admin - fix crown display logic
                     const isParticipantAdmin = groupData?.createdBy === participant.fid.toString() ||
                       groupData?.members?.some((member: any) => 
                         member.profile?.fid === participant.fid && member.role === 'admin'
                       )
+                    
+                    console.log('🔍 Crown Check Debug:', {
+                      participantFid: participant.fid,
+                      participantUsername: participant.username,
+                      groupCreatedBy: groupData?.createdBy,
+                      memberRoles: groupData?.members?.filter((m: any) => m.profile?.fid === participant.fid).map((m: any) => m.role),
+                      isParticipantAdmin
+                    })
                     
                     return (
                       <div key={participant.fid} className="flex items-center space-x-3">
