@@ -94,7 +94,7 @@ export default function ScoringPanel({ participants, eventId, onScoreUpdate }: S
       const score = updatedLocal.score ? parseInt(updatedLocal.score) : null
       const placement = updatedLocal.placement ? parseInt(updatedLocal.placement) : null
       
-      updateParticipantScore(participantId, score, placement)
+      updateParticipantScore(participantId, score, placement, field === 'score')
     }, 1000) // 1 second delay
 
     setUpdateTimeouts(prev => ({
@@ -103,7 +103,7 @@ export default function ScoringPanel({ participants, eventId, onScoreUpdate }: S
     }))
   }
 
-  const updateParticipantScore = async (participantId: string, score: number | null, placement: number | null) => {
+  const updateParticipantScore = async (participantId: string, score: number | null, placement: number | null, shouldAutoRank: boolean = false) => {
     if (!farcasterProfile?.fid) return
 
     setLoadingParticipant(participantId)
@@ -142,12 +142,42 @@ export default function ScoringPanel({ participants, eventId, onScoreUpdate }: S
       )
       
       onScoreUpdate(updatedParticipants)
+
+      // Auto-calculate rankings if this was a score update and placement is null
+      if (shouldAutoRank && score !== null && placement === null) {
+        console.log('🔄 Auto-calculating rankings after score update...')
+        // Use a small delay to ensure the state update is complete
+        setTimeout(() => {
+          autoCalculateRankingsForScoreUpdate(updatedParticipants)
+        }, 500)
+      }
     } catch (error) {
       console.error('Error updating participant score:', error)
       alert('Failed to update participant score')
     } finally {
       setLoadingParticipant(null)
     }
+  }
+
+  const autoCalculateRankingsForScoreUpdate = (currentParticipants: ParticipantWithProfile[]) => {
+    // Get all participants with scores but no placements
+    const participantsWithScores = currentParticipants
+      .filter(p => p.status === 'attended' && p.score !== null && p.placement === null)
+    
+    if (participantsWithScores.length === 0) return
+
+    console.log('🔄 Auto-ranking participants with scores but no placements:', participantsWithScores.length)
+
+    // Sort by score (highest first) and assign placements
+    const sortedByScore = [...participantsWithScores]
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+
+    // Update placements based on scores
+    sortedByScore.forEach((participant, index) => {
+      const newPlacement = index + 1
+      console.log(`🏆 Auto-assigning placement ${newPlacement} to ${participant.profiles.username} (score: ${participant.score})`)
+      updateParticipantScore(participant.id, participant.score ?? null, newPlacement, false)
+    })
   }
 
   const autoCalculateRankings = () => {
