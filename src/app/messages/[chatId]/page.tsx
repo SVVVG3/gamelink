@@ -603,6 +603,9 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+
+      {/* Bottom Navigation */}
+      <BottomNavigation />
     </div>
   )
 } 

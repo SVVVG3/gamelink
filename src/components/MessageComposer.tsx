@@ -52,76 +52,92 @@ export default function MessageComposer({
     }
   }, [disabled])
 
-  // Handle keyboard show/hide for Android
+  // Improved keyboard handling with platform detection
   useEffect(() => {
-    const handleFocusIn = () => {
-      // Add classes to body and container for keyboard state
-      document.body.classList.add('keyboard-open')
-      const container = document.querySelector('.message-page-container')
-      if (container) {
-        container.classList.add('keyboard-open')
+    let isAndroid = false
+    let isIOS = false
+    
+    // Detect platform
+    if (typeof window !== 'undefined') {
+      isAndroid = /Android/i.test(navigator.userAgent)
+      isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    }
+
+    const handleFocus = () => {
+      // Only apply aggressive keyboard management on Android
+      if (isAndroid) {
+        document.body.classList.add('keyboard-open')
+        const container = document.querySelector('.message-page-container')
+        if (container) {
+          container.classList.add('keyboard-open')
+        }
       }
-      
-      // Scroll input into view on Android with proper timing
+
+      // Gentle scroll into view for both platforms
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.scrollIntoView({ 
             behavior: 'smooth', 
-            block: 'end',
+            block: 'nearest',
             inline: 'nearest'
           })
         }
-      }, 100) // Reduced delay for better responsiveness
+      }, isIOS ? 300 : 100) // Longer delay for iOS
     }
 
-    const handleFocusOut = () => {
-      // Remove keyboard state classes
-      document.body.classList.remove('keyboard-open')
-      const container = document.querySelector('.message-page-container')
-      if (container) {
-        container.classList.remove('keyboard-open')
+    const handleBlur = () => {
+      // Clean up Android-specific classes
+      if (isAndroid) {
+        setTimeout(() => {
+          document.body.classList.remove('keyboard-open')
+          const container = document.querySelector('.message-page-container')
+          if (container) {
+            container.classList.remove('keyboard-open')
+          }
+        }, 150)
       }
     }
 
-    // Handle visual viewport changes (better Android support)
-    const handleViewportChange = () => {
-      if (isFocused && textareaRef.current) {
-        setTimeout(() => {
-          textareaRef.current?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'end'
-          })
-        }, 50)
+    // Visual Viewport API for enhanced keyboard detection (primarily for Android)
+    let visualViewport: any = null
+    if (typeof window !== 'undefined' && window.visualViewport && isAndroid) {
+      visualViewport = window.visualViewport
+      
+      const handleViewportChange = () => {
+        const container = document.querySelector('.message-page-container')
+        if (visualViewport.height < window.innerHeight * 0.75) {
+          // Keyboard is likely open
+          document.body.classList.add('keyboard-open')
+          if (container) {
+            container.classList.add('keyboard-open')
+          }
+        } else {
+          // Keyboard is likely closed
+          document.body.classList.remove('keyboard-open')
+          if (container) {
+            container.classList.remove('keyboard-open')
+          }
+        }
+      }
+
+      visualViewport.addEventListener('resize', handleViewportChange)
+      
+      return () => {
+        visualViewport.removeEventListener('resize', handleViewportChange)
       }
     }
 
     const textarea = textareaRef.current
     if (textarea) {
-      textarea.addEventListener('focusin', handleFocusIn)
-      textarea.addEventListener('focusout', handleFocusOut)
-      
-      // Listen for visual viewport changes (Android keyboard)
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', handleViewportChange)
-      }
+      textarea.addEventListener('focus', handleFocus)
+      textarea.addEventListener('blur', handleBlur)
       
       return () => {
-        textarea.removeEventListener('focusin', handleFocusIn)
-        textarea.removeEventListener('focusout', handleFocusOut)
-        
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', handleViewportChange)
-        }
-        
-        // Cleanup classes on unmount
-        document.body.classList.remove('keyboard-open')
-        const container = document.querySelector('.message-page-container')
-        if (container) {
-          container.classList.remove('keyboard-open')
-        }
+        textarea.removeEventListener('focus', handleFocus)
+        textarea.removeEventListener('blur', handleBlur)
       }
     }
-  }, [isFocused])
+  }, [])
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
