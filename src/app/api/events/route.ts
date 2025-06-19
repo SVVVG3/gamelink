@@ -336,7 +336,29 @@ export async function GET(request: NextRequest) {
 
     // If chatId is provided, filter by it (for event chat lookups)
     if (chatId) {
+      console.log('🔍 Events API Debug: Filtering by chatId:', chatId)
       query = query.eq('chat_id', chatId)
+      
+      // Add debugging to see what events exist with this chatId
+      const debugQuery = supabase
+        .from('events')
+        .select('id, title, chat_id, status')
+        .eq('chat_id', chatId)
+      
+      const { data: debugEvents, error: debugError } = await debugQuery
+      console.log('🔍 Events API Debug: Events with matching chatId:', debugEvents)
+      console.log('🔍 Events API Debug: Debug query error:', debugError)
+      
+      // Also check if there are any events with NULL chat_id that might be related
+      const nullChatQuery = supabase
+        .from('events')
+        .select('id, title, chat_id, status')
+        .is('chat_id', null)
+        .limit(5)
+      
+      const { data: nullChatEvents } = await nullChatQuery
+      console.log('🔍 Events API Debug: Recent events with NULL chat_id:', nullChatEvents)
+      
     } else {
       // Only apply other filters if not looking up by chatId
       query = query

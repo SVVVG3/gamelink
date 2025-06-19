@@ -284,10 +284,17 @@ export default function ChatPage() {
         if (isEventChatCheck) {
           try {
             console.log('🔍 Event Chat Debug: Fetching event data for chatId:', chatId)
-            const eventResponse = await fetch(`/api/events?chatId=${chatId}`)
+            const eventApiUrl = `/api/events?chatId=${chatId}`
+            console.log('🔍 Event Chat Debug: API URL:', eventApiUrl)
+            
+            const eventResponse = await fetch(eventApiUrl)
+            console.log('🔍 Event Chat Debug: API response status:', eventResponse.status)
+            
             if (eventResponse.ok) {
               const eventData = await eventResponse.json()
-              console.log('🔍 Event Chat Debug: Basic event response:', eventData)
+              console.log('🔍 Event Chat Debug: Full API response:', eventData)
+              console.log('🔍 Event Chat Debug: Events array:', eventData.events)
+              console.log('🔍 Event Chat Debug: Events array length:', eventData.events?.length)
               
               if (eventData.events && eventData.events.length > 0) {
                 const basicEventData = eventData.events[0]
@@ -334,10 +341,22 @@ export default function ChatPage() {
                   })
                 }
               } else {
-                console.log('🔍 Event Chat Debug: No events found for chatId')
+                console.log('🔍 Event Chat Debug: No events found for chatId:', chatId)
+                console.log('🔍 Event Chat Debug: This might mean:')
+                console.log('  1. The event does not have chat_id set to this chatId')
+                console.log('  2. The event was deleted')
+                console.log('  3. There is a database inconsistency')
+                console.log('🔍 Event Chat Debug: Chat info:', {
+                  chatId,
+                  chatName: chatData.name,
+                  chatType: chatData.type,
+                  groupId: chatData.group_id
+                })
               }
             } else {
               console.log('🔍 Event Chat Debug: Event fetch failed with status:', eventResponse.status)
+              const errorText = await eventResponse.text()
+              console.log('🔍 Event Chat Debug: Error response:', errorText)
             }
           } catch (error) {
             console.error('🚨 Error fetching event data:', error)
