@@ -44,6 +44,8 @@ export async function GET(
     const isCompleted = event.status === 'completed' || event.status === 'archived';
     const buttonTitle = isCompleted ? "🏆 View Results" : "🎮 Join Event";
     
+    console.log(`🔍 Frame endpoint for event ${eventId}: status="${event.status}", isCompleted=${isCompleted}, buttonTitle="${buttonTitle}"`)
+
     // Create Mini App Embed JSON
     const frameEmbed = {
       version: "next",
@@ -105,7 +107,7 @@ export async function GET(
     return new NextResponse(html, {
       headers: {
         'Content-Type': 'text/html',
-        'Cache-Control': 'public, max-age=300',
+        'Cache-Control': 'public, max-age=30',
       },
     });
 
