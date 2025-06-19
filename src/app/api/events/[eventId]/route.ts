@@ -280,6 +280,52 @@ export async function PUT(
 
     console.log(`✅ API: Status transition validation passed`)
 
+    // If this is a completion with data, handle participant finalization first
+    if (newStatus === 'completed' && completionData) {
+      console.log(`🏆 API: Processing event completion data...`)
+      
+      try {
+        // Get current participants to finalize their data
+        const { data: currentParticipants, error: participantsError } = await supabase
+          .from('event_participants')
+          .select(`
+            *,
+            profiles!event_participants_user_id_fkey (
+              fid, display_name, username, pfp_url
+            )
+          `)
+          .eq('event_id', eventId)
+
+        if (participantsError) {
+          console.error('❌ Error fetching participants for completion:', participantsError)
+        } else if (currentParticipants && currentParticipants.length > 0) {
+          console.log(`🔍 API: Found ${currentParticipants.length} participants to finalize`)
+          
+          // Auto-mark confirmed participants as no-show if they weren't marked as attended
+          const confirmedParticipants = currentParticipants.filter(p => p.status === 'confirmed')
+          console.log(`🔍 API: Found ${confirmedParticipants.length} confirmed participants to mark as no-show`)
+          
+          for (const participant of confirmedParticipants) {
+            const { error: updateError } = await supabase
+              .from('event_participants')
+              .update({ status: 'no_show' })
+              .eq('id', participant.id)
+            
+            if (updateError) {
+              console.error(`❌ Failed to mark participant ${participant.id} as no-show:`, updateError)
+            } else {
+              console.log(`✅ Marked participant ${participant.profiles?.username || participant.id} as no-show`)
+            }
+          }
+          
+          console.log(`✅ API: Completed participant status finalization`)
+        }
+      } catch (completionError) {
+        console.error('❌ Error processing completion data:', completionError)
+        // Don't fail the status update if completion processing fails
+      }
+    }
+
     // Update the event status using the existing utility function
     console.log(`🔍 API: Updating event status in database...`)
     const updatedEvent = await updateEvent(eventId, { status })
