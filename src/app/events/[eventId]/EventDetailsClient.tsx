@@ -555,7 +555,7 @@ export default function EventDetailsClient({ params }: Props) {
                 )}
                 
                 {/* Live Dashboard Button - Show for organizers when event is live */}
-                {isOrganizer && event.status === 'live' && (
+                {isOrganizer && (event.status as Event['status']) === 'live' && (
                   <div className="pt-2 border-t border-gray-700">
                     <Link
                       href={`/events/${eventId}/live`}
@@ -801,7 +801,7 @@ export default function EventDetailsClient({ params }: Props) {
             </div>
 
             {/* Organizer Actions */}
-            {isOrganizer && (
+            {isOrganizer && (event.status as Event['status']) !== 'live' && (
               <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
                 <h3 className="text-lg font-bold text-white mb-4">Organizer Actions</h3>
                 

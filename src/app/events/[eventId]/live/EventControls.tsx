@@ -26,12 +26,21 @@ export default function EventControls({
     setLoading(newStatus)
     
     try {
+      // Get current user FID from the user context
+      const userFid = farcasterProfile?.fid
+      if (!userFid) {
+        throw new Error('User not authenticated')
+      }
+
       const response = await fetch(`/api/events/${event.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ 
+          status: newStatus,
+          userFid: userFid
+        }),
       })
 
       if (!response.ok) {
@@ -54,6 +63,12 @@ export default function EventControls({
     setLoading('completed')
     
     try {
+      // Get current user FID from the user context
+      const userFid = farcasterProfile?.fid
+      if (!userFid) {
+        throw new Error('User not authenticated')
+      }
+
       // Determine final status based on archive option
       const finalStatus = completionData.archiveEvent ? 'archived' : 'completed'
       
@@ -65,6 +80,7 @@ export default function EventControls({
         },
         body: JSON.stringify({ 
           status: finalStatus,
+          userFid: userFid,
           completionData 
         }),
       })
