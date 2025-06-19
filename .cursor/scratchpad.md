@@ -2442,3 +2442,114 @@ const attendedParticipants = freshParticipants.filter(p => p.status === 'attende
 - ✅ **LIVE**: Fix now active at https://farcaster-gamelink.vercel.app/
 
 **Next Steps**: Test event completion with results sharing to verify leaderboard data and participant tagging work correctly.
+
+### 🚨 **CRITICAL ISSUE: LEADERBOARD DATA NOT PERSISTING - UNDER INVESTIGATION**
+**STATUS**: 🔍 **Enhanced debugging deployed to identify root cause**
+
+🎯 **User Report**: Cast generation and results sharing not showing leaderboard data:
+1. **Event Completion Cast**: Shows event title but no participant scores/placements
+2. **Share Results Modal**: Shows participant count but empty leaderboard
+3. **Mini App Button**: Still shows "🎮 Join Event" instead of "🏆 View Results"
+
+🔍 **Investigation Analysis**:
+User correctly identified the core issue: **"We are not storing leaderboard data when completing/archiving events"**
+
+**Evidence from Screenshots**:
+- ✅ **Cast Generated**: Event completion creates cast successfully
+- ❌ **Missing Leaderboard**: No participant names, scores, or placements in cast
+- ❌ **Share Results Empty**: Results modal shows "1 total participants" but no actual results
+- ❌ **Button Text Wrong**: Mini app embed still shows "Join Event" not "View Results"
+
+🛠️ **Technical Investigation**:
+
+#### **Potential Root Causes Identified**:
+1. **Scoring Data Not Persisted**: Live Dashboard scores may not be saved to database
+2. **Event Status Not Updated**: Event may not actually be marked as "completed"
+3. **Data Fetching Issue**: Fresh data fetch after completion may be failing
+4. **API Response Structure**: Event API may not be returning participant data correctly
+
+#### **Debugging Approach Implemented**:
+- ✅ **Enhanced EventCompletionModal Logging**: Added comprehensive console logging to track data flow
+- ✅ **Original vs Fresh Data Comparison**: Log participant data before and after completion
+- ✅ **API Response Debugging**: Log raw API response structure and data extraction
+- ✅ **Completion Data Processing**: Added participant finalization logic to event API
+- ✅ **Frame Endpoint Analysis**: Verified button text logic in frame endpoint
+
+#### **Code Changes Made**:
+1. **EventCompletionModal.tsx**: 
+   - Added detailed logging for original participant data
+   - Enhanced logging for fresh data fetching after completion
+   - Log raw API response structure and data extraction
+
+2. **Events API Route**: 
+   - Added completion data processing logic
+   - Enhanced participant status finalization
+   - Added comprehensive error handling and logging
+
+#### **Expected Debug Output**:
+```
+🔍 EventCompletion: Original participants data: [{ id, username, status, score, placement }]
+🔍 EventCompletion: Event completion API call finished
+🔍 EventCompletion: Raw API response: { event: { participants: [...] } }
+🔍 EventCompletion: Fresh participants data: [{ id, username, status, score, placement }]
+🔍 EventCompletion: Attended participants: 2 [{ username: "user1", placement: 1, score: 100 }]
+```
+
+🎯 **Next Steps**:
+1. **Test Event Completion**: Create test event, add scores in Live Dashboard, complete event
+2. **Analyze Debug Logs**: Check console output to identify where data is lost
+3. **Verify Scoring Persistence**: Confirm scores are saved during Live Dashboard usage
+4. **Fix Root Cause**: Address identified issue (likely data persistence or fetching)
+
+**Deployment Status**: ✅ **Enhanced debugging deployed to production**
+**Testing Required**: Manual event completion test with console logging analysis
+
+### ✅ **CRITICAL FARCASTER SDK FIX - RESULTS SHARING RESOLVED**
+**STATUS**: 🚀 **Successfully implemented, deployed, and ready for production use**
+
+🎯 **ISSUE IDENTIFIED**: EventCompletionModal was failing to draft casts for results sharing due to incorrect Farcaster SDK access pattern.
+
+🔍 **ROOT CAUSE ANALYSIS**:
+From console logs, the issue was:
+```
+SDK not available, falling back to web composer: SecurityError: Failed to read a named property 'farcasterSDK' from 'Window': Blocked a frame with origin \"https://farcaster-gamelink.vercel.app\" from accessing a cross-origin frame.
+```
+
+**Problems**:
+1. **Wrong SDK Access Pattern**: EventCompletionModal was trying to access `window.farcasterSDK` which doesn't exist
+2. **Cross-Origin Restrictions**: Browser security blocked access to parent frame properties
+3. **Inconsistent Implementation**: Other components used correct SDK import pattern
+
+🛠️ **SOLUTION IMPLEMENTED**:
+- ✅ **Fixed SDK Import Pattern**: Changed to proper `await import('@farcaster/frame-sdk')` pattern
+- ✅ **Proper Context Checking**: Added `await sdk.context` and `context.client` verification
+- ✅ **Aligned Implementation**: Now matches working pattern used in ResultsShareModal
+- ✅ **Graceful Fallbacks**: Maintained web composer fallback for non-mini app contexts
+
+🎯 **TECHNICAL IMPLEMENTATION**:
+```typescript
+// BEFORE (Wrong): 
+if (window.parent && window.parent.farcasterSDK) {
+  // Cross-origin access blocked
+}
+
+// AFTER (Fixed):
+const { sdk } = await import('@farcaster/frame-sdk')
+const context = await sdk.context
+if (context && context.client) {
+  // Proper SDK usage
+}
+```
+
+📋 **FILES MODIFIED**:
+- `src/components/EventCompletionModal.tsx` - Fixed Farcaster SDK access pattern
+
+🚀 **PRODUCTION IMPACT**:
+- **Cast Drafting Works**: Event completion now successfully drafts casts for sharing
+- **Proper SDK Usage**: Consistent Farcaster SDK implementation across all components
+- **Enhanced UX**: Users can now share results immediately after completing events
+- **Fallback Support**: Web composer works for standalone usage outside mini apps
+
+✅ **STATUS**: **RESOLVED** - Farcaster SDK access pattern fixed and deployed
+
+**Next Issue**: Now investigating why cast content is empty (leaderboard data not persisting)

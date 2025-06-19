@@ -124,7 +124,7 @@ export default function EventCompletionModal({
           console.log('🔍 EventCompletion: Attended participants:', attendedParticipants.length, attendedParticipants.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
           
           const topParticipants = attendedParticipants
-            .filter(p => p.placement !== null)
+            .filter(p => p.placement !== null && p.placement !== undefined)
             .sort((a, b) => (a.placement || 0) - (b.placement || 0))
             .slice(0, 3)
             .map(p => ({
@@ -135,20 +135,22 @@ export default function EventCompletionModal({
           
           console.log('🔍 EventCompletion: Top participants:', topParticipants.length, topParticipants.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
           
-          // Generate the share text with properly formatted attendees
-          const allAttendees = attendedParticipants.map(p => ({
-            profile: p.profile,
-            placement: p.placement || 0,
-            score: p.score || null
-          }))
+          // Generate the share text with properly formatted attendees (only those with valid placements)
+          const rankedAttendees = attendedParticipants
+            .filter(p => p.placement !== null && p.placement !== undefined)
+            .map(p => ({
+              profile: p.profile,
+              placement: p.placement as number,
+              score: p.score || null
+            }))
           
-          console.log('🔍 EventCompletion: All attendees:', allAttendees.length, allAttendees.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
+          console.log('🔍 EventCompletion: Ranked attendees for sharing:', rankedAttendees.length, rankedAttendees.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
           
           const shareText = generateLeaderboardShareText(
-            event, 
-            topParticipants, 
+            event,
+            topParticipants,
             attendedParticipants.length,
-            allAttendees
+            rankedAttendees
           )
           
           console.log('🔍 EventCompletion: Generated share text:', shareText)
