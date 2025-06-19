@@ -26,7 +26,8 @@ import {
   FaExclamationTriangle,
   FaSpinner,
   FaArchive,
-  FaShare
+  FaShare,
+  FaUserCog
 } from 'react-icons/fa'
 import FarcasterIcon from '@/components/FarcasterIcon'
 import { FaShield } from 'react-icons/fa6'
@@ -763,6 +764,19 @@ export default function EventDetailsClient({ params }: Props) {
                       )}
                       {event.userInEventChat ? 'Event Chat' : 'Join Event Chat'}
                     </button>
+                  </div>
+                )}
+
+                {/* Manage Participants Button - Show only for organizers */}
+                {isOrganizer && (
+                  <div className="pt-2 border-t border-gray-700">
+                    <Link
+                      href={`/events/${eventId}/participants`}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                    >
+                      <FaUserCog className="w-4 h-4 mr-2" />
+                      Manage Participants
+                    </Link>
                   </div>
                 )}
               </div>
