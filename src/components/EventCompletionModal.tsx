@@ -96,8 +96,8 @@ export default function EventCompletionModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 5rem)' }}>
+      <div className="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-700">
           <div className="flex items-center justify-between">
@@ -384,11 +384,19 @@ export default function EventCompletionModal({
 
         {/* Footer */}
         <div className="flex-shrink-0 p-6 border-t border-gray-700 bg-gray-800">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-400">
-              {currentStep === 1 && 'Complete the checklist to proceed'}
-              {currentStep === 2 && 'Review settings and complete the event'}
+          {currentStep === 2 && (
+            <div className="text-sm text-gray-400 mb-4 text-center">
+              Review settings and complete the event
             </div>
+          )}
+          
+          <div className="flex items-center justify-between">
+            {currentStep === 1 && (
+              <div className="text-sm text-gray-400">
+                Complete the checklist to proceed
+              </div>
+            )}
+            {currentStep === 2 && <div></div>}
             
             <div className="flex space-x-3">
               {currentStep === 2 && (

@@ -4,8 +4,6 @@ import { useState } from 'react'
 import { Event, EventParticipant, Profile } from '@/types'
 import { useUser } from '@/hooks/useUser'
 import EventCompletionModal from '@/components/EventCompletionModal'
-import ResultsShareModal from '@/components/ResultsShareModal'
-import { FaShare } from 'react-icons/fa'
 
 interface EventControlsProps {
   event: Event
@@ -21,7 +19,6 @@ export default function EventControls({
   const [loading, setLoading] = useState<string | null>(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState<string | null>(null)
   const [showCompletionModal, setShowCompletionModal] = useState(false)
-  const [showShareModal, setShowShareModal] = useState(false)
   const { farcasterProfile } = useUser()
 
   // Update event status
@@ -229,14 +226,6 @@ export default function EventControls({
         
         <div className="space-y-3">
           <button
-            onClick={() => setShowShareModal(true)}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-          >
-            <FaShare className="w-4 h-4" />
-            <span>Share Results</span>
-          </button>
-          
-          <button
             onClick={() => {
               if (event.chatId) {
                 window.open(`/messages/${event.chatId}`, '_blank')
@@ -297,19 +286,7 @@ export default function EventControls({
         onComplete={handleEventCompletion}
       />
 
-      {/* Results Share Modal */}
-      <ResultsShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        event={event}
-        leaderboard={participants.map(p => ({
-          profile: p.profile,
-          placement: p.placement || 0,
-          score: p.score || null,
-          status: p.status
-        }))}
-        shareType="leaderboard"
-      />
+
     </div>
   )
 } 
