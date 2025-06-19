@@ -344,6 +344,43 @@ export async function PUT(
       status: updatedEvent.status
     })
 
+    // Auto-archive event chat when event is completed or archived
+    if (['completed', 'archived'].includes(newStatus) && updatedEvent.chatId) {
+      try {
+        console.log(`🗂️ API: Auto-archiving event chat ${updatedEvent.chatId} for ${newStatus} event`)
+        
+        // Set left_at timestamp for all active participants in the event chat
+        const { data: archivedParticipants, error: archiveError } = await supabase
+          .from('chat_participants')
+          .update({ left_at: new Date().toISOString() })
+          .eq('chat_id', updatedEvent.chatId)
+          .is('left_at', null)
+          .select('id, user_id')
+
+        if (archiveError) {
+          console.error(`❌ API: Failed to archive event chat ${updatedEvent.chatId}:`, archiveError)
+          // Don't fail the status update if chat archiving fails
+        } else {
+          console.log(`✅ API: Successfully archived event chat ${updatedEvent.chatId}, removed ${archivedParticipants?.length || 0} participants`)
+          
+          // Also mark the chat as inactive
+          const { error: chatUpdateError } = await supabase
+            .from('chats')
+            .update({ is_active: false })
+            .eq('id', updatedEvent.chatId)
+
+          if (chatUpdateError) {
+            console.error(`❌ API: Failed to mark chat as inactive:`, chatUpdateError)
+          } else {
+            console.log(`✅ API: Marked event chat ${updatedEvent.chatId} as inactive`)
+          }
+        }
+      } catch (chatArchiveError) {
+        console.error(`❌ API: Error during event chat archiving (non-blocking):`, chatArchiveError)
+        // Don't fail the status update if chat operations fail
+      }
+    }
+
     // Send status change notification to participants (async, don't block response)
     if (['live', 'completed', 'cancelled'].includes(newStatus)) {
       try {

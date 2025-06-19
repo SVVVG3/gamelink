@@ -118,12 +118,57 @@ export async function POST(
 
     console.log(`✅ User ${fid} successfully joined event ${eventId} as ${role}`)
 
+    // Auto-join event chat for players (but not spectators)
+    let chatJoinResult = null
+    if (role === 'participant' && event.chat_id) {
+      try {
+        console.log(`🎮 Auto-joining user ${fid} to event chat ${event.chat_id}`)
+        
+        // Check if user is already in the chat
+        const { data: existingChatParticipant } = await supabase
+          .from('chat_participants')
+          .select('id')
+          .eq('chat_id', event.chat_id)
+          .eq('user_id', profile.id)
+          .is('left_at', null)
+          .single()
+
+        if (!existingChatParticipant) {
+          // Add user to the event chat
+          const { error: chatJoinError } = await supabase
+            .from('chat_participants')
+            .insert([{
+              chat_id: event.chat_id,
+              user_id: profile.id,
+              fid: profile.fid,
+              is_admin: false, // Players are not admins (only organizers are)
+              joined_at: new Date().toISOString()
+            }])
+
+          if (chatJoinError) {
+            console.error('⚠️ Failed to auto-join event chat (non-blocking):', chatJoinError)
+            // Don't fail the RSVP if chat join fails
+          } else {
+            console.log(`✅ User ${fid} auto-joined event chat ${event.chat_id}`)
+            chatJoinResult = { chatId: event.chat_id, autoJoined: true }
+          }
+        } else {
+          console.log(`ℹ️ User ${fid} already in event chat ${event.chat_id}`)
+          chatJoinResult = { chatId: event.chat_id, autoJoined: false, alreadyInChat: true }
+        }
+      } catch (chatError) {
+        console.error('⚠️ Error during auto-join event chat (non-blocking):', chatError)
+        // Don't fail the RSVP if chat operations fail
+      }
+    }
+
     return NextResponse.json({
       success: true,
       participation: participation,
       message: event.require_approval 
         ? 'Registration submitted for approval' 
-        : 'Successfully joined event!'
+        : 'Successfully joined event!',
+      chat: chatJoinResult
     })
 
   } catch (error) {
