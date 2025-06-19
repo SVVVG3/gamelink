@@ -41,6 +41,7 @@ interface EventWithDetails extends Event {
   participantCount: number
   organizer: Profile
   userParticipation?: EventParticipant
+  userInEventChat?: boolean
 }
 
 interface Props {
@@ -152,6 +153,13 @@ export default function EventDetailsClient({ params }: Props) {
       setChatLoading(true)
       setError(null)
 
+      // If user is already in the chat, navigate directly
+      if (event.userInEventChat) {
+        router.push(`/messages/${event.chatId}`)
+        return
+      }
+
+      // Otherwise, join the chat first
       const response = await fetch(`/api/events/${eventId}/join-chat`, {
         method: 'POST',
         headers: {
@@ -731,8 +739,7 @@ export default function EventDetailsClient({ params }: Props) {
                   </div>
                 )}
 
-
-                {/* Join Event Chat Button - Show for participants but only for non-completed/archived events */}
+                {/* Event Chat Button - Show for participants and organizers */}
                 {isUserParticipant && event.chatId && event.status !== 'completed' && event.status !== 'archived' && (
                   <div className="pt-2 border-t border-gray-700">
                     <button
@@ -745,7 +752,7 @@ export default function EventDetailsClient({ params }: Props) {
                       ) : (
                         <FaComments className="w-4 h-4 mr-2" />
                       )}
-                      Join Event Chat
+                      {event.userInEventChat ? 'Event Chat' : 'Join Event Chat'}
                     </button>
                   </div>
                 )}
