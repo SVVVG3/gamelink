@@ -637,7 +637,7 @@ export default function ChatPage() {
                   })
                   setShowInfoDropdown(!showInfoDropdown)
                 }}
-                className="p-2 text-gray-400 hover:text-white transition-colors"
+                className="p-3 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-700/50"
               >
                 <FaEllipsisV className="w-4 h-4" />
               </button>
@@ -646,38 +646,38 @@ export default function ChatPage() {
               {showInfoDropdown && (
                 <div 
                   ref={infoDropdownRef}
-                  className="absolute right-0 top-full mt-1 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-50"
+                  className="absolute right-0 top-full mt-2 w-52 bg-gray-800 border border-gray-600 rounded-xl shadow-xl z-50"
                 >
-                  <div className="py-1">
+                  <div className="py-2">
                     <button
                       onClick={() => {
                         setShowInfoDropdown(false)
                         setShowMemberModal(true)
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center"
+                      className="w-full text-left px-4 py-4 text-sm text-gray-300 hover:bg-gray-700 active:bg-gray-600 flex items-center transition-colors"
                     >
-                      <FaUsers className="w-4 h-4 mr-3" />
+                      <FaUsers className="w-5 h-5 mr-3" />
                       View Members
                     </button>
                     
                     {isGroupAdmin && (
                       <button
                         onClick={handleManageMembers}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center"
+                        className="w-full text-left px-4 py-4 text-sm text-gray-300 hover:bg-gray-700 active:bg-gray-600 flex items-center transition-colors"
                       >
-                        <FaCog className="w-4 h-4 mr-3" />
+                        <FaCog className="w-5 h-5 mr-3" />
                         Manage Members
                       </button>
                     )}
                     
-                    <div className="border-t border-gray-700 my-1"></div>
+                    <div className="border-t border-gray-700 my-2"></div>
                     
                     <button
                       onClick={handleLeaveChat}
-                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 flex items-center"
+                      className="w-full text-left px-4 py-4 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 active:bg-gray-600 flex items-center transition-colors"
                       disabled={leaveLoading}
                     >
-                      <FaSignOutAlt className="w-4 h-4 mr-3" />
+                      <FaSignOutAlt className="w-5 h-5 mr-3" />
                       {leaveLoading ? 'Leaving...' : 'Leave Chat'}
                     </button>
                   </div>
