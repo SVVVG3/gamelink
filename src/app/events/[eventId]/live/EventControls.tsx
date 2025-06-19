@@ -69,28 +69,46 @@ export default function EventControls({
         throw new Error('User not authenticated')
       }
 
-      // Determine final status based on archive option
-      const finalStatus = completionData.archiveEvent ? 'archived' : 'completed'
-      
-      // Update event status
+      // Step 1: Always transition from 'live' to 'completed' first
       const response = await fetch(`/api/events/${event.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: finalStatus,
+          status: 'completed',
           userFid: userFid,
           completionData 
         }),
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to ${completionData.archiveEvent ? 'archive' : 'complete'} event`)
+        throw new Error('Failed to complete event')
       }
 
-      const updatedEvent = await response.json()
-      onEventUpdate(updatedEvent)
+      const completedEvent = await response.json()
+      onEventUpdate(completedEvent)
+
+      // Step 2: If archive option is selected, transition from 'completed' to 'archived'
+      if (completionData.archiveEvent) {
+        const archiveResponse = await fetch(`/api/events/${event.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            status: 'archived',
+            userFid: userFid 
+          }),
+        })
+
+        if (!archiveResponse.ok) {
+          console.warn('Event completed but failed to archive. You can archive it later from the event details page.')
+        } else {
+          const archivedEvent = await archiveResponse.json()
+          onEventUpdate(archivedEvent)
+        }
+      }
 
       // Send completion notification if requested
       if (completionData.notifyParticipants) {

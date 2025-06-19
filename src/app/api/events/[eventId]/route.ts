@@ -228,6 +228,16 @@ export async function PUT(
     const currentStatus = currentEvent.status as EventStatus
     const newStatus = status as EventStatus
     
+    console.log(`🔍 API: Validating status transition: ${currentStatus} → ${newStatus}`)
+    console.log(`🔍 API: Event details:`, {
+      id: eventId,
+      currentStatus,
+      newStatus,
+      startTime: currentEvent.start_time,
+      endTime: currentEvent.end_time,
+      minParticipants: currentEvent.min_participants
+    })
+    
     const validation = await validateEventStatusTransition(
       eventId,
       currentStatus,
@@ -237,7 +247,10 @@ export async function PUT(
       currentEvent.min_participants
     )
 
+    console.log(`🔍 API: Validation result:`, validation)
+
     if (!validation.isValid) {
+      console.error(`❌ API: Status transition validation failed:`, validation.error)
       return NextResponse.json(
         { error: validation.error },
         { status: 400 }
