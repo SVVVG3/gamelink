@@ -249,7 +249,7 @@ export default function ScoringPanel({ participants, eventId, onScoreUpdate }: S
       </div>
 
       {/* Scoring List */}
-      <div className="max-h-[600px] overflow-y-auto">
+      <div>
         {sortedParticipants.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-gray-400 text-lg mb-2">

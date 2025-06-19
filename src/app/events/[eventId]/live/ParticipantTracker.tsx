@@ -160,7 +160,7 @@ export default function ParticipantTracker({
       </div>
 
       {/* Participant List */}
-      <div className="max-h-[500px] overflow-y-auto">
+      <div>
         {filteredParticipants.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-gray-400 text-lg mb-2">
