@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { FaCheckCircle, FaTimes, FaUsers, FaTrophy, FaEye, FaEyeSlash, FaDownload, FaShare, FaExclamationTriangle } from 'react-icons/fa'
 import { Event, EventParticipant, Profile } from '@/types'
+import { generateLeaderboardShareText } from '@/lib/achievements'
 
 interface EventCompletionModalProps {
   event: Event
@@ -16,6 +17,7 @@ interface EventCompletionData {
   resultsPublic: boolean
   notifyParticipants: boolean
   archiveEvent: boolean
+  shareResults: boolean
   completionNotes?: string
 }
 
@@ -39,6 +41,7 @@ export default function EventCompletionModal({
     resultsPublic: true,
     notifyParticipants: true,
     archiveEvent: true,
+    shareResults: false,
     completionNotes: ''
   })
 
@@ -80,7 +83,51 @@ export default function EventCompletionModal({
   const handleComplete = async () => {
     setLoading(true)
     try {
+      // Complete the event first
       await onComplete(completionData)
+      
+      // If sharing is enabled, generate and share the results
+      if (completionData.shareResults) {
+        try {
+          const attendedParticipants = participants.filter(p => p.status === 'attended')
+          const topParticipants = attendedParticipants
+            .filter(p => p.placement !== null)
+            .sort((a, b) => (a.placement || 0) - (b.placement || 0))
+            .slice(0, 3)
+            .map(p => ({
+              profile: p.profile,
+              placement: p.placement || 0,
+              score: p.score || null
+            }))
+          
+          // Generate the share text with properly formatted attendees
+          const allAttendees = attendedParticipants.map(p => ({
+            profile: p.profile,
+            placement: p.placement || 0,
+            score: p.score || null
+          }))
+          
+          const shareText = generateLeaderboardShareText(
+            event, 
+            topParticipants, 
+            attendedParticipants.length,
+            allAttendees
+          )
+          
+          // Create the frame URL with "🏆 View Results" button
+          const frameUrl = `${window.location.origin}/api/frames/events/${event.id}`
+          
+          // Create the Farcaster intent URL
+          const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(frameUrl)}`
+          
+          // Open the cast composer
+          window.open(castUrl, '_blank')
+        } catch (shareError) {
+          console.error('Error sharing results:', shareError)
+          // Don't fail the completion if sharing fails
+        }
+      }
+      
       onClose()
     } catch (error) {
       console.error('Error completing event:', error)
@@ -361,6 +408,34 @@ export default function EventCompletionModal({
                       <div className="text-white font-medium">Add to Event Archive</div>
                       <div className="text-gray-400 text-sm">
                         Event will be searchable in completed events archive
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Results Sharing */}
+                <div className="bg-gray-900 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-3">Social Sharing</h4>
+                  
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={completionData.shareResults}
+                      onChange={(e) => setCompletionData(prev => ({ ...prev, shareResults: e.target.checked }))}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mr-3 ${
+                      completionData.shareResults ? 'bg-purple-600 border-purple-600' : 'border-gray-600'
+                    }`}>
+                      {completionData.shareResults && <FaCheckCircle className="w-3 h-3 text-white" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-white font-medium flex items-center">
+                        <FaShare className="w-4 h-4 mr-2" />
+                        Share Results on Farcaster
+                      </div>
+                      <div className="text-gray-400 text-sm">
+                        Post leaderboard with top 3 winners and thank all participants
                       </div>
                     </div>
                   </label>

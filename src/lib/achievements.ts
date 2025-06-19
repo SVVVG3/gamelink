@@ -310,9 +310,10 @@ export function generateEventResultsShareText(
 export function generateLeaderboardShareText(
   event: Event,
   topParticipants: Array<{ profile: Profile; placement: number; score: number | null }>,
-  totalParticipants: number
+  totalParticipants: number,
+  allAttendees?: Array<{ profile: Profile; placement: number; score: number | null }>
 ): string {
-  const leaderboardText = topParticipants
+  const top3Text = topParticipants
     .slice(0, 3)
     .map((participant, index) => {
       const medals = ['🥇', '🥈', '🥉']
@@ -322,7 +323,19 @@ export function generateLeaderboardShareText(
     })
     .join('\n')
 
-  return `🏆 ${event.title} Results!\n\n${leaderboardText}\n\n👥 ${totalParticipants} total participants\n${event.game ? `🕹️ ${event.game}` : ''}\n\nJoin the competition on /gamelink! 🕹️`
+  let thanksText = ''
+  if (allAttendees && allAttendees.length > 3) {
+    // Get attendees who aren't in top 3
+    const otherAttendees = allAttendees
+      .filter(attendee => !topParticipants.slice(0, 3).some(top => top.profile.id === attendee.profile.id))
+      .map(attendee => `@${attendee.profile.username}`)
+    
+    if (otherAttendees.length > 0) {
+      thanksText = `\n\nThanks for playing ${otherAttendees.join(' ')}!`
+    }
+  }
+
+  return `🏆 ${event.title} Results!\n\n${top3Text}${thanksText}\n\n${event.game ? `🕹️ ${event.game}` : ''}\n\nCreate and join game events on /gamelink! 🎮`
 }
 
 /**

@@ -66,7 +66,9 @@ export default function ResultsShareModal({
           userParticipation.profile.username
         )
       } else if (selectedShareType === 'leaderboard') {
-        shareText = generateLeaderboardShareText(event, topParticipants, totalParticipants)
+        // Get all attendees for the "Thanks for playing" section
+        const allAttendees = leaderboard.filter(p => p.status === 'attended')
+        shareText = generateLeaderboardShareText(event, topParticipants, totalParticipants, allAttendees)
       } else if (selectedShareType === 'achievement' && selectedAchievement) {
         shareText = generateAchievementShareText(selectedAchievement, userParticipation?.profile.username || 'Player')
       }
