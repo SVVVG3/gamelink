@@ -24,6 +24,7 @@ import {
   SiRiotgames 
 } from 'react-icons/si'
 import { useFarcasterSDK } from '@/components/FarcasterSDKProvider'
+import BottomNavigation from '@/components/BottomNavigation'
 
 interface UserProfile {
   fid: number
@@ -249,7 +250,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
         {/* Header with back button */}
         <div className="flex items-center gap-4 mb-8">
           <button
@@ -417,6 +418,7 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+      <BottomNavigation />
     </div>
   )
 } 
