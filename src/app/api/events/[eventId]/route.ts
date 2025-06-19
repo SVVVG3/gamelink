@@ -149,12 +149,16 @@ export async function PUT(
 ) {
   try {
     const { eventId } = await params
-    const { status, userFid, completionData } = await request.json()
+    const requestBody = await request.json()
+    const { status, userFid, completionData } = requestBody
 
-    console.log(`🎮 API: Updating event status for ID: ${eventId}`, { status, userFid, completionData })
+    console.log(`🎮 API: Updating event status for ID: ${eventId}`)
+    console.log(`🎮 API: Request body:`, JSON.stringify(requestBody, null, 2))
+    console.log(`🎮 API: Extracted values:`, { status, userFid, completionData })
 
     // Validate required fields
     if (!status) {
+      console.error(`❌ API: Missing status field`)
       return NextResponse.json(
         { error: 'Status is required' },
         { status: 400 }
@@ -162,6 +166,7 @@ export async function PUT(
     }
 
     if (!userFid) {
+      console.error(`❌ API: Missing userFid field`)
       return NextResponse.json(
         { error: 'User authentication is required' },
         { status: 401 }
@@ -171,6 +176,7 @@ export async function PUT(
     // Validate status value
     const validStatuses = ['draft', 'upcoming', 'live', 'completed', 'cancelled', 'archived']
     if (!validStatuses.includes(status)) {
+      console.error(`❌ API: Invalid status value: ${status}`)
       return NextResponse.json(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
         { status: 400 }
@@ -180,6 +186,7 @@ export async function PUT(
     const supabase = await createClient()
 
     // Get user profile to verify authentication
+    console.log(`🔍 API: Looking up user profile for FID: ${userFid}`)
     const { data: userProfile, error: userError } = await supabase
       .from('profiles')
       .select('id, fid, username')
@@ -194,7 +201,10 @@ export async function PUT(
       )
     }
 
+    console.log(`✅ API: Found user profile:`, userProfile)
+
     // Get current event to verify authorization and validate status transition
+    console.log(`🔍 API: Fetching current event data for ID: ${eventId}`)
     const { data: currentEvent, error: eventError } = await supabase
       .from('events')
       .select('*')
@@ -210,26 +220,37 @@ export async function PUT(
     }
 
     if (!currentEvent) {
+      console.error('❌ Event not found in database')
       return NextResponse.json(
         { error: 'Event not found' },
         { status: 404 }
       )
     }
 
+    console.log(`✅ API: Found current event:`, {
+      id: currentEvent.id,
+      title: currentEvent.title,
+      status: currentEvent.status,
+      created_by: currentEvent.created_by
+    })
+
     // Check if user is the organizer
     if (currentEvent.created_by !== userProfile.id) {
+      console.error(`❌ Authorization failed: User ${userProfile.id} is not organizer of event created by ${currentEvent.created_by}`)
       return NextResponse.json(
         { error: 'Only the event organizer can update event status' },
         { status: 403 }
       )
     }
 
+    console.log(`✅ API: Authorization successful - user is event organizer`)
+
     // Comprehensive status transition validation
     const currentStatus = currentEvent.status as EventStatus
     const newStatus = status as EventStatus
     
     console.log(`🔍 API: Validating status transition: ${currentStatus} → ${newStatus}`)
-    console.log(`🔍 API: Event details:`, {
+    console.log(`🔍 API: Event details for validation:`, {
       id: eventId,
       currentStatus,
       newStatus,
@@ -257,19 +278,30 @@ export async function PUT(
       )
     }
 
+    console.log(`✅ API: Status transition validation passed`)
+
     // Update the event status using the existing utility function
+    console.log(`🔍 API: Updating event status in database...`)
     const updatedEvent = await updateEvent(eventId, { status })
 
     if (!updatedEvent) {
+      console.error(`❌ API: Failed to update event in database`)
       return NextResponse.json(
         { error: 'Failed to update event status' },
         { status: 500 }
       )
     }
 
+    console.log(`✅ API: Event status updated successfully:`, {
+      id: updatedEvent.id,
+      title: updatedEvent.title,
+      status: updatedEvent.status
+    })
+
     // Send status change notification to participants (async, don't block response)
     if (['live', 'completed', 'cancelled'].includes(newStatus)) {
       try {
+        console.log(`🔍 API: Sending status change notification...`)
         const { sendEventStatusChangeNotification } = await import('../../../../lib/notifications')
         await sendEventStatusChangeNotification(eventId, newStatus, currentStatus)
         console.log(`✅ API: Sent status change notification (${currentStatus} → ${newStatus}) for event ${eventId}`)
@@ -279,12 +311,11 @@ export async function PUT(
       }
     }
 
-    console.log(`✅ API: Successfully updated event status from '${currentStatus}' to '${status}'`)
-
+    console.log(`✅ API: Event status update completed successfully`)
     return NextResponse.json({
       success: true,
       event: updatedEvent,
-      message: `Event status updated to '${status}'`
+      message: `Event status updated to ${newStatus}`
     })
 
   } catch (error) {
