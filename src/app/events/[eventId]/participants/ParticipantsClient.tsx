@@ -221,8 +221,9 @@ export default function ParticipantsClient({ eventId }: ParticipantsClientProps)
     <div className="min-h-screen bg-gray-900">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
+        <div className="mb-8">
+          {/* Back Button and Title Row */}
+          <div className="flex items-center space-x-4 mb-4">
             <button
               onClick={navigateBack}
               className="flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
@@ -235,9 +236,21 @@ export default function ParticipantsClient({ eventId }: ParticipantsClientProps)
               <p className="text-gray-400">{event.title}</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-lg font-semibold text-white">{event.participants.length} Participants</p>
-            <p className="text-gray-400">Max: {event.maxParticipants}</p>
+          
+          {/* Participant Count Row */}
+          <div className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3 border border-gray-700">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <FaUsers className="w-4 h-4 text-blue-400" />
+                <span className="text-white font-medium">{event.participants.length} Participants</span>
+              </div>
+              <div className="text-gray-400">
+                Max: {event.maxParticipants}
+              </div>
+            </div>
+            <div className="text-sm text-gray-400">
+              {event.participants.filter(p => p.status === 'confirmed').length} confirmed
+            </div>
           </div>
         </div>
 
