@@ -268,7 +268,36 @@ export default function ChatPage() {
             if (eventResponse.ok) {
               const eventData = await eventResponse.json()
               if (eventData.events && eventData.events.length > 0) {
-                setEventData(eventData.events[0])
+                const basicEventData = eventData.events[0]
+                
+                // Fetch full event data with participants for admin detection
+                const fullEventResponse = await fetch(`/api/events/${basicEventData.id}?userFid=${profile.fid}`)
+                if (fullEventResponse.ok) {
+                  const fullEventData = await fullEventResponse.json()
+                  setEventData(fullEventData.event)
+                  
+                  // Check if current user is event admin (organizer or admin participant)
+                  const isEventAdmin = fullEventData.event.createdBy === profile.id ||
+                    fullEventData.event.participants?.some((participant: any) => 
+                      participant.user_id === profile.id && participant.role === 'organizer'
+                    )
+                  setIsGroupAdmin(isEventAdmin) // Reuse the same state for event admin
+                  
+                  console.log('🔍 Event Admin Check Debug:', {
+                    profileId: profile.id,
+                    profileFid: profile.fid,
+                    eventCreatedBy: fullEventData.event.createdBy,
+                    eventParticipants: fullEventData.event.participants?.map((p: any) => ({ 
+                      user_id: p.user_id, 
+                      role: p.role,
+                      profile: p.profile 
+                    })),
+                    isEventAdmin
+                  })
+                } else {
+                  // Fallback to basic event data if full fetch fails
+                  setEventData(basicEventData)
+                }
               }
             }
           } catch (error) {
@@ -606,17 +635,32 @@ export default function ChatPage() {
               {chat.participantProfiles && chat.participantProfiles.length > 0 ? (
                 <div className="space-y-3">
                   {chat.participantProfiles.map((participant) => {
-                    // Check if this participant is an admin - fix crown display logic
-                    const isParticipantAdmin = groupData?.createdBy === participant.fid.toString() ||
-                      groupData?.members?.some((member: any) => 
-                        member.profile?.fid === participant.fid && member.role === 'admin'
-                      )
+                    // Check if this participant is an admin - fix crown display logic for both groups and events
+                    let isParticipantAdmin = false
+                    
+                    if (isEventChat && eventData) {
+                      // For event chats, check if participant is event organizer or admin
+                      isParticipantAdmin = eventData.createdBy === participant.fid.toString() ||
+                        eventData.participants?.some((eventParticipant: any) => 
+                          eventParticipant.profile?.fid === participant.fid && 
+                          (eventParticipant.role === 'organizer' || eventParticipant.role === 'admin')
+                        )
+                    } else if (groupData) {
+                      // For group chats, check if participant is group creator or admin
+                      isParticipantAdmin = groupData.createdBy === participant.fid.toString() ||
+                        groupData.members?.some((member: any) => 
+                          member.profile?.fid === participant.fid && member.role === 'admin'
+                        )
+                    }
                     
                     console.log('🔍 Crown Check Debug:', {
                       participantFid: participant.fid,
                       participantUsername: participant.username,
+                      isEventChat,
+                      eventCreatedBy: eventData?.createdBy,
+                      eventParticipants: eventData?.participants?.filter((p: any) => p.profile?.fid === participant.fid).map((p: any) => ({ role: p.role })),
                       groupCreatedBy: groupData?.createdBy,
-                      memberRoles: groupData?.members?.filter((m: any) => m.profile?.fid === participant.fid).map((m: any) => m.role),
+                      groupMembers: groupData?.members?.filter((m: any) => m.profile?.fid === participant.fid).map((m: any) => ({ role: m.role })),
                       isParticipantAdmin
                     })
                     
