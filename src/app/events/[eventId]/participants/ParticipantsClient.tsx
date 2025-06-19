@@ -227,7 +227,7 @@ export default function ParticipantsClient({ eventId }: ParticipantsClientProps)
               className="flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
             >
               <FaArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              Event Details
             </button>
             <div>
               <h1 className="text-2xl font-bold text-white">Manage Participants</h1>
