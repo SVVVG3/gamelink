@@ -86,10 +86,25 @@ export default function EventCompletionModal({
       // Complete the event first
       await onComplete(completionData)
       
-      // If sharing is enabled, generate and share the results
+      // If sharing is enabled, fetch fresh participant data and share the results
       if (completionData.shareResults) {
         try {
-          const attendedParticipants = participants.filter(p => p.status === 'attended')
+          console.log('🔍 EventCompletion: Fetching fresh participant data after completion...')
+          
+          // Fetch fresh participant data with updated scores/placements
+          const response = await fetch(`/api/events/${event.id}`)
+          if (!response.ok) {
+            throw new Error('Failed to fetch updated event data')
+          }
+          
+          const eventData = await response.json()
+          const freshParticipants: (EventParticipant & { profile: Profile })[] = eventData.participants || []
+          
+          console.log('🔍 EventCompletion: Fresh participants:', freshParticipants.length, freshParticipants.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
+          
+          const attendedParticipants = freshParticipants.filter(p => p.status === 'attended')
+          console.log('🔍 EventCompletion: Attended participants:', attendedParticipants.length, attendedParticipants.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
+          
           const topParticipants = attendedParticipants
             .filter(p => p.placement !== null)
             .sort((a, b) => (a.placement || 0) - (b.placement || 0))
@@ -100,6 +115,8 @@ export default function EventCompletionModal({
               score: p.score || null
             }))
           
+          console.log('🔍 EventCompletion: Top participants:', topParticipants.length, topParticipants.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
+          
           // Generate the share text with properly formatted attendees
           const allAttendees = attendedParticipants.map(p => ({
             profile: p.profile,
@@ -107,12 +124,16 @@ export default function EventCompletionModal({
             score: p.score || null
           }))
           
+          console.log('🔍 EventCompletion: All attendees:', allAttendees.length, allAttendees.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
+          
           const shareText = generateLeaderboardShareText(
             event, 
             topParticipants, 
             attendedParticipants.length,
             allAttendees
           )
+          
+          console.log('🔍 EventCompletion: Generated share text:', shareText)
           
           // Use Farcaster SDK for proper mini app sharing
           const baseUrl = window.location.origin

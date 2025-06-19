@@ -2346,3 +2346,38 @@ Phase 4 is now complete with all issues resolved and UX improvements implemented
 - ✅ Improved share button UX with logical progression
 
 **Status**: Ready for Phase 5 planning and implementation.
+
+### 🚨 **LATEST ISSUE: CAST CONTENT NOT POPULATING CORRECTLY**
+**STATUS**: 🔍 **Investigating with enhanced debugging**
+
+🎯 **User Report**: Cast is generating after clicking through 2 confirmation screens, but:
+1. **Missing Leaderboard**: Cast doesn't show leaders with points
+2. **Missing Participant Tagging**: No @username tagging for attendees  
+3. **Button Text**: Mini app embed button should read "🏆 View Results"
+
+🔍 **Investigation Status**:
+- ✅ **Function Import**: `generateLeaderboardShareText` is correctly imported from `@/lib/achievements`
+- ✅ **Function Call**: EventCompletionModal calls the function with correct parameters
+- ✅ **Button Text**: Frame endpoint already has logic for "🏆 View Results" for completed events
+- 🔍 **Debug Logging**: Added comprehensive logging to track data flow
+
+🛠️ **Debugging Approach**:
+1. **Added Console Logging**: Track attended participants, top participants, all attendees, and generated share text
+2. **Data Flow Tracking**: Log participant data structure and transformations
+3. **Share Text Verification**: Log the final generated share text before SDK call
+
+🎯 **Expected Debug Output**:
+```
+🔍 EventCompletion: Attended participants: 2 [{ username: "user1", placement: 1, score: 100 }, ...]
+🔍 EventCompletion: Top participants: 2 [{ username: "user1", placement: 1, score: 100 }, ...]
+🔍 EventCompletion: All attendees: 2 [{ username: "user1", placement: 1, score: 100 }, ...]
+🔍 EventCompletion: Generated share text: "🏆 Event Results!\n\n🥇 @user1 - 100 pts\n🥈 @user2 - 85 pts\n\nThanks for playing!\n\n🕹️ Game Name\n\nCreate and join game events on /gamelink! 🎮"
+```
+
+🔧 **Potential Issues to Check**:
+1. **Participant Data**: Ensure participants have proper placement/score data
+2. **Profile Data**: Verify profile.username is available for tagging
+3. **Function Logic**: Check if generateLeaderboardShareText is working correctly
+4. **Data Transformation**: Verify data mapping between EventCompletionModal and function
+
+✅ **Next Steps**: Deploy debugging version and test event completion to capture console logs
