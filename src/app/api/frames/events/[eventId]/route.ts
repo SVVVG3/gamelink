@@ -40,11 +40,10 @@ export async function GET(
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gamelink-app.vercel.app';
     
-    // Determine button text based on event status
-    const isCompleted = event.status === 'completed' || event.status === 'archived';
-    const buttonTitle = isCompleted ? "🏆 View Results" : "🎮 Join Event";
+    // Button text - always "View Event" for consistency
+    const buttonTitle = "🎮 View Event";
     
-    console.log(`🔍 Frame endpoint for event ${eventId}: status="${event.status}", isCompleted=${isCompleted}, buttonTitle="${buttonTitle}"`)
+    console.log(`🔍 Frame endpoint for event ${eventId}: status="${event.status}", buttonTitle="${buttonTitle}"`)
 
     // Create Mini App Embed JSON
     const frameEmbed = {
@@ -107,7 +106,7 @@ export async function GET(
     return new NextResponse(html, {
       headers: {
         'Content-Type': 'text/html',
-        'Cache-Control': 'public, max-age=30',
+        'Cache-Control': 'public, max-age=300',
       },
     });
 
