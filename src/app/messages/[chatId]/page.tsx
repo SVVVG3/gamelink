@@ -148,8 +148,20 @@ export default function ChatPage() {
 
   // Share event frame function
   const shareEventFrame = async () => {
+    console.log('🔍 Share Event Debug: Function called', { 
+      eventData, 
+      isEventChat, 
+      eventDataExists: !!eventData,
+      eventDataKeys: eventData ? Object.keys(eventData) : 'no eventData'
+    })
+    
     if (!eventData) {
-      console.error('🚨 Share Event Error: Missing event data', { eventData })
+      console.error('🚨 Share Event Error: Missing event data', { 
+        eventData, 
+        isEventChat,
+        chatType: chat?.type,
+        chatName: chat?.name
+      })
       return
     }
     
@@ -264,16 +276,21 @@ export default function ChatPage() {
         // If this is an event chat, fetch event data
         if (isEventChatCheck) {
           try {
+            console.log('🔍 Event Chat Debug: Fetching event data for chatId:', chatId)
             const eventResponse = await fetch(`/api/events?chatId=${chatId}`)
             if (eventResponse.ok) {
               const eventData = await eventResponse.json()
+              console.log('🔍 Event Chat Debug: Basic event response:', eventData)
+              
               if (eventData.events && eventData.events.length > 0) {
                 const basicEventData = eventData.events[0]
+                console.log('🔍 Event Chat Debug: Basic event data:', basicEventData)
                 
                 // Fetch full event data with participants for admin detection
                 const fullEventResponse = await fetch(`/api/events/${basicEventData.id}?userFid=${profile.fid}`)
                 if (fullEventResponse.ok) {
                   const fullEventData = await fullEventResponse.json()
+                  console.log('🔍 Event Chat Debug: Full event data:', fullEventData)
                   setEventData(fullEventData.event)
                   
                   // Check if current user is event admin (organizer or admin participant)
@@ -295,13 +312,29 @@ export default function ChatPage() {
                     isEventAdmin
                   })
                 } else {
+                  console.log('🔍 Event Chat Debug: Full event fetch failed, using basic data')
                   // Fallback to basic event data if full fetch fails
                   setEventData(basicEventData)
+                  
+                  // Basic admin check using event creator
+                  const isEventAdmin = basicEventData.createdBy === profile.id
+                  setIsGroupAdmin(isEventAdmin)
+                  
+                  console.log('🔍 Event Admin Check Debug (Fallback):', {
+                    profileId: profile.id,
+                    eventCreatedBy: basicEventData.createdBy,
+                    isEventAdmin
+                  })
                 }
+              } else {
+                console.log('🔍 Event Chat Debug: No events found for chatId')
               }
+            } else {
+              console.log('🔍 Event Chat Debug: Event fetch failed with status:', eventResponse.status)
             }
           } catch (error) {
-            console.error('Error fetching event data:', error)
+            console.error('🚨 Error fetching event data:', error)
+            // Don't fail the entire chat loading if event data fails
           }
         }
       }
@@ -373,14 +406,22 @@ export default function ChatPage() {
 
   const handleManageMembers = () => {
     setShowInfoDropdown(false)
-    if (chat?.group_id) {
+    if (isEventChat && eventData) {
+      // For event chats, navigate to event participants management
+      router.push(`/events/${eventData.id}/participants`)
+    } else if (chat?.group_id) {
+      // For regular group chats, navigate to group members management
       router.push(`/groups/${chat.group_id}/members`)
     }
   }
 
   const handleEditGroup = () => {
     setShowInfoDropdown(false)
-    if (chat?.group_id) {
+    if (isEventChat && eventData) {
+      // For event chats, navigate to event editing
+      router.push(`/events/${eventData.id}/edit`)
+    } else if (chat?.group_id) {
+      // For regular group chats, navigate to group editing
       router.push(`/groups/${chat.group_id}/edit`)
     }
   }
