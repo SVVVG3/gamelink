@@ -118,30 +118,32 @@ export default function EventCompletionModal({
           const baseUrl = window.location.origin
           const eventUrl = `${baseUrl}/events/${event.id}`
           
-          // Try to use Farcaster SDK first
-          if (typeof window !== 'undefined') {
-            try {
-              // Check for Farcaster SDK in different possible locations
-              const sdk = (window as any).farcasterSDK || (window as any).parent?.farcasterSDK
+          // Try to use Farcaster SDK first (using the correct pattern)
+          try {
+            const { sdk } = await import('@farcaster/frame-sdk')
+            
+            // Check if we're in a Mini App context
+            const context = await sdk.context
+            if (context && context.client) {
+              const result = await sdk.actions.composeCast({
+                text: shareText,
+                embeds: [eventUrl]
+              })
               
-              if (sdk && sdk.actions && sdk.actions.composeCast) {
-                await sdk.actions.composeCast({
-                  text: shareText,
-                  embeds: [eventUrl]
-                })
-                console.log('✅ Results shared via Farcaster SDK')
-              } else {
-                throw new Error('Farcaster SDK not available')
+              if (result?.cast) {
+                console.log('✅ Results shared via Farcaster SDK:', result.cast.hash)
               }
-            } catch (sdkError) {
-              console.log('SDK not available, falling back to web composer:', sdkError)
-              // Fallback to Farcaster web composer
-              const castUrl = `https://farcaster.xyz/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventUrl)}`
-              if (typeof window !== 'undefined' && window.open) {
-                window.open(castUrl, '_blank')
-                console.log('✅ Results shared via Farcaster web composer')
-              }
+              return
             }
+          } catch (sdkError) {
+            console.log('SDK not available, falling back to web composer:', sdkError)
+          }
+          
+          // Fallback for standalone web app - open Farcaster web composer
+          const farcasterUrl = `https://farcaster.xyz/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventUrl)}`
+          if (typeof window !== 'undefined' && window.open) {
+            window.open(farcasterUrl, '_blank')
+            console.log('✅ Results shared via Farcaster web composer')
           }
         } catch (shareError) {
           console.error('Error sharing results:', shareError)
