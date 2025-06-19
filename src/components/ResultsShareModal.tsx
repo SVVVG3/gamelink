@@ -106,8 +106,8 @@ export default function ResultsShareModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 5rem)' }}>
+      <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center space-x-3">
@@ -123,7 +123,7 @@ export default function ResultsShareModal({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {/* Event Info */}
           <div className="bg-gray-700 rounded-lg p-4 mb-6">
             <div className="flex items-center space-x-3 mb-2">
@@ -287,7 +287,10 @@ export default function ResultsShareModal({
             )}
           </div>
 
-          {/* Share Button */}
+        </div>
+
+        {/* Footer */}
+        <div className="flex-shrink-0 p-6 border-t border-gray-700 bg-gray-800">
           <div className="flex justify-end space-x-3">
             <button
               onClick={onClose}
