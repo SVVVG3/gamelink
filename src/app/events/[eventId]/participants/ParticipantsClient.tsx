@@ -6,6 +6,7 @@ import { useUser } from '@/hooks/useUser'
 import { Event, EventParticipant, Profile } from '@/types'
 import { FaArrowLeft, FaCrown, FaUserMinus, FaUsers, FaSearch, FaUserCheck, FaUserTimes, FaGamepad } from 'react-icons/fa'
 import Link from 'next/link'
+import BottomNavigation from '@/components/BottomNavigation'
 
 interface ParticipantsClientProps {
   eventId: string
@@ -121,12 +122,9 @@ export default function ParticipantsClient({ eventId }: ParticipantsClientProps)
   }
 
   const navigateBack = async () => {
-    if (!event?.chatId) {
-      router.push(`/events/${eventId}`)
-      return
-    }
-
-    router.push(`/messages/${event.chatId}`)
+    // Check if we came from the event page by looking at the referrer or defaulting to event page
+    // Always go back to the event page since this is accessed from the event's "Manage Participants" button
+    router.push(`/events/${eventId}`)
   }
 
   if (userLoading || loading) {
@@ -219,7 +217,7 @@ export default function ParticipantsClient({ eventId }: ParticipantsClientProps)
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
         {/* Header */}
         <div className="mb-8">
           {/* Back Button and Title Row */}
@@ -361,6 +359,7 @@ export default function ParticipantsClient({ eventId }: ParticipantsClientProps)
           </div>
         </div>
       </div>
+      <BottomNavigation />
     </div>
   )
 } 
