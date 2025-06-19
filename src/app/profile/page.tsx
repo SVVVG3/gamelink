@@ -160,6 +160,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      {/* Extra padding to prevent content from being hidden behind bottom nav */}
+      <div className="h-20 sm:h-24"></div>
       <BottomNavigation />
     </main>
   )

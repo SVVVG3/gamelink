@@ -289,7 +289,7 @@ export default function MessageList({ chatId, onNewMessage, className = "" }: Me
       <div 
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto px-4 py-2 space-y-1"
-        style={{ scrollBehavior: 'smooth' }}
+        style={{ scrollBehavior: 'smooth', paddingBottom: '1rem' }}
       >
         {/* Load more button */}
         {hasMore && messages.length > 0 && (

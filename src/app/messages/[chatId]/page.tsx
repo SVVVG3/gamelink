@@ -482,16 +482,18 @@ export default function ChatPage() {
       </div>
 
       {/* Messages Area - with proper spacing for header and composer */}
-      <div className="flex-1 flex flex-col pt-16 pb-[180px] min-h-0">
+      <div className="flex-1 flex flex-col pt-16 min-h-0">
         <MessageList
           chatId={chatId}
           onNewMessage={(message) => console.log('New message received:', message)}
           className="flex-1"
         />
+        {/* Spacing between last message and input box */}
+        <div className="h-4"></div>
       </div>
 
       {/* Fixed Message Composer - with safe area padding */}
-      <div className="fixed bottom-0 left-0 right-0 z-10 p-4 bg-gray-900 border-t border-gray-700 safe-area-bottom" style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 5rem)` }}>
+      <div className="fixed bottom-0 left-0 right-0 z-10 bg-gray-900 border-t border-gray-700" style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 5rem)`, paddingTop: '1rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
         <MessageComposer
           chatId={chatId}
           onMessageSent={handleMessageSent}
