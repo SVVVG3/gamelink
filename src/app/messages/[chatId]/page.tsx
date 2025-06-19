@@ -482,7 +482,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages Area - with proper spacing for header and composer */}
-      <div className="flex-1 flex flex-col pt-16 min-h-0" style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 10rem)` }}>
+      <div className="flex-1 flex flex-col pt-16 min-h-0" style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 13rem)` }}>
         <MessageList
           chatId={chatId}
           onNewMessage={(message) => console.log('New message received:', message)}
