@@ -279,89 +279,89 @@ export default function ChatPage() {
         } catch (error) {
           console.error('Error fetching group data:', error)
         }
-        
-        // If this is an event chat, fetch event data
-        if (isEventChatCheck) {
-          try {
-            console.log('🔍 Event Chat Debug: Fetching event data for chatId:', chatId)
-            const eventApiUrl = `/api/events?chatId=${chatId}`
-            console.log('🔍 Event Chat Debug: API URL:', eventApiUrl)
+      }
+      
+      // If this is an event chat, fetch event data (independent of group_id)
+      if (isEventChatCheck) {
+        try {
+          console.log('🔍 Event Chat Debug: Fetching event data for chatId:', chatId)
+          const eventApiUrl = `/api/events?chatId=${chatId}`
+          console.log('🔍 Event Chat Debug: API URL:', eventApiUrl)
+          
+          const eventResponse = await fetch(eventApiUrl)
+          console.log('🔍 Event Chat Debug: API response status:', eventResponse.status)
+          
+          if (eventResponse.ok) {
+            const eventData = await eventResponse.json()
+            console.log('🔍 Event Chat Debug: Full API response:', eventData)
+            console.log('🔍 Event Chat Debug: Events array:', eventData.events)
+            console.log('🔍 Event Chat Debug: Events array length:', eventData.events?.length)
             
-            const eventResponse = await fetch(eventApiUrl)
-            console.log('🔍 Event Chat Debug: API response status:', eventResponse.status)
-            
-            if (eventResponse.ok) {
-              const eventData = await eventResponse.json()
-              console.log('🔍 Event Chat Debug: Full API response:', eventData)
-              console.log('🔍 Event Chat Debug: Events array:', eventData.events)
-              console.log('🔍 Event Chat Debug: Events array length:', eventData.events?.length)
+            if (eventData.events && eventData.events.length > 0) {
+              const basicEventData = eventData.events[0]
+              console.log('🔍 Event Chat Debug: Basic event data:', basicEventData)
               
-              if (eventData.events && eventData.events.length > 0) {
-                const basicEventData = eventData.events[0]
-                console.log('🔍 Event Chat Debug: Basic event data:', basicEventData)
+              // Fetch full event data with participants for admin detection
+              const fullEventResponse = await fetch(`/api/events/${basicEventData.id}?userFid=${profile.fid}`)
+              if (fullEventResponse.ok) {
+                const fullEventData = await fullEventResponse.json()
+                console.log('🔍 Event Chat Debug: Full event data:', fullEventData)
+                setEventData(fullEventData.event)
                 
-                // Fetch full event data with participants for admin detection
-                const fullEventResponse = await fetch(`/api/events/${basicEventData.id}?userFid=${profile.fid}`)
-                if (fullEventResponse.ok) {
-                  const fullEventData = await fullEventResponse.json()
-                  console.log('🔍 Event Chat Debug: Full event data:', fullEventData)
-                  setEventData(fullEventData.event)
-                  
-                  // Check if current user is event admin (organizer or admin participant)
-                  const isEventAdmin = fullEventData.event.createdBy === profile.id ||
-                    fullEventData.event.participants?.some((participant: any) => 
-                      participant.user_id === profile.id && participant.role === 'organizer'
-                    )
-                  setIsGroupAdmin(isEventAdmin) // Reuse the same state for event admin
-                  
-                  console.log('🔍 Event Admin Check Debug:', {
-                    profileId: profile.id,
-                    profileFid: profile.fid,
-                    eventCreatedBy: fullEventData.event.createdBy,
-                    eventParticipants: fullEventData.event.participants?.map((p: any) => ({ 
-                      user_id: p.user_id, 
-                      role: p.role,
-                      profile: p.profile 
-                    })),
-                    isEventAdmin
-                  })
-                } else {
-                  console.log('🔍 Event Chat Debug: Full event fetch failed, using basic data')
-                  // Fallback to basic event data if full fetch fails
-                  setEventData(basicEventData)
-                  
-                  // Basic admin check using event creator
-                  const isEventAdmin = basicEventData.createdBy === profile.id
-                  setIsGroupAdmin(isEventAdmin)
-                  
-                  console.log('🔍 Event Admin Check Debug (Fallback):', {
-                    profileId: profile.id,
-                    eventCreatedBy: basicEventData.createdBy,
-                    isEventAdmin
-                  })
-                }
+                // Check if current user is event admin (organizer or admin participant)
+                const isEventAdmin = fullEventData.event.createdBy === profile.id ||
+                  fullEventData.event.participants?.some((participant: any) => 
+                    participant.user_id === profile.id && participant.role === 'organizer'
+                  )
+                setIsGroupAdmin(isEventAdmin) // Reuse the same state for event admin
+                
+                console.log('🔍 Event Admin Check Debug:', {
+                  profileId: profile.id,
+                  profileFid: profile.fid,
+                  eventCreatedBy: fullEventData.event.createdBy,
+                  eventParticipants: fullEventData.event.participants?.map((p: any) => ({ 
+                    user_id: p.user_id, 
+                    role: p.role,
+                    profile: p.profile 
+                  })),
+                  isEventAdmin
+                })
               } else {
-                console.log('🔍 Event Chat Debug: No events found for chatId:', chatId)
-                console.log('🔍 Event Chat Debug: This might mean:')
-                console.log('  1. The event does not have chat_id set to this chatId')
-                console.log('  2. The event was deleted')
-                console.log('  3. There is a database inconsistency')
-                console.log('🔍 Event Chat Debug: Chat info:', {
-                  chatId,
-                  chatName: chatData.name,
-                  chatType: chatData.type,
-                  groupId: chatData.group_id
+                console.log('🔍 Event Chat Debug: Full event fetch failed, using basic data')
+                // Fallback to basic event data if full fetch fails
+                setEventData(basicEventData)
+                
+                // Basic admin check using event creator
+                const isEventAdmin = basicEventData.createdBy === profile.id
+                setIsGroupAdmin(isEventAdmin)
+                
+                console.log('🔍 Event Admin Check Debug (Fallback):', {
+                  profileId: profile.id,
+                  eventCreatedBy: basicEventData.createdBy,
+                  isEventAdmin
                 })
               }
             } else {
-              console.log('🔍 Event Chat Debug: Event fetch failed with status:', eventResponse.status)
-              const errorText = await eventResponse.text()
-              console.log('🔍 Event Chat Debug: Error response:', errorText)
+              console.log('🔍 Event Chat Debug: No events found for chatId:', chatId)
+              console.log('🔍 Event Chat Debug: This might mean:')
+              console.log('  1. The event does not have chat_id set to this chatId')
+              console.log('  2. The event was deleted')
+              console.log('  3. There is a database inconsistency')
+              console.log('🔍 Event Chat Debug: Chat info:', {
+                chatId,
+                chatName: chatData.name,
+                chatType: chatData.type,
+                groupId: chatData.group_id
+              })
             }
-          } catch (error) {
-            console.error('🚨 Error fetching event data:', error)
-            // Don't fail the entire chat loading if event data fails
+          } else {
+            console.log('🔍 Event Chat Debug: Event fetch failed with status:', eventResponse.status)
+            const errorText = await eventResponse.text()
+            console.log('🔍 Event Chat Debug: Error response:', errorText)
           }
+        } catch (error) {
+          console.error('🚨 Error fetching event data:', error)
+          // Don't fail the entire chat loading if event data fails
         }
       }
       
