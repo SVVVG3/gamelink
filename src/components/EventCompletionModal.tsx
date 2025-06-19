@@ -112,16 +112,30 @@ export default function EventCompletionModal({
           
           const freshParticipants: (EventParticipant & { profile: Profile })[] = eventData.event?.participants || eventData.participants || []
           
-          console.log('🔍 EventCompletion: Fresh participants data:', freshParticipants.map(p => ({ 
-            id: p.id, 
-            username: p.profile?.username, 
-            status: p.status, 
-            score: p.score, 
-            placement: p.placement 
-          })))
+          console.log('🔍 EventCompletion: Fresh participants data:', freshParticipants.length, freshParticipants.map(p => ({ username: p.profile?.username, status: p.status, score: p.score, placement: p.placement })))
           
           const attendedParticipants = freshParticipants.filter(p => p.status === 'attended')
           console.log('🔍 EventCompletion: Attended participants:', attendedParticipants.length, attendedParticipants.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
+          
+          // Auto-calculate placements for participants with scores but no placements
+          const participantsWithScores = attendedParticipants.filter(p => p.score !== null && p.score !== undefined)
+          const participantsNeedingPlacements = participantsWithScores.filter(p => p.placement === null || p.placement === undefined)
+          
+          if (participantsNeedingPlacements.length > 0) {
+            console.log('🔍 EventCompletion: Auto-calculating placements for participants with scores but no placements:', participantsNeedingPlacements.length)
+            
+            // Sort by score (highest first) and assign placements
+            const sortedByScore = [...participantsWithScores]
+              .sort((a, b) => (b.score || 0) - (a.score || 0))
+            
+            // Update placements in the fresh data
+            sortedByScore.forEach((participant, index) => {
+              const newPlacement = index + 1
+              participant.placement = newPlacement
+            })
+            
+            console.log('🔍 EventCompletion: Auto-calculated placements:', sortedByScore.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
+          }
           
           const topParticipants = attendedParticipants
             .filter(p => p.placement !== null && p.placement !== undefined)
