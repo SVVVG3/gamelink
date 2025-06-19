@@ -139,6 +139,20 @@ export default function LiveEventDashboard({ eventId }: LiveEventDashboardProps)
     }
   }, [eventId, eventData])
 
+  // Monitor event status changes and redirect when completed/archived
+  useEffect(() => {
+    if (!eventData?.event) return
+
+    const { event } = eventData
+    
+    // If event is no longer live, redirect to event page
+    if (event.status === 'completed' || event.status === 'archived') {
+      console.log(`🔄 Event status changed to ${event.status}, redirecting to event page`)
+      router.push(`/events/${eventId}`)
+      return
+    }
+  }, [eventData?.event?.status, eventId, router])
+
   // Loading state
   if (loading || userLoading) {
     return (

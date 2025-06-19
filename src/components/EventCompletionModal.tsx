@@ -114,14 +114,29 @@ export default function EventCompletionModal({
             allAttendees
           )
           
-          // Create the frame URL with "🏆 View Results" button
-          const frameUrl = `${window.location.origin}/api/frames/events/${event.id}`
+          // Use Farcaster SDK for proper mini app sharing
+          const baseUrl = window.location.origin
+          const eventUrl = `${baseUrl}/events/${event.id}`
           
-          // Create the Farcaster intent URL
-          const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(frameUrl)}`
-          
-          // Open the cast composer
-          window.open(castUrl, '_blank')
+          // Try to use Farcaster SDK first
+          if (typeof window !== 'undefined' && (window as any).farcasterSDK) {
+            try {
+              const sdk = (window as any).farcasterSDK
+              await sdk.actions.composeCast({
+                text: shareText,
+                embeds: [eventUrl]
+              })
+            } catch (sdkError) {
+              console.log('SDK not available, falling back to web composer')
+              // Fallback to Warpcast web composer
+              const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventUrl)}`
+              window.open(castUrl, '_blank')
+            }
+          } else {
+            // Fallback to Warpcast web composer
+            const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(eventUrl)}`
+            window.open(castUrl, '_blank')
+          }
         } catch (shareError) {
           console.error('Error sharing results:', shareError)
           // Don't fail the completion if sharing fails
