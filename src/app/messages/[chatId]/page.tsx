@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { getChatById, markChatMessagesAsRead, type ChatWithParticipants, type MessageWithSender } from '@/lib/supabase/chats'
@@ -9,7 +9,7 @@ import MessageList from '@/components/MessageList'
 import MessageComposer from '@/components/MessageComposer'
 import BottomNavigation from '@/components/BottomNavigation'
 import FarcasterIcon from '@/components/FarcasterIcon'
-import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV, FaTimes, FaShare, FaInfoCircle, FaSignOutAlt, FaCrown } from 'react-icons/fa'
+import { FaArrowLeft, FaUsers, FaSpinner, FaExclamationTriangle, FaCog, FaUserPlus, FaEdit, FaEllipsisV, FaTimes, FaShare, FaInfoCircle, FaSignOutAlt, FaCrown, FaChevronDown } from 'react-icons/fa'
 
 // Extended interface to include user profile data and group info
 interface ChatWithUserProfiles extends ChatWithParticipants {
@@ -38,10 +38,12 @@ export default function ChatPage() {
   const [groupData, setGroupData] = useState<any>(null)
   const [eventData, setEventData] = useState<any>(null)
   const [isEventChat, setIsEventChat] = useState(false)
-  const [showMemberList, setShowMemberList] = useState(false)
-  const [showParticipants, setShowParticipants] = useState(false)
-  const [showInfo, setShowInfo] = useState(false)
+  const [showMemberModal, setShowMemberModal] = useState(false)
+  const [showInfoDropdown, setShowInfoDropdown] = useState(false)
   const [leaveLoading, setLeaveLoading] = useState(false)
+  
+  // Refs for click outside detection
+  const infoDropdownRef = useRef<HTMLDivElement>(null)
 
   // Derived state for direct chats
   const otherParticipant = chat?.type === 'direct' && chat?.participantProfiles 
@@ -50,6 +52,23 @@ export default function ChatPage() {
 
   // Participant count for display
   const participantCount = chat?.participant_count || 0
+
+  // Handle click outside for dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (infoDropdownRef.current && !infoDropdownRef.current.contains(event.target as Node)) {
+        setShowInfoDropdown(false)
+      }
+    }
+
+    if (showInfoDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showInfoDropdown])
 
   // Fetch user profiles for chat participants
   const fetchUserProfiles = async (fids: number[]) => {
@@ -198,118 +217,103 @@ export default function ChatPage() {
       if (chatData.type === 'group' && (chatData as any).group_id && profile?.id) {
         try {
           const membershipInfo = await isGroupMember((chatData as any).group_id, profile.id)
-          setIsGroupAdmin(membershipInfo.isMember && (membershipInfo.role === 'admin' || membershipInfo.role === 'moderator'))
+          if (membershipInfo?.role === 'admin') {
+            setIsGroupAdmin(true)
+          }
           
-          // Also fetch group data for sharing
-          const groupInfo = await getGroupById((chatData as any).group_id, false)
-          setGroupData(groupInfo)
-        } catch (adminError) {
-          console.error('Error checking admin status:', adminError)
-          setIsGroupAdmin(false)
+          // Fetch group data for sharing
+          const groupInfo = await getGroupById((chatData as any).group_id)
+          if (groupInfo) {
+            setGroupData(groupInfo)
+          }
+        } catch (error) {
+          console.error('Error checking group admin status:', error)
         }
-      } else {
-        setIsGroupAdmin(false)
       }
       
-      // Mark all messages in this chat as read
-      if (profile?.id) {
-        await markChatMessagesAsRead(chatId, profile.id)
-      }
-    } catch (err) {
-      console.error('Error loading chat:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load chat')
+      // Mark messages as read
+      await markChatMessagesAsRead(chatId, profile.id!)
+    } catch (error) {
+      console.error('Error loading chat:', error)
+      setError('Failed to load chat')
     } finally {
       setIsLoading(false)
     }
   }, [chatId, profile?.fid, profile?.id])
 
-  // Load chat when component mounts or chatId changes
+  // Load chat on mount and when dependencies change
   useEffect(() => {
-    if (isAuthenticated && chatId && profile?.fid) {
+    if (profile?.fid) {
       loadChat()
     }
-  }, [isAuthenticated, chatId, profile?.fid, loadChat])
+  }, [loadChat])
 
-  // Handle message sent
   const handleMessageSent = (message: MessageWithSender) => {
-    console.log('Message sent:', message)
-    // The MessageList component will handle adding the message via real-time subscription
+    // Refresh chat to update last message
+    loadChat()
   }
 
-  // Handle message error
   const handleMessageError = (error: string) => {
-    console.error('Message error:', error)
-    // Could show a toast notification here
+    setError(error)
   }
 
-  // Get chat display name
   const getChatDisplayName = () => {
-    if (!chat) return 'Chat'
-    
-    if (chat.type === 'group') {
-      let displayName = chat.name || 'Group Chat'
-      // Remove "- Event Chat" suffix for event chats
-      if (displayName.endsWith(' - Event Chat')) {
-        displayName = displayName.replace(' - Event Chat', '')
-      }
-      return displayName
+    if (chat?.type === 'direct') {
+      return otherParticipant?.display_name || `@${otherParticipant?.username}` || 'Direct Chat'
     }
     
-    // For direct chats, show the other participant's name
-    const otherParticipantProfile = chat.participantProfiles?.find(p => p.fid !== profile?.fid)
-    if (otherParticipantProfile) {
-      return otherParticipantProfile.display_name || otherParticipantProfile.username
+    if (isEventChat) {
+      // Remove the " - Event Chat" suffix for display
+      return chat?.name?.replace(' - Event Chat', '') || 'Event Chat'
     }
     
-    // Fallback to FID if profile not found
-    const otherParticipant = chat.participants.find(p => p.fid !== profile?.fid)
-    if (otherParticipant) {
-      return `User ${otherParticipant.fid}`
-    }
-    
-    return 'Direct Chat'
+    return chat?.name || 'Group Chat'
   }
 
-  // Get participant count display
+  const getChatLabel = () => {
+    if (chat?.type === 'direct') {
+      return null
+    }
+    
+    if (isEventChat) {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+          Event
+        </span>
+      )
+    }
+    
+    return (
+      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        Group
+      </span>
+    )
+  }
+
   const getParticipantInfo = () => {
-    if (!chat) return ''
-    
-    if (chat.type === 'group') {
-      return `${chat.participant_count} members`
-    }
-    
-    return 'Direct message'
+    if (chat?.type === 'direct') return null
+    return `${participantCount} member${participantCount !== 1 ? 's' : ''}`
   }
 
-  // Handle showing member list
-  const handleShowMemberList = () => {
-    setShowMemberList(true)
-  }
-
-  // Handle admin menu actions
   const handleManageMembers = () => {
+    setShowInfoDropdown(false)
     if (chat?.group_id) {
       router.push(`/groups/${chat.group_id}/members`)
-    } else if (isEventChat && eventData) {
-      router.push(`/events/${eventData.id}`)
     }
-    setShowAdminMenu(false)
   }
 
   const handleEditGroup = () => {
+    setShowInfoDropdown(false)
     if (chat?.group_id) {
       router.push(`/groups/${chat.group_id}/edit`)
-    } else if (isEventChat && eventData) {
-      router.push(`/events/${eventData.id}`)
     }
-    setShowAdminMenu(false)
   }
 
   const handleLeaveChat = async () => {
-    if (!profile?.fid || !chatId) return
+    if (!chatId || !profile?.fid) return
     
+    setLeaveLoading(true)
     try {
-      setLeaveLoading(true)
       const response = await fetch(`/api/chats/${chatId}/leave`, {
         method: 'POST',
         headers: {
@@ -317,34 +321,24 @@ export default function ChatPage() {
         },
         body: JSON.stringify({
           userFid: profile.fid
-        }),
+        })
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to leave chat')
+        throw new Error('Failed to leave chat')
       }
 
-      // Redirect back to messages page
+      // Navigate back to messages list
       router.push('/messages')
     } catch (error) {
       console.error('Error leaving chat:', error)
-      setError(error instanceof Error ? error.message : 'Failed to leave chat')
+      setError('Failed to leave chat')
     } finally {
       setLeaveLoading(false)
-      setShowAdminMenu(false)
     }
   }
 
-  // Close admin menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => setShowAdminMenu(false)
-    if (showAdminMenu) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [showAdminMenu])
-
+  // Loading states
   if (!isAuthenticated) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-900 pb-20">
@@ -441,13 +435,19 @@ export default function ChatPage() {
               </>
             ) : (
               <div>
-                <h1 className="text-lg font-semibold text-white">
-                  {chat?.name || 'Chat'}
-                </h1>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-lg font-semibold text-white">
+                    {getChatDisplayName()}
+                  </h1>
+                  {getChatLabel()}
+                </div>
                 {chat?.type === 'group' && (
-                  <p className="text-sm text-gray-400">
+                  <button
+                    onClick={() => setShowMemberModal(true)}
+                    className="text-sm text-gray-400 hover:text-gray-300 transition-colors cursor-pointer"
+                  >
                     {getParticipantInfo()}
-                  </p>
+                  </button>
                 )}
               </div>
             )}
@@ -456,23 +456,67 @@ export default function ChatPage() {
 
         {/* Chat actions */}
         <div className="flex items-center space-x-2">
+          {/* Farcaster Share Button */}
           {chat?.type === 'group' && (
             <button
-              onClick={() => setShowParticipants(!showParticipants)}
+              onClick={isEventChat ? shareEventFrame : shareGroupFrame}
               className="p-2 text-gray-400 hover:text-white transition-colors"
-              title="View participants"
+              title={isEventChat ? "Share Event" : "Share Group"}
             >
-              <FaUsers className="w-4 h-4" />
+              <FarcasterIcon className="w-5 h-5" />
             </button>
           )}
           
-          <button
-            onClick={() => setShowInfo(!showInfo)}
-            className="p-2 text-gray-400 hover:text-white transition-colors"
-            title="Chat info"
-          >
-            <FaInfoCircle className="w-4 h-4" />
-          </button>
+          {/* Info Dropdown */}
+          {chat?.type === 'group' && (
+            <div className="relative" ref={infoDropdownRef}>
+              <button
+                onClick={() => setShowInfoDropdown(!showInfoDropdown)}
+                className="p-2 text-gray-400 hover:text-white transition-colors flex items-center"
+                title="Chat options"
+              >
+                <FaEllipsisV className="w-4 h-4" />
+              </button>
+              
+              {showInfoDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowMemberModal(true)
+                        setShowInfoDropdown(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center"
+                    >
+                      <FaUsers className="w-4 h-4 mr-3" />
+                      View Members
+                    </button>
+                    
+                    {isGroupAdmin && (
+                      <button
+                        onClick={handleManageMembers}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center"
+                      >
+                        <FaCog className="w-4 h-4 mr-3" />
+                        Manage Members
+                      </button>
+                    )}
+                    
+                    <div className="border-t border-gray-700 my-1"></div>
+                    
+                    <button
+                      onClick={handleLeaveChat}
+                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 flex items-center"
+                      disabled={leaveLoading}
+                    >
+                      <FaSignOutAlt className="w-4 h-4 mr-3" />
+                      {leaveLoading ? 'Leaving...' : 'Leave Chat'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -495,110 +539,60 @@ export default function ChatPage() {
         />
       </div>
 
-      {/* Participants Sidebar */}
-      {showParticipants && chat?.type === 'group' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
-          <div className="w-80 bg-gray-800 h-full overflow-y-auto">
+      {/* Member List Modal */}
+      {showMemberModal && chat?.type === 'group' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-lg max-w-md w-full max-h-96 overflow-hidden">
             <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Participants</h2>
+              <h2 className="text-lg font-semibold text-white">
+                {isEventChat ? 'Event Participants' : 'Group Members'}
+              </h2>
               <button
-                onClick={() => setShowParticipants(false)}
+                onClick={() => setShowMemberModal(false)}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
               >
                 <FaTimes className="w-4 h-4" />
               </button>
             </div>
             
-            <div className="p-4 space-y-3">
+            <div className="p-4 max-h-80 overflow-y-auto">
               {chat.participantProfiles && chat.participantProfiles.length > 0 ? (
-                chat.participantProfiles.map((participant) => (
-                  <div key={participant.fid} className="flex items-center space-x-3">
-                    {participant.pfp_url ? (
-                      <img 
-                        src={participant.pfp_url} 
-                        alt={participant.display_name || participant.username}
-                        className="w-10 h-10 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-white">
-                          {(participant.display_name || participant.username)?.[0]?.toUpperCase()}
-                        </span>
+                <div className="space-y-3">
+                  {chat.participantProfiles.map((participant) => (
+                    <div key={participant.fid} className="flex items-center space-x-3">
+                      {participant.pfp_url ? (
+                        <img 
+                          src={participant.pfp_url} 
+                          alt={participant.display_name || participant.username}
+                          className="w-10 h-10 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-white">
+                            {(participant.display_name || participant.username)?.[0]?.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-white font-medium">
+                          {participant.display_name || `@${participant.username}`}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          @{participant.username}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="text-white font-medium">
-                        {participant.display_name || `@${participant.username}`}
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        @{participant.username}
-                      </p>
+                      {isGroupAdmin && (
+                        <FaCrown className="w-4 h-4 text-yellow-500" title="Admin" />
+                      )}
                     </div>
-                    {isGroupAdmin && (
-                      <FaCrown className="w-4 h-4 text-yellow-500" title="Admin" />
-                    )}
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
                 <div className="text-center py-8">
                   <FaUsers className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400">No members found</p>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Chat Info Sidebar */}
-      {showInfo && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
-          <div className="w-80 bg-gray-800 h-full overflow-y-auto">
-            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Chat Info</h2>
-              <button
-                onClick={() => setShowInfo(false)}
-                className="p-2 text-gray-400 hover:text-white transition-colors"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">Chat Name</label>
-                <p className="text-white">{chat?.name || 'Unnamed Chat'}</p>
-              </div>
-              
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">Type</label>
-                <p className="text-white capitalize">{chat?.type || 'Unknown'}</p>
-              </div>
-              
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">Created</label>
-                <p className="text-white">
-                  {chat?.created_at ? new Date(chat.created_at).toLocaleDateString() : 'Unknown'}
-                </p>
-              </div>
-              
-              {chat?.type === 'group' && (
-                <div>
-                  <label className="text-sm text-gray-400 block mb-1">Members</label>
-                  <p className="text-white">{getParticipantInfo()}</p>
-                </div>
-              )}
-
-              {/* Leave Chat Button */}
-              <div className="pt-4 border-t border-gray-700">
-                <button
-                  onClick={handleLeaveChat}
-                  className="w-full flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                  disabled={leaveLoading}
-                >
-                  {leaveLoading ? 'Leaving...' : 'Leave Chat'}
-                </button>
-              </div>
             </div>
           </div>
         </div>
