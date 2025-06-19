@@ -191,7 +191,16 @@ export default function EventDetailsClient({ params }: Props) {
     
     // Share the event page URL, not the frame endpoint
     const eventPageUrl = `${window.location.origin}/events/${eventId}`
-    const shareText = `🎮 Join me for ${event.title}!\n\nGame: ${event.game}\nDate: ${formatDateTime(event.startTime).date} at ${formatDateTime(event.startTime).time}\n\n`
+    
+    // Build share text with platform information
+    let shareText = `🎮 Join me for ${event.title}!\n\nGame: ${event.game}\n`
+    
+    // Add platform information if available
+    if (event.gamingPlatform) {
+      shareText += `Platform: ${event.gamingPlatform}\n`
+    }
+    
+    shareText += `Date: ${formatDateTime(event.startTime).date} at ${formatDateTime(event.startTime).time}\n\n`
     
     // Try to use Farcaster SDK if available (Mini App context)
     try {
