@@ -244,6 +244,13 @@ export default function ChatPage() {
       
       // Check if this is an event chat
       const isEventChatCheck = chatData.name?.endsWith(' - Event Chat') || false
+      console.log('🔍 Event Chat Detection Debug:', {
+        chatName: chatData.name,
+        endsWithEventChat: chatData.name?.endsWith(' - Event Chat'),
+        isEventChatCheck,
+        chatType: chatData.type,
+        groupId: chatData.group_id
+      })
       setIsEventChat(isEventChatCheck)
       
       // Fetch group data if this is a group chat
@@ -356,6 +363,19 @@ export default function ChatPage() {
       loadChat()
     }
   }, [loadChat])
+
+  // Debug admin status
+  useEffect(() => {
+    console.log('🔍 Admin Status Debug:', {
+      isGroupAdmin,
+      isEventChat,
+      eventData: eventData ? 'exists' : 'null',
+      groupData: groupData ? 'exists' : 'null',
+      chatGroupId: chat?.group_id,
+      profileId: profile?.id,
+      profileFid: profile?.fid
+    })
+  }, [isGroupAdmin, isEventChat, eventData, groupData, chat?.group_id, profile?.id, profile?.fid])
 
   const handleMessageSent = (message: MessageWithSender) => {
     // Refresh chat to update last message
@@ -588,22 +608,34 @@ export default function ChatPage() {
           {chat?.type === 'group' && (
             <div className="relative" ref={infoDropdownRef}>
               <button
-                onClick={() => setShowInfoDropdown(!showInfoDropdown)}
-                className="p-2 text-gray-400 hover:text-white transition-colors flex items-center"
-                title="Chat options"
+                onClick={() => {
+                  console.log('🔍 Info Dropdown Clicked:', {
+                    isGroupAdmin,
+                    isEventChat,
+                    eventData: eventData ? 'exists' : 'null',
+                    groupData: groupData ? 'exists' : 'null',
+                    chatGroupId: chat?.group_id
+                  })
+                  setShowInfoDropdown(!showInfoDropdown)
+                }}
+                className="p-2 text-gray-400 hover:text-white transition-colors"
               >
                 <FaEllipsisV className="w-4 h-4" />
               </button>
               
+              {/* Info dropdown menu */}
               {showInfoDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
+                <div 
+                  ref={infoDropdownRef}
+                  className="absolute right-0 top-full mt-1 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-50"
+                >
                   <div className="py-1">
                     <button
                       onClick={() => {
-                        setShowMemberModal(true)
                         setShowInfoDropdown(false)
+                        setShowMemberModal(true)
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center"
                     >
                       <FaUsers className="w-4 h-4 mr-3" />
                       View Members
@@ -612,7 +644,7 @@ export default function ChatPage() {
                     {isGroupAdmin && (
                       <button
                         onClick={handleManageMembers}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center"
                       >
                         <FaCog className="w-4 h-4 mr-3" />
                         Manage Members
