@@ -83,8 +83,18 @@ export default function EventCompletionModal({
   const handleComplete = async () => {
     setLoading(true)
     try {
+      console.log('🔍 EventCompletion: Starting event completion process...')
+      console.log('🔍 EventCompletion: Original participants data:', participants.map(p => ({ 
+        id: p.id, 
+        username: p.profile?.username, 
+        status: p.status, 
+        score: p.score, 
+        placement: p.placement 
+      })))
+      
       // Complete the event first
       await onComplete(completionData)
+      console.log('🔍 EventCompletion: Event completion API call finished')
       
       // If sharing is enabled, fetch fresh participant data and share the results
       if (completionData.shareResults) {
@@ -98,9 +108,17 @@ export default function EventCompletionModal({
           }
           
           const eventData = await response.json()
-          const freshParticipants: (EventParticipant & { profile: Profile })[] = eventData.participants || []
+          console.log('🔍 EventCompletion: Raw API response:', eventData)
           
-          console.log('🔍 EventCompletion: Fresh participants:', freshParticipants.length, freshParticipants.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
+          const freshParticipants: (EventParticipant & { profile: Profile })[] = eventData.event?.participants || eventData.participants || []
+          
+          console.log('🔍 EventCompletion: Fresh participants data:', freshParticipants.map(p => ({ 
+            id: p.id, 
+            username: p.profile?.username, 
+            status: p.status, 
+            score: p.score, 
+            placement: p.placement 
+          })))
           
           const attendedParticipants = freshParticipants.filter(p => p.status === 'attended')
           console.log('🔍 EventCompletion: Attended participants:', attendedParticipants.length, attendedParticipants.map(p => ({ username: p.profile?.username, placement: p.placement, score: p.score })))
