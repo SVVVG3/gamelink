@@ -52,19 +52,28 @@ export default function MessageComposer({
     }
   }, [disabled])
 
-  // Improved keyboard handling with platform detection
+  // Enhanced keyboard handling with improved platform detection and Visual Viewport API
   useEffect(() => {
     let isAndroid = false
     let isIOS = false
+    let isDesktop = false
     
     // Detect platform
     if (typeof window !== 'undefined') {
       isAndroid = /Android/i.test(navigator.userAgent)
       isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      isDesktop = window.innerWidth > 768 && !isAndroid && !isIOS
+    }
+
+    // Skip keyboard handling on desktop
+    if (isDesktop) {
+      return
     }
 
     const handleFocus = () => {
-      // Only apply aggressive keyboard management on Android
+      setIsFocused(true)
+      
+      // Apply keyboard-open class only on Android for aggressive management
       if (isAndroid) {
         document.body.classList.add('keyboard-open')
         const container = document.querySelector('.message-page-container')
@@ -73,7 +82,7 @@ export default function MessageComposer({
         }
       }
 
-      // Gentle scroll into view for both platforms
+      // Scroll input into view with platform-specific timing
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.scrollIntoView({ 
@@ -82,11 +91,13 @@ export default function MessageComposer({
             inline: 'nearest'
           })
         }
-      }, isIOS ? 300 : 100) // Longer delay for iOS
+      }, isIOS ? 300 : isAndroid ? 150 : 100)
     }
 
     const handleBlur = () => {
-      // Clean up Android-specific classes
+      setIsFocused(false)
+      
+      // Clean up Android-specific classes with delay for keyboard close animation
       if (isAndroid) {
         setTimeout(() => {
           document.body.classList.remove('keyboard-open')
@@ -94,25 +105,27 @@ export default function MessageComposer({
           if (container) {
             container.classList.remove('keyboard-open')
           }
-        }, 150)
+        }, 200) // Increased delay for smoother transition
       }
     }
 
-    // Visual Viewport API for enhanced keyboard detection (primarily for Android)
+    // Enhanced Visual Viewport API for Android keyboard detection
     let visualViewport: any = null
     if (typeof window !== 'undefined' && window.visualViewport && isAndroid) {
       visualViewport = window.visualViewport
       
       const handleViewportChange = () => {
         const container = document.querySelector('.message-page-container')
-        if (visualViewport.height < window.innerHeight * 0.75) {
-          // Keyboard is likely open
+        const keyboardThreshold = window.innerHeight * 0.75
+        
+        if (visualViewport.height < keyboardThreshold) {
+          // Keyboard is open
           document.body.classList.add('keyboard-open')
           if (container) {
             container.classList.add('keyboard-open')
           }
         } else {
-          // Keyboard is likely closed
+          // Keyboard is closed
           document.body.classList.remove('keyboard-open')
           if (container) {
             container.classList.remove('keyboard-open')

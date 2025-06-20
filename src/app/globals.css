@@ -22,14 +22,28 @@ body {
 html {
   /* Prevent zoom on input focus on iOS */
   -webkit-text-size-adjust: 100%;
-  /* Support for safe areas on mobile devices */
-  padding-bottom: env(safe-area-inset-bottom);
   /* Fix for viewport issues */
   height: 100%;
   overflow-x: hidden;
 }
 
-/* Message page specific layout */
+/* =================================================================
+   BOTTOM NAVIGATION SAFE AREA FIXES
+   ================================================================= */
+
+/* Default bottom navigation with safe area support */
+.bottom-nav-safe {
+  /* Use safe area insets for proper positioning above system UI */
+  padding-bottom: env(safe-area-inset-bottom);
+  /* Ensure it's above system navigation but not conflicting */
+  bottom: env(safe-area-inset-bottom);
+}
+
+/* =================================================================
+   MESSAGE PAGE LAYOUT - COMPREHENSIVE CROSS-PLATFORM SOLUTION
+   ================================================================= */
+
+/* Base message page container - works for desktop and most mobile */
 .message-page-container {
   display: flex;
   flex-direction: column;
@@ -39,56 +53,56 @@ html {
   max-height: 100dvh;
   overflow: hidden;
   background: #111827; /* bg-gray-900 for dark mode */
-  /* Perfect bottom padding to clear bottom navigation without too much space */
-  padding-bottom: 40px; /* Increased from 35px to 40px for perfect balance */
+  
+  /* Base bottom padding for bottom navigation */
+  /* Calculate: bottom nav height (72px) + safe area + small buffer */
+  padding-bottom: calc(72px + env(safe-area-inset-bottom) + 8px);
 }
 
-/* iOS-specific adjustments */
+/* =================================================================
+   PLATFORM-SPECIFIC ADJUSTMENTS
+   ================================================================= */
+
+/* iOS-specific adjustments - minimal interference with native behavior */
 @supports (-webkit-touch-callout: none) {
   .message-page-container {
+    /* Use webkit fill available for better iOS viewport handling */
     height: -webkit-fill-available;
     min-height: -webkit-fill-available;
-    /* iOS needs extra padding for safe area */
-    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+    
+    /* iOS needs more conservative padding */
+    padding-bottom: calc(72px + env(safe-area-inset-bottom) + 12px);
+  }
+  
+  .message-composer-container {
+    /* iOS gets sticky positioning for natural keyboard behavior */
+    position: sticky;
+    bottom: 0;
+    /* Extra padding for iOS safe area */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
   }
 }
 
-/* Android-specific keyboard handling */
-.message-page-container.keyboard-open {
-  /* When keyboard is open on Android, use visual viewport */
-  height: 100vh;
-  height: 100svh; /* Small viewport height for mobile keyboards */
-  /* Maintain perfect bottom padding even with keyboard open */
-  padding-bottom: 40px;
-}
-
-.message-composer-container {
-  /* Ensure composer stays at bottom */
-  flex-shrink: 0;
-  position: relative;
-  z-index: 10;
-  background: #1f2937; /* bg-gray-800 */
-  border-top: 1px solid #374151; /* border-gray-700 */
-  /* Add bottom margin to clear bottom navigation */
-  margin-bottom: 0;
-}
-
-.message-list-container {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* Ensure messages scroll properly above keyboard */
-  position: relative;
-  z-index: 1;
-  background: #111827; /* bg-gray-900 for dark mode */
-}
-
-/* Enhanced Android keyboard handling only for Android */
-@media screen and (max-width: 768px) {
-  /* Android Chrome specific handling */
-  @supports not (-webkit-touch-callout: none) {
+/* Android-specific adjustments - more aggressive keyboard management */
+@supports not (-webkit-touch-callout: none) {
+  /* Only apply on mobile screen sizes */
+  @media screen and (max-width: 768px) {
+    .message-page-container {
+      /* Android needs extra bottom padding to clear system nav + bottom nav */
+      padding-bottom: calc(72px + env(safe-area-inset-bottom) + 16px);
+    }
+    
+    /* When keyboard is open on Android */
+    .message-page-container.keyboard-open {
+      /* Use small viewport height to account for keyboard */
+      height: 100svh;
+      min-height: 100svh;
+      /* Maintain bottom padding even with keyboard */
+      padding-bottom: calc(72px + env(safe-area-inset-bottom) + 16px);
+    }
+    
+    /* Prevent body scroll when keyboard opens on Android */
     body.keyboard-open {
-      /* Prevent body scroll and layout shifts on Android */
       position: fixed;
       top: 0;
       left: 0;
@@ -98,27 +112,67 @@ html {
       height: 100vh;
       height: 100dvh;
     }
-    
-    .message-page-container.keyboard-open {
-      /* When keyboard opens on Android, adjust for smaller viewport */
-      height: 100svh;
-      min-height: 100svh;
-      /* Maintain perfect bottom padding for navigation */
-      padding-bottom: 40px;
-    }
-  }
-  
-  /* iOS gets minimal adjustments */
-  @supports (-webkit-touch-callout: none) {
-    .message-composer-container {
-      /* Ensure composer is always accessible on iOS */
-      position: sticky;
-      bottom: 0;
-      /* Add bottom padding for iOS safe area + navigation */
-      padding-bottom: env(safe-area-inset-bottom);
-    }
   }
 }
+
+/* =================================================================
+   MESSAGE COMPOSER POSITIONING
+   ================================================================= */
+
+.message-composer-container {
+  /* Ensure composer stays at bottom */
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  background: #1f2937; /* bg-gray-800 */
+  border-top: 1px solid #374151; /* border-gray-700 */
+  
+  /* Base padding for all platforms */
+  padding-bottom: 8px;
+}
+
+/* =================================================================
+   MESSAGE LIST SCROLLING
+   ================================================================= */
+
+.message-list-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Ensure messages scroll properly above keyboard */
+  position: relative;
+  z-index: 1;
+  background: #111827; /* bg-gray-900 for dark mode */
+  
+  /* Smooth scrolling for better UX */
+  scroll-behavior: smooth;
+  /* Prevent scroll bounce on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =================================================================
+   DESKTOP OPTIMIZATIONS
+   ================================================================= */
+
+/* Desktop gets simplified layout without mobile-specific adjustments */
+@media screen and (min-width: 769px) {
+  .message-page-container {
+    /* Desktop doesn't need aggressive keyboard handling */
+    height: 100vh;
+    /* Simple bottom padding for desktop */
+    padding-bottom: 80px;
+  }
+  
+  .message-composer-container {
+    /* Desktop gets standard positioning */
+    position: relative;
+    padding-bottom: 8px;
+  }
+}
+
+/* =================================================================
+   UTILITY CLASSES
+   ================================================================= */
 
 /* Safe area support for bottom navigation */
 .safe-area-bottom {
