@@ -28,22 +28,22 @@ html {
 }
 
 /* =================================================================
-   BOTTOM NAVIGATION SAFE AREA FIXES
+   BOTTOM NAVIGATION POSITIONING
    ================================================================= */
 
-/* Default bottom navigation with safe area support */
+/* Bottom navigation positioned with safe area support */
 .bottom-nav-safe {
-  /* Use safe area insets for proper positioning above system UI */
-  padding-bottom: env(safe-area-inset-bottom);
-  /* Ensure it's above system navigation but not conflicting */
-  bottom: env(safe-area-inset-bottom);
+  /* Position at bottom with safe area insets */
+  bottom: env(safe-area-inset-bottom, 0);
+  /* Add bottom padding for safe area */
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* =================================================================
-   MESSAGE PAGE LAYOUT - COMPREHENSIVE CROSS-PLATFORM SOLUTION
+   MESSAGE PAGE LAYOUT - PRECISE SPACING SOLUTION
    ================================================================= */
 
-/* Base message page container - works for desktop and most mobile */
+/* Base message page container with precise bottom navigation spacing */
 .message-page-container {
   display: flex;
   flex-direction: column;
@@ -54,9 +54,8 @@ html {
   overflow: hidden;
   background: #111827; /* bg-gray-900 for dark mode */
   
-  /* Base bottom padding for bottom navigation */
-  /* Calculate: bottom nav height (72px) + safe area + small buffer */
-  padding-bottom: calc(72px + env(safe-area-inset-bottom) + 8px);
+  /* Precise bottom padding: bottom nav actual height (68px) + safe area */
+  padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
 }
 
 /* =================================================================
@@ -70,16 +69,16 @@ html {
     height: -webkit-fill-available;
     min-height: -webkit-fill-available;
     
-    /* iOS needs more conservative padding */
-    padding-bottom: calc(72px + env(safe-area-inset-bottom) + 12px);
+    /* iOS gets same precise padding as base */
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
   }
   
   .message-composer-container {
     /* iOS gets sticky positioning for natural keyboard behavior */
     position: sticky;
     bottom: 0;
-    /* Extra padding for iOS safe area */
-    padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
+    /* Minimal padding for iOS */
+    padding-bottom: 4px;
   }
 }
 
@@ -88,8 +87,8 @@ html {
   /* Only apply on mobile screen sizes */
   @media screen and (max-width: 768px) {
     .message-page-container {
-      /* Android needs extra bottom padding to clear system nav + bottom nav */
-      padding-bottom: calc(72px + env(safe-area-inset-bottom) + 16px);
+      /* Android gets same precise padding as base */
+      padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
     }
     
     /* When keyboard is open on Android */
@@ -97,8 +96,8 @@ html {
       /* Use small viewport height to account for keyboard */
       height: 100svh;
       min-height: 100svh;
-      /* Maintain bottom padding even with keyboard */
-      padding-bottom: calc(72px + env(safe-area-inset-bottom) + 16px);
+      /* Maintain precise bottom padding even with keyboard */
+      padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
     }
     
     /* Prevent body scroll when keyboard opens on Android */
@@ -116,6 +115,35 @@ html {
 }
 
 /* =================================================================
+   DESKTOP AND MINI APP OPTIMIZATIONS
+   ================================================================= */
+
+/* Desktop and Farcaster mini app on desktop - precise spacing */
+@media screen and (min-width: 769px) {
+  .message-page-container {
+    /* Desktop uses standard viewport */
+    height: 100vh;
+    /* Precise bottom padding for desktop (no safe area needed) */
+    padding-bottom: 68px;
+  }
+  
+  .message-composer-container {
+    /* Desktop gets standard positioning */
+    position: relative;
+    padding-bottom: 4px;
+  }
+}
+
+/* Farcaster mini app specific adjustments (all screen sizes) */
+@media screen {
+  /* When in Farcaster mini app context */
+  .message-page-container {
+    /* Ensure precise spacing in mini app environment */
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
+  }
+}
+
+/* =================================================================
    MESSAGE COMPOSER POSITIONING
    ================================================================= */
 
@@ -127,8 +155,8 @@ html {
   background: #1f2937; /* bg-gray-800 */
   border-top: 1px solid #374151; /* border-gray-700 */
   
-  /* Base padding for all platforms */
-  padding-bottom: 8px;
+  /* Minimal padding - let container handle spacing */
+  padding-bottom: 4px;
 }
 
 /* =================================================================
@@ -151,32 +179,12 @@ html {
 }
 
 /* =================================================================
-   DESKTOP OPTIMIZATIONS
-   ================================================================= */
-
-/* Desktop gets simplified layout without mobile-specific adjustments */
-@media screen and (min-width: 769px) {
-  .message-page-container {
-    /* Desktop doesn't need aggressive keyboard handling */
-    height: 100vh;
-    /* Simple bottom padding for desktop */
-    padding-bottom: 80px;
-  }
-  
-  .message-composer-container {
-    /* Desktop gets standard positioning */
-    position: relative;
-    padding-bottom: 8px;
-  }
-}
-
-/* =================================================================
    UTILITY CLASSES
    ================================================================= */
 
 /* Safe area support for bottom navigation */
 .safe-area-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 0.5rem);
 }
 
 /* Line clamp utilities */
