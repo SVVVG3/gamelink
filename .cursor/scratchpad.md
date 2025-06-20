@@ -572,6 +572,237 @@ Each task is considered complete when:
   - Feature discovery tooltips
   - Achievement system for engagement
 
+---
+
+## 📋 **PLANNER MODE: User Onboarding & Profile Completion Implementation Plan**
+
+### **Current State Analysis:**
+- ✅ **Authentication**: Farcaster AuthKit + SDK integration working
+- ✅ **Profile System**: Basic profile creation with Farcaster data sync
+- ✅ **Gamertag Management**: Comprehensive platform support (8 platforms)
+- ❌ **Guided Onboarding**: No structured new user flow
+- ❌ **Profile Completion**: No completion tracking or incentives
+- ❌ **Progressive Setup**: Users can skip essential profile setup
+- ❌ **Onboarding Analytics**: No tracking of completion rates
+
+### **User Experience Issues:**
+1. **New users land directly on profile page** without guidance
+2. **No indication of profile completeness** or next steps
+3. **Critical gamertag setup can be skipped** entirely
+4. **No onboarding analytics** to track user engagement
+5. **Missing welcome/tutorial experience** for new users
+
+### **Technical Challenges:**
+1. **State Management**: Need to track onboarding progress across sessions
+2. **Progressive Disclosure**: Show relevant steps without overwhelming users
+3. **Skip Prevention**: Encourage completion while allowing flexibility
+4. **Analytics Integration**: Track completion rates and drop-off points
+5. **Cross-Platform Consistency**: Onboarding must work on desktop, mobile, Farcaster mini app
+
+---
+
+## 🏗️ **IMPLEMENTATION ROADMAP**
+
+### **Phase 1: Foundation & Analytics Setup (Week 1)**
+
+#### **Task 1.1: Onboarding State Management**
+- **Database Schema Updates**:
+  - Add `onboarding_completed: boolean` to profiles table
+  - Add `onboarding_step: string` to track current step
+  - Add `profile_completion_score: number` for completion percentage
+  - Add `onboarding_started_at: timestamp` for analytics
+- **State Management**:
+  - Create `useOnboarding` hook for progress tracking
+  - Implement progress persistence across sessions
+  - Add completion percentage calculation logic
+- **Success Criteria**: 
+  - Onboarding state persists across browser sessions
+  - Progress can be resumed from any step
+  - State updates are atomic and consistent
+
+#### **Task 1.2: Profile Completion Scoring System**
+- **Scoring Algorithm**:
+  - Farcaster profile data: 30% (name, bio, pfp)
+  - Gaming profiles: 50% (at least 2 platforms recommended)
+  - Settings & preferences: 20% (notifications, privacy)
+- **Visual Indicators**:
+  - Progress bar component with percentage
+  - Completion badges/achievements
+  - Next steps recommendations
+- **Success Criteria**:
+  - Accurate completion percentage calculation
+  - Real-time updates as users add information
+  - Visual progress indicators working across platforms
+
+#### **Task 1.3: Onboarding Analytics Setup**
+- **Event Tracking**:
+  - Step entry/exit events
+  - Completion rates per step
+  - Time spent on each step
+  - Drop-off point identification
+- **Analytics Dashboard**:
+  - Completion rate metrics
+  - User flow visualization
+  - A/B testing framework setup
+- **Success Criteria**:
+  - Step-by-step analytics tracking functional
+  - Completion rate measurement accurate
+  - Drop-off point identification working
+
+### **Phase 2: Onboarding Flow Implementation (Week 2)**
+
+#### **Task 2.1: Welcome Screen & Flow Entry**
+- **Welcome Screen Components**:
+  - GameLink value proposition presentation
+  - Benefits of complete profile explanation
+  - Continue vs Skip decision point
+- **Flow Entry Logic**:
+  - New user detection (first time vs returning)
+  - Incomplete profile detection
+  - Contextual entry points throughout app
+- **Success Criteria**:
+  - Welcoming first impression created
+  - Clear value proposition communicated
+  - Smooth transition to setup steps
+
+#### **Task 2.2: Guided Gamertag Setup Wizard**
+- **Multi-Step Wizard**:
+  - Platform prioritization (PSN, Xbox, Steam first)
+  - Smart platform suggestions based on Farcaster bio
+  - Bulk import options for power users
+  - Validation and error handling
+- **Platform Selection Logic**:
+  - Popular platforms highlighted first
+  - Search functionality for platform discovery
+  - Custom platform addition support
+- **Success Criteria**:
+  - At least 1 gamertag added by 80% of users
+  - Reduced setup time vs current flow
+  - High completion rate for gamertag step
+
+#### **Task 2.3: Profile Enhancement Steps**
+- **Settings Configuration**:
+  - Notification preferences setup
+  - Privacy settings explanation and configuration
+  - Friend discovery enablement
+- **Progressive Enhancement**:
+  - Optional vs required steps clearly marked
+  - Skip options with later re-engagement
+  - Contextual help and explanations
+- **Success Criteria**:
+  - Clear understanding of each setting
+  - Appropriate default selections
+  - Easy modification post-onboarding
+
+### **Phase 3: Completion Incentives & Retention (Week 3)**
+
+#### **Task 3.1: Completion Rewards System**
+- **Achievement System**:
+  - Completion milestone badges
+  - Profile strength indicators
+  - Social recognition for complete profiles
+- **Feature Unlocks**:
+  - Enhanced discovery features for complete profiles
+  - Priority in friend recommendations
+  - Access to advanced gaming features
+- **Success Criteria**:
+  - Increased completion rates measured
+  - User engagement with reward system
+  - Positive feedback on incentives
+
+#### **Task 3.2: Smart Reminders & Re-engagement**
+- **Progressive Reminder System**:
+  - In-app completion prompts (non-intrusive)
+  - Contextual completion suggestions
+  - Email/notification reminders (if enabled)
+- **Quick-Complete Options**:
+  - One-click gamertag import from common platforms
+  - Bulk setup options for returning users
+  - Profile completion shortcuts
+- **Success Criteria**:
+  - Increased return and completion rates
+  - Non-intrusive reminder experience
+  - Effective re-engagement messaging
+
+#### **Task 3.3: Onboarding Optimization Framework**
+- **A/B Testing Infrastructure**:
+  - Different onboarding flow variants
+  - Completion rate comparison tools
+  - User feedback collection system
+- **Continuous Improvement**:
+  - Data-driven optimization decisions
+  - User feedback integration
+  - Iterative flow improvements
+- **Success Criteria**:
+  - A/B testing framework functional
+  - Improved completion rates over time
+  - User satisfaction metrics improving
+
+### **Phase 4: Advanced Features & Polish (Week 4)**
+
+#### **Task 4.1: Contextual Help System**
+- **Interactive Guidance**:
+  - Tooltips and guided tours
+  - Contextual help based on user actions
+  - Progressive disclosure of advanced features
+- **Help Content**:
+  - Platform-specific gamertag help
+  - Privacy setting explanations
+  - Feature benefit explanations
+- **Success Criteria**:
+  - Reduced user confusion and support requests
+  - Effective feature discovery
+  - Positive user feedback on help system
+
+#### **Task 4.2: Cross-Platform Onboarding Optimization**
+- **Platform-Specific Enhancements**:
+  - Mobile-optimized onboarding flow
+  - Desktop feature showcases
+  - Farcaster mini app specific optimizations
+- **Responsive Design**:
+  - Touch-friendly interfaces on mobile
+  - Keyboard navigation support
+  - Consistent experience across devices
+- **Success Criteria**:
+  - Consistent experience across platforms
+  - Platform-specific optimizations working
+  - High completion rates on all platforms
+
+---
+
+## 🎯 **EXECUTOR IMPLEMENTATION GUIDE**
+
+### **Start Here - Phase 1, Task 1.1**:
+1. **Database Schema First**: Update profiles table with onboarding fields
+2. **Create useOnboarding Hook**: State management for progress tracking
+3. **Implement Persistence**: Save progress across sessions
+4. **Test State Management**: Ensure atomic updates and consistency
+
+### **Key Implementation Principles**:
+- **Mobile-First Design**: Onboarding must work perfectly on phones
+- **Progressive Disclosure**: Don't overwhelm users with too many options
+- **Skip-Friendly**: Allow users to skip but encourage completion
+- **Analytics-Driven**: Implement tracking early for optimization
+- **Performance-Conscious**: Lazy load components, optimize for speed
+
+### **Critical Success Factors**:
+- **User Testing**: Test with real users throughout development
+- **Analytics Integration**: Track everything for optimization
+- **Cross-Platform Testing**: Verify on desktop, mobile, Farcaster mini app
+- **Performance Monitoring**: Ensure fast load times
+- **Accessibility**: Support keyboard navigation and screen readers
+
+### **Questions for Human User**:
+1. **Priority Platforms**: Which gaming platforms should we prioritize in onboarding?
+2. **Completion Requirements**: Should any profile elements be mandatory vs optional?
+3. **Analytics Preferences**: Do we have preferred analytics tools or should we build custom?
+4. **Design Assets**: Do we need new design assets or can we use existing GameLink branding?
+5. **A/B Testing**: Should we implement A/B testing from the start or add it later?
+
+---
+
+**Ready for Implementation**: All tasks are clearly defined with success criteria, technical requirements, and implementation guidance. Executor can begin with Phase 1, Task 1.1.
+
 ### **🎨 User Experience Improvements**
 
 #### **1. Mobile Responsiveness & Performance**

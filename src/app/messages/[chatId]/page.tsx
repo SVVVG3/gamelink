@@ -758,27 +758,32 @@ export default function ChatPage() {
                     
                     return (
                       <div key={participant.fid} className="flex items-center space-x-3">
-                        {participant.pfp_url ? (
-                          <img 
-                            src={participant.pfp_url} 
-                            alt={participant.display_name || participant.username}
-                            className="w-10 h-10 rounded-full"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium text-white">
-                              {(participant.display_name || participant.username)?.[0]?.toUpperCase()}
-                            </span>
+                        <button
+                          onClick={() => router.push(`/profile/${participant.fid}`)}
+                          className="flex items-center space-x-3 hover:bg-gray-700 rounded-lg p-2 -m-2 transition-colors flex-1"
+                        >
+                          {participant.pfp_url ? (
+                            <img 
+                              src={participant.pfp_url} 
+                              alt={participant.display_name || participant.username}
+                              className="w-10 h-10 rounded-full"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-medium text-white">
+                                {(participant.display_name || participant.username)?.[0]?.toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <p className="text-white font-medium">
+                              {participant.display_name || `@${participant.username}`}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                              @{participant.username}
+                            </p>
                           </div>
-                        )}
-                        <div className="flex-1">
-                          <p className="text-white font-medium">
-                            {participant.display_name || `@${participant.username}`}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            @{participant.username}
-                          </p>
-                        </div>
+                        </button>
                         {/* Show crown for actual admins */}
                         {isParticipantAdmin && (
                           <FaCrown className="w-4 h-4 text-yellow-500" title="Admin" />

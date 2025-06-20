@@ -360,8 +360,8 @@ export async function PUT(
       status: updatedEvent.status
     })
 
-    // Auto-archive event chat when event is completed or archived
-    if (['completed', 'archived'].includes(newStatus) && updatedEvent.chatId) {
+    // Auto-archive event chat when event is completed, archived, or cancelled
+    if (['completed', 'archived', 'cancelled'].includes(newStatus) && updatedEvent.chatId) {
       try {
         console.log(`🗂️ API: Auto-archiving event chat ${updatedEvent.chatId} for ${newStatus} event`)
         
