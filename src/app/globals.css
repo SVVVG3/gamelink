@@ -40,10 +40,10 @@ html {
 }
 
 /* =================================================================
-   MESSAGE PAGE LAYOUT - PRECISE SPACING SOLUTION
+   MESSAGE PAGE LAYOUT - MOBILE-OPTIMIZED SPACING
    ================================================================= */
 
-/* Base message page container with precise bottom navigation spacing */
+/* Base message page container with mobile-optimized spacing */
 .message-page-container {
   display: flex;
   flex-direction: column;
@@ -54,8 +54,8 @@ html {
   overflow: hidden;
   background: #111827; /* bg-gray-900 for dark mode */
   
-  /* Precise bottom padding: bottom nav actual height (68px) + safe area */
-  padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
+  /* Mobile-optimized bottom padding: smaller gap for mobile devices */
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
 }
 
 /* =================================================================
@@ -69,8 +69,8 @@ html {
     height: -webkit-fill-available;
     min-height: -webkit-fill-available;
     
-    /* iOS gets same precise padding as base */
-    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
+    /* iOS gets minimal gap - just enough to not overlap */
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
   }
   
   .message-composer-container {
@@ -87,8 +87,8 @@ html {
   /* Only apply on mobile screen sizes */
   @media screen and (max-width: 768px) {
     .message-page-container {
-      /* Android gets same precise padding as base */
-      padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
+      /* Android gets small gap to prevent overlap */
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
     }
     
     /* When keyboard is open on Android */
@@ -96,8 +96,8 @@ html {
       /* Use small viewport height to account for keyboard */
       height: 100svh;
       min-height: 100svh;
-      /* Maintain precise bottom padding even with keyboard */
-      padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
+      /* Maintain small bottom padding even with keyboard */
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
     }
     
     /* Prevent body scroll when keyboard opens on Android */
@@ -118,13 +118,13 @@ html {
    DESKTOP AND MINI APP OPTIMIZATIONS
    ================================================================= */
 
-/* Desktop and Farcaster mini app on desktop - precise spacing */
+/* Desktop and Farcaster mini app on desktop - no gap needed */
 @media screen and (min-width: 769px) {
   .message-page-container {
     /* Desktop uses standard viewport */
     height: 100vh;
-    /* Precise bottom padding for desktop (no safe area needed) */
-    padding-bottom: 68px;
+    /* Desktop gets no gap - text input should touch bottom nav */
+    padding-bottom: 0;
   }
   
   .message-composer-container {
@@ -134,12 +134,12 @@ html {
   }
 }
 
-/* Farcaster mini app specific adjustments (all screen sizes) */
-@media screen {
-  /* When in Farcaster mini app context */
+/* Farcaster mini app specific adjustments (mobile only) */
+@media screen and (max-width: 768px) {
+  /* When in Farcaster mini app context on mobile */
   .message-page-container {
-    /* Ensure precise spacing in mini app environment */
-    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0));
+    /* Mini app on mobile gets minimal gap */
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
   }
 }
 
