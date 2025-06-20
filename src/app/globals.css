@@ -40,10 +40,10 @@ html {
 }
 
 /* =================================================================
-   MESSAGE PAGE LAYOUT - OPTIMAL SPACING (TESTED VALUES)
+   MESSAGE PAGE LAYOUT - SIMPLIFIED (COMPOSER HANDLES SPACING)
    ================================================================= */
 
-/* Base message page container with optimal bottom navigation spacing */
+/* Base message page container - simplified since composer handles bottom nav */
 .message-page-container {
   display: flex;
   flex-direction: column;
@@ -54,12 +54,12 @@ html {
   overflow: hidden;
   background: #111827; /* bg-gray-900 for dark mode */
   
-  /* Default mobile padding - minimal spacing */
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+  /* Minimal padding - composer handles bottom navigation clearance */
+  padding-bottom: 0px;
 }
 
 /* =================================================================
-   PLATFORM-SPECIFIC ADJUSTMENTS - OPTIMAL VALUES
+   PLATFORM-SPECIFIC ADJUSTMENTS - SIMPLIFIED
    ================================================================= */
 
 /* iOS-specific adjustments - minimal interference with native behavior */
@@ -69,16 +69,8 @@ html {
     height: -webkit-fill-available;
     min-height: -webkit-fill-available;
     
-    /* iOS optimal spacing - increased to prevent blocking */
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
-  }
-  
-  .message-composer-container {
-    /* iOS gets sticky positioning for natural keyboard behavior */
-    position: sticky;
-    bottom: 0;
-    /* Minimal padding for safe area */
-    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0));
+    /* No padding needed - composer handles bottom nav clearance */
+    padding-bottom: 0px;
   }
 }
 
@@ -87,8 +79,8 @@ html {
   /* Only apply on mobile screen sizes */
   @media screen and (max-width: 768px) {
     .message-page-container {
-      /* Android optimal spacing - tested value */
-      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+      /* No padding needed - composer handles bottom nav clearance */
+      padding-bottom: 0px;
     }
     
     /* When keyboard is open on Android */
@@ -96,8 +88,8 @@ html {
       /* Use small viewport height to account for keyboard */
       height: 100svh;
       min-height: 100svh;
-      /* Maintain optimal padding even with keyboard */
-      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+      /* No padding needed - composer handles bottom nav clearance */
+      padding-bottom: 0px;
     }
     
     /* Prevent body scroll when keyboard opens on Android */
@@ -115,22 +107,16 @@ html {
 }
 
 /* =================================================================
-   DESKTOP AND MINI APP OPTIMIZATIONS - PERFECT SPACING
+   DESKTOP AND MINI APP OPTIMIZATIONS - SIMPLIFIED
    ================================================================= */
 
-/* Desktop and Farcaster mini app on desktop - perfect layout */
+/* Desktop and Farcaster mini app on desktop - simplified */
 @media screen and (min-width: 769px) {
   .message-page-container {
     /* Desktop uses standard viewport */
     height: 100vh;
-    /* Desktop perfect spacing - text input touches bottom nav */
+    /* No padding needed - composer handles bottom nav clearance */
     padding-bottom: 0px;
-  }
-  
-  .message-composer-container {
-    /* Desktop gets standard positioning */
-    position: relative;
-    padding-bottom: 4px;
   }
 }
 
@@ -138,13 +124,13 @@ html {
 @media screen and (max-width: 768px) {
   /* When in Farcaster mini app context on mobile */
   .message-page-container {
-    /* Mini app on mobile gets consistent spacing */
-    /* iOS: 12px, Android: 12px (handled by platform detection above) */
+    /* No padding needed - composer handles bottom nav clearance */
+    /* All spacing handled by message composer component */
   }
 }
 
 /* =================================================================
-   MESSAGE COMPOSER POSITIONING
+   MESSAGE COMPOSER POSITIONING - FIXED BOTTOM NAV CLEARANCE
    ================================================================= */
 
 .message-composer-container {
@@ -155,8 +141,36 @@ html {
   background: #1f2937; /* bg-gray-800 */
   border-top: 1px solid #374151; /* border-gray-700 */
   
-  /* Minimal padding - let container handle spacing */
+  /* CRITICAL FIX: Add bottom margin to clear bottom navigation */
+  /* Bottom nav height: ~60px + safe area + buffer */
+  margin-bottom: calc(60px + env(safe-area-inset-bottom, 0));
   padding-bottom: 4px;
+}
+
+/* Platform-specific composer adjustments */
+@supports (-webkit-touch-callout: none) {
+  /* iOS: Use webkit fill available and proper margin */
+  .message-composer-container {
+    margin-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+    padding-bottom: 4px;
+  }
+}
+
+@supports not (-webkit-touch-callout: none) {
+  /* Android: Same margin for consistency */
+  @media screen and (max-width: 768px) {
+    .message-composer-container {
+      margin-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+    }
+  }
+}
+
+/* Desktop: No bottom navigation overlap */
+@media screen and (min-width: 769px) {
+  .message-composer-container {
+    margin-bottom: calc(60px + env(safe-area-inset-bottom, 0));
+    padding-bottom: 4px;
+  }
 }
 
 /* =================================================================
