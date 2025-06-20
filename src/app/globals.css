@@ -40,10 +40,10 @@ html {
 }
 
 /* =================================================================
-   MESSAGE PAGE LAYOUT - MOBILE-OPTIMIZED SPACING
+   MESSAGE PAGE LAYOUT - OPTIMAL SPACING (TESTED VALUES)
    ================================================================= */
 
-/* Base message page container with mobile-optimized spacing */
+/* Base message page container with optimal bottom navigation spacing */
 .message-page-container {
   display: flex;
   flex-direction: column;
@@ -54,12 +54,12 @@ html {
   overflow: hidden;
   background: #111827; /* bg-gray-900 for dark mode */
   
-  /* Mobile-optimized bottom padding: smaller gap for mobile devices */
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
+  /* Default mobile padding - minimal spacing */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
 }
 
 /* =================================================================
-   PLATFORM-SPECIFIC ADJUSTMENTS
+   PLATFORM-SPECIFIC ADJUSTMENTS - OPTIMAL VALUES
    ================================================================= */
 
 /* iOS-specific adjustments - minimal interference with native behavior */
@@ -69,16 +69,16 @@ html {
     height: -webkit-fill-available;
     min-height: -webkit-fill-available;
     
-    /* iOS gets minimal gap - just enough to not overlap */
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+    /* iOS optimal spacing - increased to prevent blocking */
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
   }
   
   .message-composer-container {
     /* iOS gets sticky positioning for natural keyboard behavior */
     position: sticky;
     bottom: 0;
-    /* Minimal padding for iOS */
-    padding-bottom: 4px;
+    /* Minimal padding for safe area */
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0));
   }
 }
 
@@ -87,7 +87,7 @@ html {
   /* Only apply on mobile screen sizes */
   @media screen and (max-width: 768px) {
     .message-page-container {
-      /* Android gets small gap to prevent overlap */
+      /* Android optimal spacing - tested value */
       padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
     }
     
@@ -96,7 +96,7 @@ html {
       /* Use small viewport height to account for keyboard */
       height: 100svh;
       min-height: 100svh;
-      /* Maintain small bottom padding even with keyboard */
+      /* Maintain optimal padding even with keyboard */
       padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
     }
     
@@ -115,16 +115,16 @@ html {
 }
 
 /* =================================================================
-   DESKTOP AND MINI APP OPTIMIZATIONS
+   DESKTOP AND MINI APP OPTIMIZATIONS - PERFECT SPACING
    ================================================================= */
 
-/* Desktop and Farcaster mini app on desktop - no gap needed */
+/* Desktop and Farcaster mini app on desktop - perfect layout */
 @media screen and (min-width: 769px) {
   .message-page-container {
     /* Desktop uses standard viewport */
     height: 100vh;
-    /* Desktop gets no gap - text input should touch bottom nav */
-    padding-bottom: 0;
+    /* Desktop perfect spacing - text input touches bottom nav */
+    padding-bottom: 0px;
   }
   
   .message-composer-container {
@@ -138,8 +138,8 @@ html {
 @media screen and (max-width: 768px) {
   /* When in Farcaster mini app context on mobile */
   .message-page-container {
-    /* Mini app on mobile gets minimal gap */
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+    /* Mini app on mobile gets consistent spacing */
+    /* iOS: 12px, Android: 12px (handled by platform detection above) */
   }
 }
 
