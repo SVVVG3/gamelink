@@ -775,11 +775,11 @@ export default function ChatPage() {
                               </span>
                             </div>
                           )}
-                          <div>
-                            <p className="text-white font-medium">
+                          <div className="text-left">
+                            <p className="text-white font-medium text-left">
                               {participant.display_name || `@${participant.username}`}
                             </p>
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm text-gray-400 text-left">
                               @{participant.username}
                             </p>
                           </div>
