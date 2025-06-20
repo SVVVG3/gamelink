@@ -757,10 +757,10 @@ export default function ChatPage() {
                     })
                     
                     return (
-                      <div key={participant.fid} className="flex items-center space-x-3">
+                      <div key={participant.fid} className="flex items-center justify-between">
                         <button
                           onClick={() => router.push(`/profile/${participant.fid}`)}
-                          className="flex items-center space-x-3 hover:bg-gray-700 rounded-lg p-2 -m-2 transition-colors flex-1"
+                          className="flex items-center space-x-3 hover:bg-gray-700 rounded-lg p-2 -m-2 transition-colors"
                         >
                           {participant.pfp_url ? (
                             <img 
@@ -775,7 +775,7 @@ export default function ChatPage() {
                               </span>
                             </div>
                           )}
-                          <div className="flex-1">
+                          <div>
                             <p className="text-white font-medium">
                               {participant.display_name || `@${participant.username}`}
                             </p>
